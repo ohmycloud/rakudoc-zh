@@ -1,0 +1,395 @@
+# Grammars
+
+Grammars - 一组具名 regexes 组成正式的 grammar
+
+Grammars 是一个很强大的工具用于析构文本并通常返回数据结构。
+
+例如, Perl 6 是使用 Perl 6 风格 grammar 解析并执行的。
+
+对普通 Perl 6 使用者更实用的一个例子是 link:https://github.com/moritz/json[JSON::Tiny]模块, 它能反序列化任何合法的 JSON 文件, 而反序列代码只有不到 100 行, 还能扩展。
+
+Grammars 允许你把 regexes 组织到一块儿, 就像类(class) 中组织方法那样。
+
+
+## 具名正则 (Named Regexes)
+　
+grammars 的主要组成部分是 link:http://doc.perl6.org/language/regexes[regexes]。 而 Perl 6 的 link:http://doc.perl6.org/language/regexes[regexes]语法不在该文档的讨论范围, 具名正则(named regexes) 有它自己的特殊语法, 这跟子例程(subroutine) 的定义很像:
+
+``` perl
+my regex number { \d+ [ \. \d+ ]?   }   # 普通 regex 中空格被忽略, [] 是非捕获组
+```
+
+上面的代码使用 `my` 关键字指定了本地作用域的 regex, 因为具名正则(named regexes) 通常用在 grammars 里面。
+
+正则有名字了就方便我们在任何地方重用那个正则了:
+
+``` perl
+say "32.51" ~~ &number;
+say "15 + 4.5" ~~ /  \s* '+' \s*  /
+&number           # my regex number { \d+ [ \. \d+ ]?   }  
+```
+
+为什么用 `&number`, 对比具名子例程你就知道了:
+
+``` perl
+> sub number { say "i am a subroutine" }  # 具名子例程
+> &number                                 # sub number () { #`(Sub|140651249646256) ... }
+```
+
+`&number` 就是直接引用了具名的 regex 或 子例程。而在`/ /` 或 grammars 里面, 引用一个具名正则的语法也很特殊, 就是给名字包裹上 `< >`。`<>` 就像引号那样, 当用它引起某个具名正则后, 引用这个 `` 就会把该具名正则插入(带入)到整个正则之中, 就像字符串插值那样：
+
+``` perl
+use v6;
+
+# 具名正则的声明
+my regex number { \d+ [ \. \d+]? }  
+my token ident  { \w+            }
+my rule  alpha  { <[A..Za..z]>   }
+
+# 1.0 通过 & 来引用
+say so "12.34" ~~ &number; # true
+
+# 2.0 在正则构造 // 里使用
+say so "12.88 + 0.12" ~~ /  \s* '+' \s*  /; # true
+# say so "12.88 + 0.12" ~~ /  \s* '+' \s*  /;
+# wrong, method 'number' not found for invocant of class 'Cursor'
+
+# 3.0 在 grammar 里面使用
+grammar EquationParse {
+    # 这里也不能给 number 起别名, 除非 number 是在 grammar 内部声明的
+     token TOP {  \s* '+' \s*  \s* '=' \s*  }
+}
+
+# 等式解析
+my $expr = EquationParse.parse("12.88 + 0.12 = 13.00");
+say $expr;
+
+```
+
+声明具名正则不是只有一个 `regex` 声明符, 实际上 , regex 声明符用的最少, 大多数时候, 都是使用 `token` 或 `rule` 声明符。token 和 rule 这两个都是 `ratcheing` (棘轮)的, 这意味着如果匹配失败, 那么匹配引擎就不会回并尝试匹配了。这通常会是你想要的, 但不适用于所有情况:
+
+> 棘轮用于单向驱动, 防止逆转。
+
+``` perl
+my regex works-but-slow { .+ q } # 可能会回溯
+my token fails-but-fast { .+ q } # 不回溯
+my $s = 'Tokens and rules won\'t backtrack, which makes them fail quicker!';
+say so $s ~~ &works-but-slow; # True
+say so $s ~~ &fails-but-fast; # False, .+ 得到了整个字符串但不回溯
+```
+
+ `token` 和 `rule` 的唯一区别就是 `rule` 声明符会让正则中的 `:sigspace` 修饰符起效:
+
+``` perl
+my token non-space-y { 'once' 'upon' 'a' 'time' }
+my rule space-y { 'once' 'upon' 'a' 'time' }
+say 'onceuponatime'    ~~ &non-space-y;
+say 'once upon a time' ~~ &space-y;
+```
+
+## 创建 Grammar
+　
+当使用 grammar 关键字而非 class 关键字声明来声明一个类时, 会自动得到以 link:https://docs.perl6.org/type/Grammar[Grammar] 的父类。Grammars 应该只用于解析文本; 如果你想提取复杂的数据, 推荐 link:http://doc.perl6.org/language/grammars#Action_Objects[action object]和 grammar 一块使用。
+
+### Proto regexes
+
+link:https://docs.perl6.org/type/Grammar[Grammars] 由 rules，token 和 regexes 组成; 他们实际上是方法，因为 grammars 是类。这些方法可以共享一个共同的名称和功能，因此可以使用 link:https://docs.perl6.org/syntax/proto[proto]。
+
+如果你有很多备选分支(alternations), 那么生成可读性好的代码或子类化(subclass)你的 grammar 可能会变得很困难。在下面的 `Actions` 类中, `TOP` 方法中的三元操作符并不理想, 并且当我们添加的操作越多, 它就变得越糟糕:
+
+```perl6
+grammar Calculator {
+    token TOP { [ <add> | <sub> ] }
+    rule  add { <num> '+' <num> }
+    rule  sub { <num> '-' <num> }
+    token num { \d+ }
+}
+
+class Calculations {
+    method TOP ($/) { make $<add> ?? $<add>.made !! $<sub>.made; }
+    method add ($/) { make [+] $<num>; }
+    method sub ($/) { make [-] $<num>; }
+}
+
+say Calculator.parse('2 + 3', actions => Calculations).made;
+
+# OUTPUT:
+# 5
+```
+
+为了让事情变得更好, 我们可以在 tokens 身上使用看起来像 `:sym<...>` 那样的副词来使用正则表达式原型(protoregexes):
+
+```perl6
+grammar Calculator {
+    token TOP { <calc-op> }
+
+    proto rule calc-op          {*}
+          rule calc-op:sym<add> { <num> '+' <num> }
+          rule calc-op:sym<sub> { <num> '-' <num> }
+
+    token num { \d+ }
+}
+
+class Calculations {
+    method TOP              ($/) { make $<calc-op>.made; }
+    method calc-op:sym<add> ($/) { make [+] $<num>; }
+    method calc-op:sym<sub> ($/) { make [-] $<num>; }
+}
+
+say Calculator.parse('2 + 3', actions => Calculations).made;
+
+# OUTPUT:
+# 5
+```
+
+在这个 grammar 中, 备选分支(alternation)已经被 `<calc-op>` 替换掉了, 它实质上是我们将要创建的一组值的名字。我们通过使用 `proto rule calc-op` 定义了一个 rule 原型类型(prototype) 来达成。我们之前的每一个备选分支已经被新的 rule `calc-op` 替换掉了并且备选分支的名字被附加上了 `:sym<>` 副词。
+
+在 actions 类中, 我们现在摆脱了三目操作符, 仅仅只在 `$<calc-op>` 匹配对象上接收 `.made` 值。并且单独备选分支的 actions 现在和 grammar 遵守相同的命名模式:  `method calc-op:sym<add>` 和 `method calc-op:sym<sub>`。
+
+当你子类化(subclass)那个 grammar 和 actions 类的时候才能看到这个方法的真正魅力。假设我们想为 calculator 增加一个乘法功能:
+
+```perl6
+grammar BetterCalculator is Calculator {
+    rule calc-op:sym<mult> { <num> '*' <num> }
+}
+
+class BetterCalculations is Calculations {
+    method calc-op:sym<mult> ($/) { make [*] $<num> }
+}
+
+say BetterCalculator.parse('2 * 3', actions => BetterCalculations).made;
+
+# OUTPUT:
+# 6
+```
+
+所有我们需要添加的就是为 `calc-op` 组添加额外的 rule 和 action, 感谢正则表达式原型(protoregexes), 所有的东西都能正常工作。
+
+## 特殊的 Tokens
+
+### TOP
+
+```perl6
+grammar Foo {
+    token TOP { \d+ }
+}
+```
+
+The TOP token is the default first token attempted to match when parsing with a grammar—the root of the tree. Note that if you're parsing with .parse method, token TOP is automatically anchored to the start and end of the string (see also: .subparse).
+
+`TOP` token 是默认的第一个尝试去匹配的 token , 当解析一个 grammar 的时候 - 那颗树的根。注意如果你正使用 `.parse` 方法进行解析, 那么 token TOP 被自动地锚定到字符串的开头和结尾(再看看 `.subparse`)。
+
+使用 `rule TOP` 或 `regex TOP` 也是可以接受的。
+
+在 `.parse`、`.subparse` 或 `.parsefile` Grammar 方法中使用 `:rule` 命名参数可以选择一个不同的 token 来进行首次匹配。
+
+### ws
+
+当使用 `rule` 而非 `token` 时, 原子(atom)后面的任何空白(whitespace)被转换为一个对 `ws` 的非捕获调用。即:
+
+```perl6
+rule entry { <key> ’=’ <value> }
+```
+
+等价于:
+
+```perl6
+token entry { <key> <.ws> ’=’ <.ws> <value> <.ws> } # . = non-capturing
+```
+
+默认的 `ws` 匹配"空白"(whitespace), 例如空格序列(不管什么类型)、换行符、unspaces、或 heredocs。
+
+提供你自己的 `ws` token 是极好的:
+
+```perl6
+grammar Foo {
+    rule TOP { \d \d }
+}.parse: "4   \n\n 5"; # Succeeds
+
+grammar Bar {
+    rule TOP { \d \d }
+    token ws { \h*   }
+}.parse: "4   \n\n 5"; # Fails
+```
+
+上面的例子中, 在 Bar Gramamr 中重写了自己的 `ws`, 只匹配水平空白符, 所以 `\n\n` 匹配失败。
+
+### sym
+
+`<sym>` token 可以在原型正则表达式(proto regex) 中使用，以匹配那个特定正则表达式的 `:sym` 副词的字符串值：
+
+```perl6
+grammar Foo {
+    token TOP { <letter>+ }
+    proto token letter {*}
+    token letter:sym<P> { <sym> }
+    token letter:sym<e> { <sym> }
+    token letter:sym<r> { <sym> }
+    token letter:sym<l> { <sym> }
+    token letter:sym<*> {   .   }
+}.parse("I ♥ Perl", actions => class {
+    method TOP($/) { make $<letter>.grep(*.<sym>).join }
+}).made.say; # OUTPUT: «Perl␤» 
+```
+
+当你已经将原型正则表达式与要匹配的字符串区分开来时，这很方便，因为使用 `<sym>` token 可防止重复这些字符串。
+
+
+### 总是成功断言
+
+`<?>` is the always succeed assertion(总是匹配成功). 当它用作 grammar 中的 token 时, 它可以被用于触发一个 Action 类方法。在下面的 grammar 中, 我们查找阿拉伯数字并且使用 `always succeed assertion` 定义一个 succ token。
+
+在 action 类中, 我们使用对 succ 方法的调用来设置(在这个例子中, 我们在 @!numbers 中准备了一个新元素)。在 `digit` 方法中, 我们把阿拉伯数字转换为梵文数字并且把它添加到 @!numbers 数组的最后一个元素中。多亏了 `succ`, 最后一个元素总是当前正被解析的 `digit` 数字的数。
+
+```perl6
+grammar Digifier {
+    rule TOP {
+        [ <.succ> <digit>+ ]+
+    }
+    token succ   { <?> }
+    token digit { <[0..9]> }
+}
+
+class Devanagari {
+    has @!numbers;
+    method digit ($/) { @!numberslink:2358[*-1] ~= $/.ord.&[+].chr }
+    method succ  ($)  { @!numbers.push: ''     }
+    method TOP   ($/) { make @!numbers[^(*-1)] }
+}
+
+say Digifier.parse('255 435 777', actions => Devanagari.new).made;
+# OUTPUT:
+# (२५५ ४३५ ७७७)
+```
+
+## Grammar 中的方法
+
+在 grammar 中使用 `method` 代替 `rule` 或 `token` 也是可以的, 只要它们返回一个 link:https://docs.perl6.org/type/Cursor[Cursor] 类型:
+
+```perl6
+grammar DigitMatcher {
+    method TOP (:$full-unicode) {
+        $full-unicode ?? self.num-full !! self.num-basic;
+    }
+    token num-full  { \d+ }
+    token num-basic { <[0..9]>+ }
+}
+```
+
+上面的 grammar 会根据 parse 方法提供的参数尝试不同的匹配:
+
+```perl6
+say +DigitMatcher.subparse: '12७१७९०९', args => \(:full-unicode);
+# OUTPUT:
+# 12717909
+
+say +DigitMatcher.subparse: '12७१७९०९', args => \(:!full-unicode);
+# OUTPUT:
+# 12
+```
+
+## Action Object
+　
+一个成功的 grammar 匹配会给你一棵匹配对象(Match objects)的解析树, 匹配树(match tree)到达的越深, 则 grammar 中的分支越多, 那么在匹配树中航行以获取你真正感兴趣的东西就变的越来越困难。
+
+为了避免你在匹配树(match tree)中迷失, 你可以提供一个 action object。grammar 中每次解析成功一个具名规则(named rule)之后, 它就会尝试调用一个和该 grammar rule 同名的方法, 并传递给这个方法一个`Match` 对象作为位置参数。如果不存在这样的同名方法, 就跳过。
+
+这儿有一个例子来说明 grammar 和 action：
+
+``` perl
+use v6;
+
+grammar TestGrammar {
+    token TOP { ^ \d+ $ }
+}
+
+class TestActions {
+    method TOP($/) {
+        $/.make(2 + $/);  # 等价于 $/.make: 2 + $/
+    }
+}
+my $actions = TestActions.new; # 创建 Action 实例
+my $match   = TestGrammar.parse('40', :$actions);
+say $match;       # ｢40｣
+say $match.made;  # 42
+```
+
+`TestActions` 的一个实例变量作为具名参数 `actions` 被传递给 `parse` 调用, 然后当 token `TOP` 匹配成功之后, 就会自动调用方法 `TOP`, 并传递匹配对象(match object) 作为方法的参数。
+
+为了让参数是匹配对象更清楚, 上面的例子使用 `$/` 作为 action 方法的参数名, 尽管那仅仅是一个方便的约定, 跟内在无关。 `$match` 也可以。(尽管使用 `$/`可以提供把 `$`作为`$/`的缩写的优势。)
+
+下面是一个更有说服力的例子:
+
+``` perl
+use v6;
+
+grammar KeyValuePairs {
+    token TOP {
+        [<pair> \n+]*
+    }
+ 
+    token ws {
+        \h*
+    }
+ 
+    rule pair {
+        <key=.identifier> '=' <value=.identifier>
+    }
+    token identifier {
+        \w+
+    }
+}
+
+class KeyValuePairsActions {
+    method pair      ($/) {
+        $/.make: $<key>.made => $<value>.made
+    }
+    method identifier($/) {
+        # 子例程 `make` 和在 $/ 上调用 .make 相同
+        make ~$/
+    }
+    method TOP ($match) {
+        # TOP 方法的参数可以使用任意变量名, 而不仅仅是 $/ 
+        $match.make: $match<pair>».made
+    }
+}
+
+my $res = KeyValuePairs.parse(q:to/EOI/, :actions(KeyValuePairsActions)).made;
+    second=b
+    hits=42
+    perl=6
+    EOI
+for @$res -> $p {
+    say "Key: $p.key()\tValue: $p.value()";
+}
+```
+
+这会输出:
+
+``` perl
+Key: second     Value: b
+Key: hits       Value: 42
+Key: perl       Value: 6
+```
+
+`pair` 这个 rule, 解析一对由等号分割的 pair, 并且给 `identifier` 这个 token 各自起了别名。对应的 action 方法构建了一个 `Pair` 对象, 并使用子匹配对象(sub match objects)的 `.made` 属性。这也暴露了一个事实: submatches 的 action 方法在那些调用正则/外部正则之前就被调用。所以 action 方法是按后续调用的。
+
+名为 `TOP` 的 action 方法仅仅把由 `pair` 这个 rule 的多重匹配组成的所有对象收集到一块, 然后以一个列表的方式返回。
+
+注意 `KeyValuePairsActions` 是作为一个类型对象(type object)传递给方法 `parse`的, 这是因为 action 方法中没有一个使用属性(属性只能通过实例来访问)。
+
+其它情况下, action 方法可能会在属性中保存状态。 那么这当然需要你传递一个实例给 `parse` 方法。
+
+注意, `token ws` 有点特殊: 当 `:sigspace` 开启的时候(就是我们使用 `rule`的时候), 我们覆写的 `ws` 会替换某些空白序列。这就是为什么 `rule pair` 中等号两边的空格解析没有问题并且闭合 `}` 之前的空白不会狼吞虎咽地吃下换行符, 因为换行符在 `TOP` token 已经占位置了, 并且 token 不会回溯。
+
+``` perl
+# ws 的内置定义
+/ <.ws> /                # match "whitespace":
+                         #   \s+ if it's between two \w characters,
+                         #   \s* otherwise
+
+> my token ws { \h* } # 重写 ws 这个内置的 token
+> say so "\n" ~~ &ws # True
+```
+
+所以 `<.ws>` 内置的定义是：如果空白在两个 `\w` 单词字符之间, 则意思为 `\s+`, 否则为 `\s*`。 我们可以重写 `ws` 关于空白的定义, 重新定义我们需要的空白。比如把 `ws` 定义为 `{ \h* }` 就是所有水平空白符, 甚至可以将`ws` 定义为非空白字符。例如: `token ws { 'x' }`

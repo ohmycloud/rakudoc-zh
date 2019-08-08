@@ -1,0 +1,582 @@
+Perl 6 Pod 是一种易于使用的标记语言。 Pod 可用于编写语言文档，用于文档化程序和模块，以及其他类型的文档组合。
+
+每个 Pod 文档必须以 `=begin pod` 开头，以 `=end pod` 结束。这两个分隔符之间的所有内容都将被处理并用于生成文档。
+
+```
+=begin pod
+ 
+A very simple Perl 6 Pod document
+ 
+=end pod
+```
+
+## 块结构
+
+Pod 文档可能包含多个 Pod 块。有四种方法可以定义块（分隔符，段落，缩写和声明符）; 前三个产生相同的结果，但第四个不同。你可以使用最方便你的特定文档任务的任何形式。
+
+### 分割符块
+
+分隔块由 `=begin` 和 `=end` 标记限定，两者都后跟有效的 Perl 6 标识符，后者是块的 `typename`。完全小写的类型名称（例如 `=begin head1`）或完全大写（例如：`=begin SYNOPSIS`）保留。
+
+```
+=begin head1
+Top Level Heading
+=end head1
+```
+
+## 配置信息
+
+在 typename 之后， `=begin` 标记行的其余部分被视为块的配置信息。此信息由不同类型的块以不同方式使用，但始终使用 Perl6-ish 选项对指定。也就是说，任何：
+
+|===
+|alue is...	     |Specify with...	        |Or with...	            |Or with... 
+|List	         |:key[$e1, $e2, ...]	    |:key($e1, $e2, ...)	|           
+|Hash	         |:key{$k1=>$v1, $k2=>$v2}	|  	                    |           
+|Boolean (true)	 |:key	                    |:key(True)	            |:key[True] 
+|Boolean (false) |:!key	                    |:key(False)	        |:key[False]
+|String	         |:key<str>	                |:key('str')	        |:key("str")
+|Int	         |:key(42)	                |:key[42]	            |           
+|Number	         |:key(2.3)	                |:key[2.3]	            |           
+|===
+
+其中'$e1，$e2，...'是 String，Int，Number 或 Boolean 类型的列表元素。列表可能具有混合元素类型。请注意，单元素列表将转换为其元素的类型（String，Int，Number 或 Boolean）。另请注意，如果需要，可以使用“bigints”。
+
+对于散列，'$k1，$k2，...'是 Str 类型的键，'$v1，$2，...'是 String，Int，Number 或 Boolean 类型的值。
+
+字符串由单引号或双引号分隔。空格在字符串之外是微不足道的。散列键不需要引用分隔，除非它们包含重要的空格。
+
+当然，所有选项键和值必须是常量，因为Pod是一种规范语言，而不是编程语言。具体来说，选项值不能是闭包。有关各种Perl 6对符号的详细信息，请参见概要2。
+
+配置部分可以通过在第一（虚拟）列中带有=后跟空白字符的那些行开始在后续行上扩展。 （注意：此功能尚未实现。当前所有配置信息必须与= begin标记行在同一行提供，或=为段落块的名称提供。）
+
+### 段落块
+
+段落块以 `=for` 标记开始，以下一个 Pod 指令或第一个空行结束。 `=for` 标记后面跟着块的类型名加上，可选地，跟上面描述的分隔块中的任何配置数据。
+
+```
+=for head1
+Top Level Heading
+```
+
+## 缩写块
+
+缩写块以 `=` 符号开头，紧接着是块的类型名称。以下所有数据都是块内容的一部分，因此无法为缩写块指定配置数据。该块在下一个Pod指令或第一个空行结束。
+
+```
+=head1 Top Level Heading 
+```
+
+## 声明器块
+
+声明器块与其他声明块不同，没有特定类型，而是附加到某些源代码。
+
+声明器块由特殊注释引入：`#=` 或 `#|`，必须紧跟空格或左括号。如果后跟一个空格，则该块在行尾终止;如果后跟一个或多个左括号，则该块由关闭括号的匹配序列终止。
+
+以＃开头的块附加到它们之后的代码，以 `#=` 开头的块附加到它们之前的代码。
+
+由于声明器块附加到源代码，因此它们可用于记录类，角色，子例程等。
+
+WHY方法可用于这些类，角色，子例程等，以返回附加的 Pod 值。
+
+```perl6
+#| Base class for magicians 
+class Magician {
+  has Int $.level;
+  has Str @.spells;
+}
+ 
+#| Fight mechanics 
+sub duel(Magician $a, Magician $b) {
+}
+#= Magicians only, no mortals. 
+ 
+say Magician.WHY; # OUTPUT: «Base class for magicians␤» 
+say &duel.WHY.leading; # OUTPUT: «Fight mechanics␤» 
+say &duel.WHY.trailing; # OUTPUT: «Magicians only, no mortals.␤» 
+```
+
+这些声明可以扩展多个块：
+
+```perl6
+#|( This is an example of stringification: 
+    * Numbers turn into strings
+    * Regexes operate on said strings
+    * C<with> topicalizes and places result into $_
+)
+sub search-in-seq( Int $end, Int $number ) {
+    with (^$end).grep( /^$number/ ) {
+        .say for $_<>;
+    }
+}
+#=« Uses 
+    * topic
+    * decont operator
+»
+```
+
+通过使用匹配的括号构造对，例如 `()` 或 `«»`，注释可以扩展多行。但是，这种格式不会转换为 `perl6 -doc` 的多行显示。
+
+## 块类型
+
+Pod提供多种标准块类型。
+
+### 标题
+
+可以使用= headN来定义标题，其中N大于零（例如，= head1，= head2，...）。
+
+```
+=head1 A Top Level Heading 
+ 
+=head2 A Second Level Heading 
+ 
+=head3 A Third Level Heading 
+```
+
+### 普通段落
+
+普通段落由在当前嵌套级别格式化为文档的文本组成，其中空格被挤压，线条填充，并且应用了任何特殊的内联标记。
+
+普通段落由一个或多个连续的文本行组成，每行文本以非空白字符开头。段落由第一个空行或块指令终止。
+
+例如：
+
+```
+=head1 This is a heading block 
+ 
+This is an ordinary paragraph.
+Its text  will   be     squeezed     and
+short lines filled. It is terminated by
+the first blank line.
+ 
+This is another ordinary paragraph.
+Its     text    will  also be squeezed and
+short lines filled. It is terminated by
+the trailing directive on the next line.
+ 
+=head2 This is another heading block 
+ 
+This is yet another ordinary paragraph,
+at the first virtual column set by the
+previous directive
+```
+
+普通段落不需要明确的标记或分隔符。
+
+或者，还有一个显式的 `=para` 标记，可用于明确标记段落。
+
+```
+=para
+This is an ordinary paragraph.
+Its text  will   be     squeezed     and
+short lines filled.
+```
+
+另外，可以使用较长 `= begin para` 和 `=end para` 形式。
+
+例如：
+
+```
+=begin para
+This is an ordinary paragraph.
+Its text  will   be     squeezed     and
+short lines filled.
+ 
+This is still part of the same paragraph,
+which continues until an...
+=end para
+```
+
+如前面的示例所示，在分隔 `=begin para` 和 `=end para` 块中，保留任何空行。
+
+## 代码块
+
+代码块用于指定源代码，应该在没有重新调整的情况下进行渲染，不需要空格压缩，也不需要识别任何内联格式代码。通常，这些块用于显示代码，标记或其他文本规范的示例，并使用固定宽度字体进行渲染。
+
+代码块可以隐式地指定为一行或多行文本，每行文本以空白字符开头。然后通过空行终止隐式代码块。
+
+例如：
+
+```
+This ordinary paragraph introduces a code block:
+ 
+    my $name = 'John Doe';
+    say $name;
+```
+
+代码块也可以通过将它们包含在= begin code和= end code中来显式定义
+
+```
+   =begin code
+    my $name = 'John Doe';
+    say $name;
+   =end code
+```
+
+## I/O 块
+
+Pod 提供用于指定程序输入和输出的块。
+
+`=input` 块用于指定预先格式化的键盘输入，应该在不重新对齐或挤压空格的情况下进行渲染。
+
+`=output` 块用于指定预先格式化的终端或文件输出，也应该在没有重新调整或空白压缩的情况下进行渲染。
+
+## 列表
+
+### 无序列表
+
+Pod 中的列表被指定为一系列 `=item` 块。
+
+例如：
+
+```
+The three suspects are:
+ 
+=item  Happy 
+=item  Sleepy 
+=item  Grumpy 
+```
+
+三名嫌犯是：
+
+
+- Happy
+- Sleepy
+- Grumpy
+
+### 定义列表
+
+定义术语或命令的列表使用 `=defn`，等同于 HTML 中的 DL 列表
+
+```
+=defn Happy 
+When you're not blue.
+ 
+=defn blue 
+When you're not happy.
+```
+
+将以这种方式呈现：
+
+Happy When you're not blue.
+
+Blue When you're not happy.
+
+目前，它可能是一个简单的HTML段落，但将来可能会发生变化。
+
+### 多层级列表
+
+列表可以是多级的，使用 `=item1`，`=item2`，`=item3` 等块指定每个级别的项目。
+
+请注意，`=item` 只是 `=item1` 的缩写。
+
+例如：
+
+```
+=item1  Animal 
+=item2     Vertebrate 
+=item2     Invertebrate 
+ 
+=item1  Phase 
+=item2     Solid 
+=item2     Liquid 
+=item2     Gas 
+```
+
+- Animal
+ - Vertebrate
+ - Invertebrate
+
+- Phase
+ - Solid
+ - Liquid
+ - Gas
+
+### 多段落列表
+
+使用 `=item` 块（ `=begin item` 和 `=end item` ）的分隔形式，我们可以指定包含多个段落的项目。
+
+例如：
+
+```
+Let's consider two common proverbs:
+ 
+=begin item
+I<The rain in Spain falls mainly on the plain.>
+ 
+This is a common myth and an unconscionable slur on the Spanish
+people, the majority of whom are extremely attractive.
+=end item
+ 
+=begin item
+I<The early bird gets the worm.>
+ 
+In deciding whether to become an early riser, it is worth
+considering whether you would actually enjoy annelids
+for breakfast.
+=end item
+ 
+As you can see, folk wisdom is often of dubious value.
+```
+
+让我们考虑两个常见的谚语：
+
+- The rain in Spain falls mainly on the plain.
+
+This is a common myth and an unconscionable slur on the Spanish people, the majority of whom are extremely attractive.
+
+- The early bird gets the worm.
+
+In deciding whether to become an early riser, it is worth considering whether you would actually enjoy annelids for breakfast.
+
+正如你所看到的，民间智慧往往具有可疑的价值。
+
+## 表
+
+查看此页面以获取与link:https://docs.perl6.org/language/tables[表]相关的文档
+
+## Pod 注释
+
+Pod评论是Pod渲染器忽略的评论。
+
+注释对于元文档（记录文档）很有用。单行注释使用comment关键字：
+
+```
+=comment Add more here about the algorithm 
+```
+
+对于多行注释，请使用带分隔符的注释块：
+
+```
+=begin comment
+This comment is
+multi-line.
+=end comment
+```
+
+## 语义块
+
+所有大写块类型名称都保留用于指定标准文档，发布，源组件或元信息。
+
+```
+=NAME
+=AUTHOR
+=VERSION
+=TITLE
+=SUBTITLE
+```
+
+## 格式化代码
+
+格式代码提供了一种向一段文本添加内联标记的方法。
+所有Pod格式代码都包含一个大写字母，紧接着是一组尖括号。
+格式代码可以嵌套其他格式代码。
+
+### 粗体
+
+要以粗体格式化文本，请将其括在 `B< >` 中
+
+```
+Perl 6 is B<awesome>
+```
+
+Perl 6 is **awesome**
+
+### 斜体
+
+要用斜体格式化文本，请将其括在 `I< >`中
+
+```
+Perl 6 is I<awesome>
+```
+
+Perl 6 is *awesome*
+
+### 下划线
+
+要在文本下划线将其括在 `U<>` 中
+
+```
+Perl 6 is U<awesome>
+```
+
+### 代码
+
+要将文本标记为代码并将其逐字处理，请将其括在 `C< >` 中
+
+```
+C<my $var = 1; say $var;>
+```
+
+`my $var = 1; say $var;`
+
+### 链接
+
+要创建链接，请将其括在 `L< >` 中
+
+```
+Perl 6 homepage L<https://perl6.org>
+L<Perl 6 homepage|https://perl6.org>
+```
+
+Perl 6 homepage link:https://perl6.org/[https://perl6.org]
+
+link:https://perl6.org/[Perl 6 homepage]
+
+要创建指向同一文档中某个部分的链接：
+
+```
+Comments L<#Comments>
+```
+
+Comments link:https://docs.perl6.org/language/pod#Comments[Comments]
+
+### 注释
+
+注释是从不呈现的文本。
+
+要创建注释，请将其括在 `Z< >` 中
+
+```
+Perl 6 is awesome Z<Of course it is!>
+```
+
+Perl 6 is awesome
+
+### 笔记
+
+注释呈现为脚注。
+
+要创建一个注释，请将其括在 `N< >` 中
+
+```
+Perl 6 is multi-paradigmatic N<Supporting Procedural, Object Oriented, and Functional programming>
+```
+
+### 键盘输入
+
+要将文本标记为键盘输入，请将其括在 `K< >` 中
+
+```
+Enter your name K<John Doe>
+```
+
+### 终端输出
+
+要将文本标记为终端输出，请将其括在 `T< >` 中
+
+```
+Hello T<John Doe>
+```
+
+### Unicode
+
+要在 Pod 文档中包含 Unicode 代码点或 HTML5 字符引用，请将它们包含在 `E< >`中
+
+`E< >`可以包含一个数字，该数字被视为所需代码点的十进制 Unicode 值。它还可以使用 Perl 6 表示法为显式数字括起显式二进制，八进制，十进制或十六进制数字。
+
+```
+Perl 6 makes considerable use of the E<171> and E<187> characters.
+ 
+Perl 6 makes considerable use of the E<laquo> and E<raquo> characters.
+ 
+Perl 6 makes considerable use of the E<0b10101011> and E<0b10111011> characters.
+ 
+Perl 6 makes considerable use of the E<0o253> and E<0o273> characters.
+ 
+Perl 6 makes considerable use of the E<0d171> and E<0d187> characters.
+ 
+Perl 6 makes considerable use of the E<0xAB> and E<0xBB> characters.
+```
+
+Perl 6 makes considerable use of the « and » characters.
+
+## 渲染 Pod
+
+### HTML
+
+要从 Pod 生成 HTML，你需要 `Pod::To::HTML` 模块。
+
+如果尚未安装，请通过运行以下命令进行安装：`zef install Pod::To::HTML`
+
+使用终端运行以下命令：
+
+```
+perl6 --doc=HTML input.pod6 > output.html
+```
+
+### Markdown
+
+要从 Pod 生 Markdown，你需要 `Pod::To::Markdown` 模块。
+
+如果尚未安装，请通过运行以下命令进行安装：`zef install Pod::To::Markdown`
+
+使用终端运行以下命令：
+
+```
+perl6 --doc=Markdown input.pod6 > output.md
+```
+
+### Text
+
+为了从 Pod 生成 Text，你可以使用默认的 `Pod::To::Text` 模块。
+
+使用终端，运行以下命令：
+
+```
+perl6 --doc=Text input.pod6 > output.txt
+```
+
+你可以省略 `=Text` 部分：
+
+```
+perl6 --doc input.pod6 > output.txt
+```
+
+你甚至可以将 Pod 直接嵌入到你的程序中，并使用 multi MAIN 子例程将传统的 Unix 命令行 "--man" 选项添加到你的程序中，如下所示：
+
+```perl6
+multi MAIN(Bool :$man)
+{
+    run $*EXECUTABLE, '--doc', $*PROGRAM;
+}
+```
+
+现在 `myprogram --man` 将输出你的 Pod 渲染为手册页。
+
+## 访问 Pod
+
+为了从 Perl 6 程序中访问 Pod 文档，需要使用特殊的 `=` twigil，如link:https://docs.perl6.org/language/variables#The_%3D_Twigil[变量部分]所述。
+
+= twigil 提供了对 Pod 结构的内省，提供了一个 link:https://docs.perl6.org/type/Pod::Block[Pod::Block] 树根，从中可以访问 Pod 文档的整个结构。
+
+例如，以下代码内省了自己的Pod文档：
+
+```
+=begin pod
+ 
+=head1 This is an head1 title 
+ 
+This is a paragraph.
+ 
+=head2 Subsection 
+ 
+Here some text for the subsection.
+ 
+=end pod
+ 
+for $=pod -> $pod-item {
+    for $pod-item.contents -> $pod-block {
+      $pod-block.perl.say;
+    }
+}
+```
+
+产生以下输出：
+
+```
+Pod::Heading.new(level => 1, config => {}, contents => [Pod::Block::Para.new(config => {}, contents => ["This is an head1 title"])]);
+Pod::Block::Para.new(config => {}, contents => ["This is a paragraph."]);
+Pod::Heading.new(level => 2, config => {}, contents => [Pod::Block::Para.new(config => {}, contents => ["Subsection"])]);
+Pod::Block::Para.new(config => {}, contents => ["Here some text for the subsection."]);
+```
+

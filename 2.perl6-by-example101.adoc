@@ -1,0 +1,327 @@
+== 通过例子学习 Perl 6
+
+假设您举办乒乓球锦标赛。裁判员以格式告诉你每场比赛的结果 `Player1 Player2 | 3:2`，这意味着 Player1 赢 Player2 了3到2局。你需要一个脚本来总结每个玩家赢得的比赛和数量，以确定总冠军。
+
+输入数据（存储在一个名为的文件中scores.txt）如下所示：
+
+```
+Beth Ana Charlie Dave
+Ana Dave | 3:0
+Charlie Beth | 3:1
+Ana Beth | 2:3
+Dave Charlie | 3:0
+Ana Charlie | 3:1
+Beth Dave | 0:3
+```
+
+第一行是球员名单。每个后续行记录匹配的结果。
+
+这是在Perl 6中解决该问题的一种方法：
+
+```perl6
+use v6;
+ 
+my $file  = open 'scores.txt';
+my @names = $file.get.words;
+ 
+my %matches;
+my %sets;
+ 
+for $file.lines -> $line {
+    next unless $line; # ignore any empty lines 
+ 
+    my ($pairing, $result) = $line.split(' | ');
+    my ($p1, $p2)          = $pairing.words;
+    my ($r1, $r2)          = $result.split(':');
+ 
+    %sets{$p1} += $r1;
+    %sets{$p2} += $r2;
+ 
+    if $r1 > $r2 {
+        %matches{$p1}++;
+    } else {
+        %matches{$p2}++;
+    }
+}
+ 
+my @sorted = @names.sort({ %sets{$_} }).sort({ %matches{$_} }).reverse;
+ 
+for @sorted -> $n {
+    say "$n has won %matches{$n} matches and %sets{$n} sets";
+}
+```
+
+这会产生输出：
+
+```
+Ana has won 2 matches and 8 sets
+Dave has won 2 matches and 6 sets
+Charlie has won 1 matches and 4 sets
+Beth has won 1 matches and 4 sets
+```
+
+=== v6
+
+每个Perl 6程序都应该以类似于的行开头use v6;。该行告诉编译器程序期望的Perl版本。如果您不小心使用Perl 5运行该文件，您将收到有用的错误消息。6.c是Perl 6版本的示例。
+
+=== 语句
+
+Perl 6程序由零个或多个语句组成。甲语句用分号或在线的端部的大括号结束：
+
+```perl6
+my $file = open 'scores.txt';
+```
+
+=== 词法和块
+
+my声明一个词法变量，它只在从声明点到块结尾的当前块中可见。如果没有封闭块，则在整个文件的剩余部分（它实际上是封闭块）中可见。块是大括号之间的代码的任何部分{ }。
+
+=== 符号和标识符
+
+变量名开始于印记，这是因为这样的非字母数字符号$，@，%，或&--or偶尔双冒号::。Sigils指示变量的结构接口，例如它是否应被视为单个值，复合值，子例程等。在sigil之后出现一个标识符，可以由字母，数字和下划线组成。在字母之间你也可以使用破折号-或撇号'，因此isn't并且double-click是有效的标识符。
+
+=== 标量
+
+Sigils指示变量的默认访问方法。带有@印记的变量可以在位置上访问; 带有%sigil的变量由字符串键访问。的$印记，然而，指示可以包含任何单个值和以任何方式进行访问的通用标量容器中。标量甚至可以包含像a Array或a 这样的复合对象Hash; 的$印记表示这应该被视为一个单一的值，即使在期望多个值（如用一个上下文Array或Hash）。
+
+=== 文件句柄和赋值
+
+内置函数open打开一个文件，此处命名scores，并返回一个文件句柄 - 表示该文件的对象。等号将该文件句柄= 分配给左侧的变量，这意味着$file现在存储文件句柄。
+
+=== 字符串字面量
+
+'scores.txt'是一个字符串文字。字符串是一段文本，字符串文字是直接出现在程序中的字符串。在这一行中，它是提供给的参数open。
+
+```perl6
+my @names = $file.get.words;
+```
+
+=== 数组、方法和调用
+
+右侧调用一个方法 - 一个命名的行为组 - 以get存储在其中的文件句柄命名$file。该get方法从文件中读取并返回一行，删除行结尾。如果您$file在打电话后打印内容get，您将看到第一行不再在那里。words也是一个方法，在返回的字符串上调用get。words将其调用者 - 它所操作的字符串 - 分解为一个单词列表，这里的意思是由空格分隔的字符串。它将单个字符串'Beth Ana Charlie Dave'转换为字符串列表'Beth', 'Ana', 'Charlie', 'Dave'。
+
+最后，此列表存储在link:https://docs.perl6.org/type/Array[Array]中 @names。该@印记标志着声明的变量作为Array。数组存储有序列表。
+
+```perl6
+my %matches;
+my %sets;
+```
+
+=== 散列
+
+这两行代码声明了两个哈希值。的%印记标记每个变量作为Hash。A Hash是键值对的无序集合。其他编程语言称为哈希表，字典或映射。您可以查询一个哈希表对应于一定的值$key用%hash{$key}。
+
+在得分计数程序中，%matches存储每个玩家赢得的比赛数量。%sets存储每个玩家赢得的套数。这两个哈希都是由玩家的名字索引的。
+
+```perl6
+for $file.lines -> $line {
+    ...
+}
+```
+
+=== for 和 block
+
+for生成一个循环，该循环运行由花括号分隔的块一次，用于列表的每个项目，将变量设置$line为每次迭代的当前值。$file.lines生成从文件读取的行列表，从文件scores.txt的第二行开始，因为我们已经调用$file.get过一次，然后一直到文件的末尾。
+
+在第一次迭代期间，$line将包含字符串Ana Dave | 3:0; 在第二次，Charlie Beth | 3:1等等。
+
+```perl6
+my ($pairing, $result) = $line.split(' | ');
+```
+
+my可以同时声明多个变量。赋值的右侧是对名为的方法的调用split，将该字符串' | '作为参数传递。
+
+split将其调用者分解为字符串列表，以便将列表项与分隔符连接将' | '生成原始字符串。
+
+$pairing获取返回列表的第一项，$result第二项。
+
+处理完第一行后，$pairing将保持字符串Ana Dave和$result 3:0。
+
+接下来的两行遵循相同的模式：
+
+```perl6
+my ($p1, $p2) = $pairing.words;
+my ($r1, $r2) = $result.split(':');
+```
+
+第一个提取并存储变量$p1和中两个玩家的名字$p2。第二个为每个玩家提取结果并将其存储在$r1和中$r2。
+
+处理完文件的第一行后，变量包含值：cell '0'
+
+|===
+|Variable	| Contents          
+|$line	    | 'Ana Dave \| 3:0'
+|$pairing	| 'Ana Dave'        
+|$result	|      '3:0'        
+|$p1	    |      'Ana'        
+|$p2	    |      'Dave'       
+|$r1	    |      '3'          
+|$r2	    |      '0'          
+|===
+
+
+然后程序计算每个玩家赢得的次数：
+
+```perl6
+%sets{$p1} += $r1;
+%sets{$p2} += $r2;
+```
+
+`+=` 赋值运算符是一个快捷方式：
+
+```perl6
+%sets{$p1} = %sets{$p1} + $r1;
+%sets{$p2} = %sets{$p2} + $r2;
+```
+
+=== Any 和 +=
+
++= $r1表示将左侧变量中的值增加$ r1。在第一次迭代%sets{$p1}中尚未设置，因此它默认为一个名为的特殊值Any。加法和递增运算符视为Any零的数字; 字符串会自动转换为数字，因为加法是一个数字运算。
+
+fat arrow，pair和autovivification
+在这两行执行之前，%sets为空。添加到不在散列中的条目将导致该条目即时生成，其值从零开始。（这是autovivification）。在这两行第一次运行后，%sets包含'Ana' => 3, 'Dave' => 0 。（胖箭头=> 分隔键中的键和值Pair。）
+
+```perl6
+if $r1 > $r2 {
+    %matches{$p1}++;
+} else {
+    %matches{$p2}++;
+}
+```
+
+如果$r1在数值上大于$r2，则%matches{$p1}增加1。如果$r1不大于$r2，则%matches{$p2}递增。正如在这种情况下+=，如果之前不存在任何一个哈希值，它将通过增量操作自动生成。
+
+=== 后自增和前自增
+
+`$thing++` 是 `$thing += 1` 或 `$thing = $thing + 1` 的缩写，除了表达式的返回值在增量$thing 之前的小异常，而不是递增的值。与许多其他编程语言一样，您可以将其++用作前缀。然后它返回递增的值; my $x = 1; say ++$x打印2。
+
+```perl6
+my @sorted = @names.sort({ %sets{$_} }).sort({ %matches{$_} }).reverse;
+```
+
+=== 变量, $_
+
+该行包含三个单独的简单步骤。数组的sort方法返回数组内容的排序版本。但是，数组上的默认排序按其内容排序。要以获胜者优先顺序打印玩家名称，代码必须按照玩家的分数而不是他们的名字对数组进行排序。该sort方法的参数是一个块，用于将数组元素（播放器的名称）转换为要排序的数据。数组项通过主题变量 传入$_。
+
+=== 块
+
+您之前已经看过块：for循环-> $line { ... } 和if语句都在块上运行。块是一个独立的Perl 6代码片段，带有可选的签名（-> $line 部分）。
+
+按分数对玩家进行排序的最简单方法是@names.sort({ %matches{$_} })，根据赢得的匹配数进行排序。然而Ana和Dave都赢了两场比赛。这种简单的排序并没有考虑赢得的套数，这是决定谁赢得锦标赛的次要标准。
+
+=== 稳定的排序
+
+当两个数组项具有相同的值时，sort将它们保留为找到它们的顺序。计算机科学家称之为稳定的。该程序利用Perl 6的这个属性sort通过两次排序来实现目标：首先是赢得的集合数量（次要标准），然后是赢得的匹配数量。
+
+在第一个排序步骤之后，名称在顺序中Beth Charlie Dave Ana。在第二个排序步骤之后，它仍然是相同的，因为没有人比其他人赢得更少的比赛但是更多的比赛。这样的情况是完全可能的，特别是在较大的比赛中。
+
+sort从最小到最大按升序排序。这与所需顺序相反。因此，代码.reverse在第二次排序的结果上调用方法，并将最终列表存储在其中@sorted。
+
+```perl6
+for @sorted -> $n {
+    say "$n has won %matches{$n} matches and %sets{$n} sets";
+}
+```
+
+=== say，print 和 put
+
+为了打印出玩家及其分数，代码循环@sorted，$n依次设置每个玩家的名字。将此代码读作“对于已排序的每个元素，设置$n为元素，然后执行以下块的内容”。say将其参数打印到标准输出（通常是屏幕），然后是换行符。（print如果您不想在最后使用换行符，请使用。）
+
+请注意，say通过调用.gist方法将截断某些数据结构，因此put如果您想要精确输出则更安全。
+
+=== 插值
+
+当您运行该程序时，您将看到它say不会逐字打印该字符串的内容。代替$n它打印变量的内容$n- 存储在其中的玩家的名字$n。代码及其内容的自动替换是插值。此插值仅在由双引号分隔的字符串中发生"..."。单引号字符串'...'不进行插值：
+
+=== 双引号字符串和单引号字符串
+
+```perl6
+my $names = 'things';
+say 'Do not call me $names'; # OUTPUT: «Do not call me $names␤» 
+say "Do not call me $names"; # OUTPUT: «Do not call me things␤» 
+```
+
+Perl 6中的双引号字符串可以使用$sigil以及花括号中的代码块来插入变量。由于任何Perl代码都可以出现在花括号中，因此可以通过将它们放在花括号中来插入Arrays和Hashes。
+
+花括号内的数组使用每个项目之间的单个空格字符进行插值。花括号内的哈希值被插值为一系列线条。每行包含一个键，后跟一个制表符，然后是与该键相关的值，最后是换行符。
+
+我们现在看一个例子吧。
+
+在此示例中，您将看到一些特殊语法，可以更轻松地创建字符串列表。这是<...> link:https://docs.perl6.org/language/operators#index-entry-qw-quote-words-quote-words[引用词]构造。当您在<和>之间放置单词时，它们都被假定为字符串，因此您不需要将它们分别用双引号括起来"..." 。
+
+```perl6
+say "Math: { 1 + 2 }";                  # OUTPUT: «Math: 3␤» 
+my @people = <Luke Matthew Mark>;
+say "The synoptics are: {@people}";     # OUTPUT: «The synoptics are: Luke Matthew Mark␤» 
+ 
+say "{%sets}␤";                         # From the table tennis tournament 
+ 
+# Charlie 4 
+# Dave    6 
+# Ana     8 
+# Beth    4 
+```
+
+当数组和散列变量直接出现在双引号字符串中（而不是在大括号内）时，如果它们的名称后跟postcircumfix - 一个跟在语句后面的包围对，它们只会被插值。在变量名和postcircumfix之间进行方法调用也没问题。
+
+=== 禅切
+
+```perl6
+my @flavors = <vanilla peach>;
+ 
+say "we have @flavors";           # OUTPUT: «we have @flavors␤» 
+say "we have @flavors[0]";        # OUTPUT: «we have vanilla␤» 
+# so-called "Zen slice" 
+say "we have @flavors[]";         # OUTPUT: «we have vanilla peach␤» 
+ 
+# method calls ending in postcircumfix 
+say "we have @flavors.sort()";    # OUTPUT: «we have peach vanilla␤» 
+ 
+# chained method calls: 
+say "we have @flavors.sort.join(', ')";
+                                # OUTPUT: «we have peach, vanilla␤» 
+```
+
+=== 练习
+
+1.示例程序的输入格式是多余的：第一行包含所有玩家的名字是不必要的，因为你可以通过查看后续行中的名字来找出参加锦标赛的玩家。
+
+如果不使用@names变量，如何使程序运行？提示：%hash.keys返回存储的所有密钥的列表%hash。
+
+答：删除该行my @names = $file.get.words;，然后更改：
+
+```perl6
+my @sorted = @names.sort({ %sets{$_} }).sort({ %matches{$_} }).reverse;
+```
+
+为:
+
+```perl6
+my @sorted = %sets.keys.sort({ %sets{$_} }).sort({ %matches{$_} }).reverse;
+```
+
+除了删除冗余@names变量之外，您还可以使用它来警告播放器是否出现在第一行中未提及的情况，例如由于拼写错误。你会如何修改你的程序来实现这一目标？
+
+提示：尝试使用成员资格运算符。
+
+答：更改@names到@valid-players。当通过文件的行循环，请检查$p1和$p2在@valid-players。请注意，对于link:https://docs.perl6.org/routine/(elem[成员运算符])，您也可以使用(elem)和!(elem)。
+
+```perl6
+...;
+my @valid-players = $file.get.words;
+...;
+ 
+for $file.lines -> $line {
+    my ($pairing, $result) = $line.split(' | ');
+    my ($p1, $p2)          = $pairing.split(' ');
+    if $p1 ∉ @valid-players {
+        say "Warning: '$p1' is not on our list!";
+    }
+    if $p2 ∉ @valid-players {
+        say "Warning: '$p2' is not on our list!";
+    }
+    ...
+}
+```
+
+

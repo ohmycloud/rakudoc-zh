@@ -1,0 +1,136 @@
+# 自省和 Perl 6 的对象系统
+
+Perl 6 是构建在元对象层上面的。那意味着有些对象(元对象)控制着各种面向对象结构(例如类、roles、方法、属性、枚举,…)怎样去表现。
+
+要感受类的元对象, 这儿有一个同样的例子出现2次: 一次一种 Perl 6中的普通声明, 一次通过元模型来表达:
+```perl6
+class A {
+    method x() { say 42 }
+}
+A.x(); # 42
+```
+
+对应于:
+
+```perl6
+constant A := Metamodel::ClassHOW.new_type( name => 'A' );  # class A {
+A.^add_method('x', my method x(A:) { say 42 });             # method x() .. .
+A.^compose;                                                 # }
+
+A.x(); # 42
+```
+
+(除了声明形式的运行在编译时, 后面这种形式不是)
+
+对象后面的元对象能使用 `$obj.HOW`获取, 这儿的 HOW 代表着 **Higher Order Workings**(或者 HOW the *%@$ does this work?)。
+
+这儿, 带有 `.^`的调用是元对象的调用, 所以 `A.^compose`是 `A.HOW.compose(A)`的简写。调用者也被传递到参数列表中, 以使它能够支持原型类型风格的类型系统, 那儿只有一个元对象。
+
+就像上面的例子展示的那样, 所有的面向对象特性对使用者都是可获得的, 而不仅仅是编译器。实际上编译器就是使用元对象的这样的调用的。
+
+## 元对象(MetaObjects)
+
+这些是内省的宏, 类似于方法调用。
+
+元对象通常以 ALLCAPS(全大写)命名, 并且避免使用你自己的带有全大写名字的方法被认为是一个好的风格。这会避免和可能出现在未来版本中的任何元对象发生冲突。注意, 如果你必须使用带有全大写名字的方法的话, 把你的这个方法名字用引号引起来来间接安全地调用:
+
+```perl6
+#| THIS IS A CLASS FOR SHOUTING THINGS
+class MY-CLASSES-ARE-ALL-CAPS {
+    method WHY { "I DON'T KNOW" }
+}
+my $c = MY-CLASSES-ARE-ALL-CAPS.new;
+say $c.WHY      # "THIS IS A CLASS FOR SHOUTING THINGS"? 显示这？你在逗我!
+say $c."WHY"()  # "I DON'T KNOW"
+```
+
+## WHAT
+
+类型的类型对象。例如 `42.WHAT` 返回 `Int`类型对象。
+
+## WHICH
+
+对象的同一值。这能用于哈希和同一比较, 并且这是 `===`中缀操作符的实现方式。
+
+```perl6
+> "a".WHICH
+Str|a
+```
+
+## WHO
+
+支持对象的包
+
+```perl6
+> "a".WHO
+Str
+```
+
+## WHERE
+
+对象的内存地址。注意这在移动的/紧凑的垃圾回收实现中是不稳定的。 在稳定的同一指示器中使用 `WHERE`。
+
+## HOW
+
+元类对象(the metaclass object)：“Higher Order Workings”。
+
+## WHY
+
+附加的 Pod 值。
+
+## DEFINITE
+
+对象有一个有效的强制表现。
+
+对于实例返回 `True`, 对于类型对象返回 `False`。
+
+```perl6
+> 42.DEFINITE
+True
+> Int.DEFINITE
+False
+```
+
+## VAR
+
+返回底层的 Scalar 对象, 如果有的话。
+
+## 元对象系统的结构
+
+对于每个类型声明符关键字, 例如 `class`、`role` 、`enum`、`module`、`package`、`grammar` 或`subset`, 就有一个独立的元类在 `Matamodel::`命名空间中。(Rakudo 在 `Perl6::Metamodel::`命名空间中实现了它们, 然后把 `Perl6::Metamodel`映射到 `Metamodel`)。
+
+这些元类(meta classes)中的很多都共享公共的功能。例如 roles、grammars和 classes(类)都能包括方法和属性, 还能遵守 roles。这个共享的功能是在 roles 中实现的, 它被组合进合适的元类中。例如 link:http://doc.perl6.org/type/Metamodel::RoleContainer[role Metamodel::RoleContainer]实现了类型能处理 roles 和 `Metamodel::ClassHOW`的功能, 它是在 `class`关键字后面的元类, 遵守了这个 role。
+
+## Bootstrapping concerns
+
+你可能想知道为什么 `Metamodel::ClassHOW`可以是一个类, 当按照`Metamodel::ClassHOW`作为一个类被定义时, 或者 roles 负责 role 处理的怎么能是 roles。答案是通过魔法。
+
+开玩笑啦。自举是特别实现的。Rakudo 使用语言的对象系统来实现自举, 它恰好(几乎)就是 Perl 6 的一个子集: NQP, Not Quite Perl。 NQP 有原始的, class-like 叫做 `konwhow` 的性质, 它用于自举它自己的类和 roles 实现。`konwhow`建立在NQP 提供的虚拟机的原始基础上。
+
+因为元对象是根据低级(low-level)类型引导的, 自省有时能返回低级(low-level)类型而非你期望的那个类型, 例如返回一个 NQP-level 的子例程而非普通的 `Routine`对象, 或返回一个引导的属性而非link:http://doc.perl6.org/type/Attribute[Attribute]。
+
+## 组合和静态推理
+
+在 Perl 6中, 类型是在解析时被构造的, 所以在开始, 它必须是可变的。然而, 如果所有类型一直是可变的, 那么关于类型的所有推断会在任何类型的修改时变得无效。例如父类的列表因此类型检测的结果能在那个时候改变。
+
+所以为了获得这两个世界中最好的东西, 当类型从可变转为不可变时是好时机。这就叫做组合, 并且对于从句法构成上声明的类型, 它发生在类型声明被完全解析时(所以总是在闭合花括号被解析时)。
+
+如果你通过元对象系统直接创建类型, 你必须要在它们身上调用 `.^compose`, 在它们变得完全起作用之前。
+
+很多元类也使用组合时来计算一些诸如方法解析顺序这样的属性, 发布一个方法缓存, 和其它清扫任务。在它们被组合之后干预类型有时是可能的, 但通常是造成灾难的因素。 不要那样做。
+
+## 能力和责任
+
+元对象协议提供了很多常规 Perl 6 代码故意限制了的能力, 例如调用类中不信任你的私有方法, 窥探私有属性, 和其它通常不能完成的东西。
+
+常规的 Perl 6 代码有很多就地的安全检测; 元模型中不是这样，它靠近底层的虚拟机, 违反和虚拟机的约定可以导致所有奇怪的行为, 而在正常代码中, 显而易见的会是 bugs。
+
+所以, 在写元类型的时候要格外小心和思考。
+
+## 能力、便利和陷阱
+
+元对象协议被设计的强大到实现 Perl 6 的对象系统。这种能力间或花费了便利的代价。
+
+例如, 当你写了 `my $x = 42`并在 `$x`上调用方法时, 大部分方法会在整数 42 上起作用, 而不是在存储 42 的标量容器上。这是 Perl 6中设立的一块便利。元对象协议中的大部分不能提供自动忽略标量容器的便利性, 因为它们也用于实现那些标量容器。 所以, 如果你写了 `my $t = MyType; ... $t.^compose`, 那么你正组合那个`$`变量表明的标量, 而不是 `MyType`。
+
+结果就是你需要很详尽的理解 Perl 6 的底层以避免陷阱, 当使用 MOP 时, 并且不能期望得到和普通 Perl 6 代码提供的 "do what I mean" 的便利。

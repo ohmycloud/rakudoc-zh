@@ -1,0 +1,273 @@
+== Perl 5 到 Perl 6 的指南 - 运算符
+
+=== 描述
+
+一个（希望）全面的 Perl 5 运算符列表及其 Perl 6 等价物，并在必要时记录它们之间的差异。
+
+=== 注意
+
+本文档*没有*详细解释运算符。本文档旨在指导您从 Perl 5 `perlop` 文档中的操作符过渡到 Perl 6 中的等效文档。有关 Perl 6 等效文档的完整文档，请参阅link:https://docs.perl6.org/language/operators[Perl 6文档]。
+
+==== 运算符优先级和关联性
+
+运算符优先级表在 Perl 6 中与在 Perl 5 中有所不同，因此这里不再详述。如果您需要知道 Perl 6 中给定运算符的优先级和关联性，请参阅link:https://docs.perl6.org/language/operators#Operator_precedence[运算符优先级]。
+
+==== 项和列表运算符
+
+Perl 5 `perlop` 文档中列出的作为一元运算符和列表运算符的内容在这个章节里往往可以被视为函数，例如 `print` 和 `chdir`。因此，您可以在link:https://docs.perl6.org/language/5to6-perlfunc[函数]指南中找到有关它们的信息。括号仍用于分组。有一点需要注意：在 Perl 6 中，是`,`（逗号）创建列表**而不是**圆括号。所以：
+
+```perl6
+my @foo = 1,2,3,4,5;   # no parentheses needed 
+.say for 1,2,3,4,5;    # also no parentheses 
+ 
+my $scalar = (1);      # *not* a list, as there is no comma 
+my $list   = (1,);     # a List in a scalar container 
+```
+
+==== 箭头运算符
+
+由于您通常不会在 Perl 6 中使用引用，因此箭头作为解除引用运算符可能不太有用。但是，如果您确实需要解引用某些内容，则箭头就是点号。它也是方法调用的中的点号。因此，Perl 5 中的 `$arrayref->link:https://docs.perl6.org/language/terms#Pair[7] ` 在 Perl 6 中变成 `$arrayref.[7]`，类似地, `$user->name` 变成了 `$user.name`。`=>` 箭头用于构建 Pair 对，参考[Pair 术语文档]。
+
+==== 自动递增和自动递减
+
+和 Perl 5 中工作的一样。一个可能的警告是对于 `++` 它们调用 `succ` 方法, 对于 `--` 他们调用 `pred` 方法。对于内置数字类型，这是不太可能做一些不寻常的，但自定义类型可以定义自己的 `succ` 和 `pred` 方法，所以在这种情况下，你应该注意的是什么是 `++` 和 `--` *真正*能做的。
+
+==== 指数
+
+像你期望的那样工作。在 Perl 5 的 perlop 中关于 `**` 绑定比一元减号更紧密的警告（即 `-2 ** 4` 被计算为 `-(2 ** 4)` 而不是 `(-2) ** 4`）也适用于 Perl 6。
+
+==== 符号一元运算符
+
+如在 Perl 5 中那样，一元 `!` 和 `-` 进行逻辑和算术否定。`?^` 用于按位逻辑否定，文档指出这相当于 `!`。值得注意的是，这些分别强制他们的参数 为 `Bool` 和 `Numeric` 类型。
+
+一元 `~` 是 Perl 6 中的字符串上下文运算符，因此使用前缀 `+^` 进行逐位整数否定。假设两个补码。
+
+`+` *确实*在 Perl 6 中产生作用，强转其参数为数值类型。
+
+一元 `\` 没有了。如果你真的想要对现有的命名变量进行“引用”，你可以使用项上下文，如下所示：`$aref = item(@array)` 或者可以通过更熟悉的前缀 `$`： `$aref = $@array`。请注意，您并没有真正获得引用，而是一个带有引用对象的标量容器。
+
+您可以使用 `&` sigil 获取命名子例程的“引用” ：`$sref = &foo`。匿名数组，散列和 sub 创建过程中**立即**返回底层对象：`$sref = sub { }`。
+
+==== 绑定运算符
+
+`=~` 和 `!~` 分别被 `~~` 和 `!~~` 取代。那些认为 Perl 5 中的智能匹配坏掉的人会很高兴听到它在 Perl 6 中运行得更好，因为更强的坚定意味着更少的猜测。有关link:https://docs.perl6.org/language/operators#index-entry-smartmatch_operator[smartmatch]在 Perl 6 中的工作原理的更详细说明，请参阅link:https://docs.perl6.org/language/operators#index-entry-smartmatch_operator[smartmatch 文档]。
+
+==== 乘法运算符
+
+二元 `*`，`/` 和 `%` 分别执行乘法，除法和取模运算，和 Perl 5 中一样。
+
+二元 `x` 运算符在 Perl 6 中略有不同，并且他有一个同伴儿。`print '-' x 80;` 给你一个 80 个破折号的字符串，但是对于 `@ones = (1) x 80;` 给你一个 80 个 “1” 的列表的 Perl 5行为，你会使用 `@ones = 1 xx 80;`。
+
+==== 加法运算符
+
+二元 `+` 和 `-` 分别进行加法和减法运算，如您所料。
+
+由于 `.` 是方法调用运算符，所以二元 `~` 在 Perl 6 中充当字符串连接运算符。
+
+==== Shift operators
+
+`<<` 和 `>>` 已被 `+<` 和 `+>` 取代。
+
+==== 命名一元运算符
+
+如上所述，您可以在link:https://docs.perl6.org/language/5to6-perlfunc[函数]指南中找到它们。
+
+==== 关系运算符
+
+这些都像 Perl 5 中那样工作。
+
+==== 相等运算符
+
+`==` 和  `!=` 都像 Perl 5 中那样工作。
+
+`<=> ` 和 `cmp` 在 Perl 6 中有不同的行为。`<=> ` 做数值比较，但返回 `Order::Less`、`Order::Same` 或者 `Order::More` 而不是Perl 5 中的 `-1`、`0` 或 `1`。要获得 `cmp` 的 Perl 5 行为（使用它返回 `Order` 对象而不是整数的更改），您应该使用 `leg` 运算符。
+
+`cmp` 要么做 `<=>` 要么做 `leg`，这取决于其参数的现有类型。
+
+`~~` 是 Perl 5 中的智能匹配运算符，但它也*只是* Perl 6 中的匹配运算符，如上所述。有关智能匹配在 Perl 6 中的工作原理，请参阅link:https://docs.perl6.org/language/operators#index-entry-smartmatch_operator[smartmatch文档]。
+
+==== 智能匹配运算符
+
+有关link:https://docs.perl6.org/language/operators#index-entry-smartmatch_operator[smartmatch]在 Perl 6 中的工作原理的更详细说明，请参阅link:https://docs.perl6.org/language/operators#index-entry-smartmatch_operator[smartmatch文档]。
+
+==== Bitwise And
+
+二元 `&` 在 Perl 6 中是 `+&`。
+
+==== Bitwise Or and Exclusive Or
+
+按位或已经从 Perl 5 中的 `|` 变成 Perl 6 中的 `+|`。同样地，按位 XOR `^` 变成了 `+^`。
+
+==== C-style 的逻辑和
+
+不变。
+
+==== C-style 逻辑或
+
+不变。
+
+==== Logical Defined-Or
+
+在 Perl 6 中保持为 `//`。返回第一个有定义的操作数，或者返回最后一个操作数。此外，还有一个低优先级版本，称为 `orelse`。
+
+==== Range 运算符
+
+在列表上下文中，`..` 作为范围运算符运行，不需要更改。也就是说，存在可能有用的排他性范围运算符。这些是：
+
+- 中缀 `..^` 不包括末端;  
+- 中缀 `^..` 不包括起点;  
+- 中缀 ``^..^` 不包括起点和末端;  
+- `^` 从零开始的前缀，不包括末端。  
+
+以下示例显示了所有上述范围运算符的效果（请注意圆括号仅用于允许方法调用）：
+
+```perl6
+(1..^5).list;  # (1 2 3 4) 
+(1^..5).list;  # (2 3 4 5) 
+(1^..^5).list; # (2 3 4) 
+(^5).list;     # (0 1 2 3 4) 
+```
+
+在 Perl 5 中，在标量上下文中，运算符 `..` 和 `...` 像触发器(flip-flop)操作符一样，即使它们鲜为人知且可能较少使用。Perl 6 中的那些运算符分别由link:https://docs.perl6.org/routine/ff[ff]和link:https://docs.perl6.org/routine/fff[fff]代替。
+
+==== 条件运算符
+
+条件运算符 `?:` 已替换为 `?? !!`:
+
+```perl6
+$x = $ok  ? $yes  : $no;  # Perl 5 
+$x = $ok ?? $yes !! $no;  # Perl 6 
+```
+
+==== 赋值运算符
+
+虽然没有完整记录，但 S03 表明数学和逻辑赋值运算符应该像您期望的那样工作。一个值得注意的变化是 `.=` 在左侧的对象上调用可变方法（也可以是类型对象）。这允许以下有用的惯用法：
+
+```perl6
+class LongClassName {
+    has $.frobnicate;
+}
+my LongClassName $bar .= new( frobnicate => 42 ); # no need to repeat class name 
+```
+
+这确保了 `$bar` 只能包含一个 `LongClassName` 对象，并且不必重复（并且可能拼写错误）类名。
+
+`~=` 是字符串连接赋值，正如您可能期望的更改 `.` 和 `~`。此外，按位赋值运算符可能不会分为数字和字符串版本（`&=` 等等，相对 `&.=` 等），因为该功能目前在 Perl 5 本身中是实验性的 - 尽管，这并没有具体记录。
+
+==== 逗号运算符
+
+逗号运算符大多按预期工作，但从技术上讲，它创建link:https://docs.perl6.org/type/List[列表]）或分隔函数调用中的参数。此外，还有一个 `:` 变体可以将函数调用转换为方法调用 - 请参阅link:https://docs.perl6.org/language/operators#infix_%253A[此页面]。
+
+`=> `运算符，或*胖箭头*，工作方式类似于 Perl 5 的“胖逗号”，因为它允许在其左侧的无引号（普通）标识符，但在 Perl 6 中它构造 Pair 对象，而不是仅仅作为分隔符发挥作用。如果您试图将一行 Perl 5 代码直接翻译为 Perl 6，它应该会按预期运行。
+
+==== 列表运算符 (rightward)
+
+与命名一元运算符一样，您可以在link:https://docs.perl6.org/language/5to6-perlfunc[函数]下找到这些。
+
+==== 逻辑非
+
+`!` 的优先级较低版本。对于 `!`，强转其参数为 `Bool`。
+
+==== 逻辑和
+
+如 Perl 5 中的 较低优先级版本的 `&&` 一样。
+
+==== 逻辑或或独占或
+
+`or` 是低优先级版本的 `||`，并且 `xor` 是低优先级版本的 `^^`。
+
+此外，还有一个低优先级版本的 `//`，称为 `orelse`。
+
+==== 引用和引用类似的运算符
+有关引用构造的所有详细信息，请参阅link:https://docs.perl6.org/language/quoting[引用]。
+
+有一个引用运算符，允许绝对的文字字符串：`Q` 或者 `｢…｣`，尽管后者可能很难在你的键盘上找到，这取决于你的键盘......反斜杠转义也*没有*应用在 `Q` 引用的字符串上。例如 `Q{This is still a closing curly brace → \}` 合成的是 "This is still a closing curly brace → \"。
+
+`q` 做你期望的，允许反斜杠转义。例如 `q{This is not a closing curly brace → \}, but this is → }` 返回 "This is not a closing curly brace → }, but this is →"。与 Perl 5 一样，您可以使用单引号获得此行为。
+
+`qq` 允许变量插值。但是，默认情况下，只插入标量变量。要获得其他变量插值，您需要在它们后面放置方括号（所谓的link:https://docs.perl6.org/language/subscripts#index-entry-Zen_slices[zen-slice]）以使它们进行插值。例如：
+
+```perl6
+my @a = <1 2 3>; 
+say qq/@a[] example@example.com/;
+```
+
+结果为 “1 2 3 example@example.com”。哈希以相同的方式进行插值：
+
+```perl6
+my %a = 1 => 2, 3 => 4;
+say "%a{}";
+```
+
+导致空格分隔 Pair 对儿, Tab 将每对中的键与值分开（因为这是 `Pair` 的标准字符串化，并且哈希在字符串化时充当 `Pair` 的列表）。您还可以使用花括号在字符串中插入 Perl 6 代码。有关所有详细信息，请参阅link:https://docs.perl6.org/language/quoting#Interpolation%253A_qq[插值]。
+
+`qw` 像 Perl 5 中那样工作，也可以呈现为 `<...>`。例如 `qw/a b c/` 相当于 `<a b c>`。
+
+还有一个能插值的 `qw` 版本，即 `qqw`。所以：
+
+```perl6
+my $a = 42;
+say qqw/$a b c/;
+```
+
+给你 “42 b c”。
+
+Shell 引用可以通过 `qx` 获得，但是你应该注意，反引号不像 Perl 5 那样进行 shell 引用，并且 Perl 变量*不*在 `qx` 字符串中进行插值。如果需要在 shell 命令字符串中插入 Perl 变量，则可以改为使用 `qqx`。
+
+Perl 6 中没有 `qr` 运算符了。
+
+`tr///` 与 Perl 5 中的工作方式类似。需要注意的是范围的指定方式不同。您可以使用“a..z”代替使用范围“a-z”，即使用 Perl 的范围运算符。`tr///` 有一个方法版本，记录的更好，称为 `.trans`。`.trans` 使用 Pair 对儿的列表，如下所示：可以在link:https://design.perl6.org/S05.html#Transliteration[https://design.perl6.org/S05.html#Transliteration中]找到更广泛的使用说明。
+
+```perl6
+$x.trans(
+    ['a'..'c'] => ['A'..'C'], 
+    ['d'..'q'] => ['D'..'Q'], 
+    ['r'..'z'] => ['R'..'Z']
+    );
+```
+
+等价的 `y///` 已经废除了。
+
+在 Perl 6 中 `:to` 以不同方式指定了 Heredocs。您可以使用引号运算符，例如，`q:to/END/;` 将以 “END” 开头的 heredoc 结尾。类似地，您可以根据引用运算符进行转义和插值，即带有 `Q` 的文字值, 带有 `q`  的反斜杠转义和带有插值的 `qq`。
+
+==== I/O 运算符
+
+有关 Perl 6 中输入/输出的完整详细信息，请参阅link:https://docs.perl6.org/language/io[io]。
+
+因为 `<...> ` 与 Perl 6 中的 quote-words 构造一样，`<> ` 不用于从文件中读取行。您可以通过 `IO` 从文件名创建对象或使用打开的文件句柄然后在任何一种情况下在它身上调用 `.lines` 来实现。或者例如 `my @a = "filename".IO.lines;` 或 `my $fh = open "filename", :r;my @a = $fh.lines;`（在后一种情况下，我们使用 `:r` 专门打开用于读取的文件）。要以迭代方式执行此操作，可以用以下方式 使用 `for` 循环：
+
+```perl6
+for 'huge-csv'.IO.lines -> $line {
+    # Do something with $line 
+}
+```
+
+注意那里的 `->` 用法。这是块语法的一部分，而在 Perl 6 中要用在 `if`，`for`，`while` 等块中。
+
+如果你想将整个文件 slurp 为标量，你会惊讶的！- 使用 `.slurp` 方法。例如：
+
+```perl6
+my $x = "filename".IO.slurp;
+=== ... or ... 
+my $fh = open "filename", :r;
+my $x = $fh.slurp;
+```
+
+如link:https://docs.perl6.org/language/5to6-perlvar[特殊变量]指南中所述，`ARGV` 魔术输入文件句柄已被替换 `$*ARGFILES`，并且`@ARGV` 命令行参数数组已被替换 `@*ARGS`。
+
+==== No-ops
+
+`1 while foo();` 与 Perl 5 中的工作方式相同，但它会生成警告。在 Perl 6 中，这个惯用法现在被写成了 `Nil while foo();`。
+
+==== 按位字符串运算符
+
+单独记录在上面了，但总结如下......
+
+按位整数否定加上前缀 `+^`。按位布尔否定是 `?^`。
+
+按位与是 `+&`。
+
+按位整数或是 `+|`。按位整数 xor 是中缀 `+^`。按位布尔或是 `?|`。
+
+左移和右移是 `+<` 和 `+>`。
+

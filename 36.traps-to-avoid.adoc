@@ -1,0 +1,317 @@
+== 要避免的陷阱
+
+在学习一门编程语言时，可能有熟悉另一门编程语言的背景，总有一些事情会让您感到惊讶，并且可能会耗费宝贵的调试和发现时间。
+
+本文件旨在展示常见的误解，以避免它们。
+
+在编写 Perl 6 的过程中，我们付出了巨大的努力来消除语法中的瑕疵。然而，当你消灭一个瑕疵的时候，有时另一个会突然冒出来。所以我们花了很多时间去寻找最小数量的瑕疵或者试图把它们放在它们很少被看到的地方。正因为如此，Perl 6 的瑕疵出现在了不同的地方，而不是来自另一种语言时所期望的那样。
+
+=== 变量和常量
+
+==== 常量在编译时计算
+
+常量是在编译时计算的，所以如果在模块中使用它们，请记住，由于模块本身的预编译，它们的值将被冻结:
+
+```perl6
+# WRONG (most likely): 
+unit module Something::Or::Other;
+constant $config-file = "config.txt".IO.slurp;
+```
+
+`$config-file` 将在预编译时一次性被读入。`config.txt` 文件的更改不会在你再次启动脚本时重新加载;只有当模块被重新编译时才会重新加载。
+
+避免使用link:https://docs.perl6.org/language/containers[容器]，而倾向于将值link:https://docs.perl6.org/language/containers#Binding[绑定]到提供类似于常量行为的变量上，但允许更新值:
+
+```perl6
+# Good; file gets updated from 'config.txt' file on each script run: 
+unit module Something::Or::Other;
+my $config-file := "config.txt".IO.slurp;
+```
+
+==== 赋值为 Nil 产生不同的值, 通常是 Any
+
+实际上，赋给 `Nil` 会link:https://docs.perl6.org/type/Nil[将变量还原为其默认值]。所以:
+
+```perl6
+my @a = 4, 8, 15, 16;
+@a[2] = Nil;
+say @a; # OUTPUT: «[4 8 (Any) 16]␤» 
+```
+
+在本例中，`Any` 是 `Array` 元素的默认值。
+
+你可以故意指定 `Nil` 作为默认值:
+
+```perl6
+my %h is default(Nil) = a => Nil;
+say %h; # OUTPUT: «Hash %h = {:a(Nil)}␤» 
+```
+
+或者将值绑定到 `Nil`，如果结果是你想要的:
+
+```perl6
+@a[3] := Nil;
+say @a; # OUTPUT: «[4 8 (Any) Nil]␤» 
+```
+
+这个陷阱可能隐藏在函数的结果中，比如匹配:
+
+```perl6
+my $result2 = 'abcdef' ~~ / dex /;
+say "Result2 is { $result2.^name }"; # OUTPUT: «Result2 is Any␤» 
+```
+
+link:https://docs.perl6.org/language/regexes#Literals[Match 将会是 Nil]如果什么也没有找到。但是，如果将 `Nil` 赋给上面的 `$result2`，则会得到其默认值，如所示为 `Any`。
+
+==== 使用块来插入匿名状态变量
+
+程序员打算让代码计数程序被调用的次数，但是计数器没有增加:
+
+```perl6
+sub count-it { say "Count is {$++}" }
+count-it;
+count-it;
+ 
+# OUTPUT: 
+# Count is 0 
+# Count is 0 
+```
+
+当涉及到状态变量时，每当该块的块被重新进入时，声明 vars 的块就会被克隆，vars 也会被重新初始化。这让像下面这样的结构表现得恰当;每次调用子程序时，循环内部的状态变量都会被重新初始化:
+
+```perl6
+sub count-it {
+    for ^3 {
+        state $count = 0;
+        say "Count is $count";
+        $count++;
+    }
+}
+ 
+count-it;
+say "…and again…";
+count-it;
+ 
+ 
+# OUTPUT: 
+# Count is 0 
+# Count is 1 
+# Count is 2 
+# …and again… 
+# Count is 0 
+# Count is 1 
+# Count is 2 
+```
+
+同样的布局存在于我们的 bug 程序中。双引号字符串中的 `{}` 不仅仅是执行一段代码的插值。它实际上是它自己的块，就像在上面的例子中，每次进入子例程时都会被克隆，重新初始化状态变量。为了得到正确的计数，我们需要去掉内部块，使用标量上下文分析器来插入我们的代码:
+
+```perl6
+sub count-it { say "Count is $($++)" }
+count-it;
+count-it;
+ 
+# OUTPUT: 
+# Count is 0 
+# Count is 1 
+```
+
+或者，也可以使用link:https://docs.perl6.org/routine/~[连接运算符]:
+
+```perl6
+sub count-it { say "Count is " ~ $++ }
+```
+
+=== Blocks
+
+==== 提防空 "block"
+
+花括号用于声明块。然而，空花括号会声明一个哈希。
+
+```perl6
+$ = {say 42;} # Block 
+$ = {;}       # Block 
+$ = {…}       # Block 
+$ = { }       # Hash 
+```
+
+如果你想有效地声明一个空的块，你可以使用第二种形式:
+
+```perl6
+my &does-nothing = {;};
+say does-nothing(33); # OUTPUT: «Nil␤» 
+```
+
+=== 对象
+
+==== 给属性赋值
+
+新手通常会这样想，因为带有访问器的属性被声明为 `has $.x`，在类里面它们可以给 `$.x` 赋值 。事实并非如此。
+
+例如
+
+```perl6
+use v6.c;
+class Point {
+    has $.x;
+    has $.y;
+    method double {
+        $.x *= 2;   # WRONG 
+        $.y *= 2;   # WRONG 
+        self;
+    }
+}
+ 
+say Point.new(x => 1, y => -2).double.x
+# OUTPUT: «Cannot assign to an immutable value␤» 
+```
+
+方法 `double` 中的第一行标记为 `# WRONG`，因为 `$.x` 是 `$( self.x )` 的缩写。是对只读访问器的调用。
+
+语法 `has $.x` 是 `has $!x; method x() { $!x }` 的简写，因此实际属性称为$!将自动生成只读访问器方法。
+
+因此，编写方法 `double` 的正确方法是：
+
+```perl6
+method double {
+    $!x *= 2;
+    $!y *= 2;
+    self;
+}
+```
+
+它直接作用于属性。
+
+==== BUILD 防止从构造函数参数中自动初始化属性
+
+在定义自己的 `BUILD` 子方法时，必须自己初始化所有属性。例如
+
+```perl6
+use v6.c;
+class A {
+    has $.x;
+    has $.y;
+    submethod BUILD {
+        $!y = 18;
+    }
+}
+ 
+say A.new(x => 42).x;       # OUTPUT: «Any␤» 
+```
+
+留下 `$!x` 未初始化，因为自定义的 `BUILD` 没有初始化它。
+
+**注意**:考虑使用 link:https://docs.perl6.org/language/objects#index-entry-TWEAK[TWEAK]。link:https://docs.perl6.org/language/glossary#Rakudo[Rakudo] 自发布 2016.11 以来支持 link:https://docs.perl6.org/language/objects#index-entry-TWEAK[TWEAK] 方法。
+
+一种可能的补救方法是显式地初始化 `BUILD` 中的属性:
+
+```perl6
+submethod BUILD(:$x) {
+    $!y = 18;
+    $!x := $x;
+}
+```
+
+这可以简化为：
+
+```perl6
+submethod BUILD(:$!x) {
+    $!y = 18;
+}
+```
+
+另一种更普遍的方法是不去管 `BUILD`，而是与 `BUILDALL` 机制挂钩:
+
+```perl6
+use v6.c;
+class A {
+    has $.x;
+    has $.y;
+    method BUILDALL(|c) {
+        callsame;
+        $!y = 18;
+        self
+    }
+}
+ 
+say A.new(x => 42).x;       # OUTPUT: «42␤» 
+```
+
+记住 `BUILDALL` 是一个方法，而不是子方法。这是因为在默认情况下，每个类层次结构只有一个这样的方法，而 `BUILD` 是每个类显式调用的。这就是为什么为了正确地初始化父对象，需要在 `BUILDALL` 中使用 `callsame`，而不是在 `BUILD` 中(关于该主题的更多信息请参阅link:https://docs.perl6.org/language/objects#Object_construction[对象创建])。
+
+
+=== 空白
+
+==== regex 中的空白不按字面匹配
+
+```perl6
+say 'a b' ~~ /a b/; # OUTPUT: «False␤» 
+```
+
+默认情况下，regexe 中的空白被认为是一种可选的没有语义的填充，就像 Perl 6 语言的其他部分一样。
+
+匹配空白的方法:
+
+- `\s` 匹配任何一个空白，`\s+` 匹配至少一个空白
+
+- `' '`(引号中的空格)以匹配单个空格
+
+- `\t`， `\n` 匹配特定空格(制表符，换行符)
+
+- `\h`， `\v`，用于水平，垂直空白
+
+- `.ws` 是一个内建的空白规则，它通常如你所愿
+
+- 对于 `m:s/a b/` 或 `m:sigspace/a b/`， regex 中的空白匹配任意空格
+
+==== 模棱两可的解析
+
+虽然有些语言允许您删除记号之间尽可能多的空白，但是 Perl 6 就不那么宽容了。最重要的准则是我们不鼓励使用代码高尔夫，所以不要在空格上浪费时间(这些限制背后更严重的潜在原因是单遍解析和解析 Perl 6 程序的能力，而实际上不需要link:https://en.wikipedia.org/wiki/Backtracking[回溯])。
+
+你应留意的常见区域是:
+
+===== 块与散列切片的歧义性
+
+```perl6
+# WRONG; trying to hash-slice a Bool: 
+while ($++ > 5){ .say }
+```
+
+```perl6
+# RIGHT: 
+while ($++ > 5) { .say }
+ 
+# EVEN BETTER; Perl 6 does not require parentheses there: 
+while $++ > 5 { .say }
+```
+
+===== 化简与数组构造函数的歧义性
+
+```perl6
+# WRONG; ambiguity with `[<]` meta op: 
+my @a = [[<foo>],];
+```
+
+```perl6
+# RIGHT; reductions cannot have spaces in them, so put one in: 
+my @a = [[ <foo>],];
+ 
+# No ambiguity here, natural spaces between items suffice to resolve it: 
+my @a = [[<foo bar ber>],];
+```
+
+===== 小于与单词引用/关联索引
+
+```perl6
+# WRONG; trying to index 3 associatively: 
+say 3<5>4
+```
+
+```perl6
+# RIGHT; prefer some extra whitespace around infix operators: 
+say 3 < 5 > 4
+```
+
+==== 捕获
+
+===== 捕获中的容器与值
+

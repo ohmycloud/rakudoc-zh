@@ -1,0 +1,210 @@
+== 输入和输出
+
+在这里，我们简要概述了与文件相关的输入/输出操作。详细信息可以在 link:https://docs.perl6.org/type/IO[IO] 角色的文档中找到，也可以在 link:https://docs.perl6.org/type/IO::Handle[IO::Handle]  和 link:https://docs.perl6.org/type/IO::Path[IO::Path] 类型中找到。
+
+=== 读取文件
+
+读取文件内容的一种方法是通过带有 `:r`（读取）文件模式选项的 `open` 函数打开文件，并吞噬内容：
+
+```perl6
+my $fh = open "testfile", :r;
+my $contents = $fh.slurp;
+$fh.close;
+```
+
+这里我们使用 `IO::Handle` 对象上的 `close` 方法显式地关闭文件句柄。这是一种非常传统的读取文件内容的方法。但是，同样的事情可像这样更容易和更清楚地完成：
+
+```perl6
+my $contents = "testfile".IO.slurp;
+# or in procedural form: 
+$contents = slurp "testfile"
+```
+
+通过将 `IO` 角色添加到文件名字符串中，我们实际上能够将字符串作为文件对象本身引用，从而直接吞噬其内容中。请注意，`slurp` 负责为你打开和关闭文件。
+
+==== 逐行读取
+
+当然，我们也可以选择逐行读取文件。将排除新行分隔符（即  `$*IN.nl-in`）。
+
+```perl6
+for 'huge-csv'.IO.lines -> $line {
+    # Do something with $line 
+}
+ 
+# or if you'll be processing later 
+my @lines = 'huge-csv'.IO.lines;
+```
+
+=== 写文件
+
+要将数据写入文件，我们再次选择调用 `open` 函数的传统方法 - 这次使用 `:w`（write）选项 - 并将数据打印到文件中：
+
+```perl6
+my $fh = open "testfile", :w;
+$fh.print("data and stuff\n");
+$fh.close;
+```
+
+或者使用等效的 `say`，因此不再需要显式的换行符了：
+
+```perl6
+my $fh = open "testfile", :w;
+$fh.say("data and stuff");
+$fh.close;
+```
+
+我们可以通过使用 `spurt` 在写入模式下打开文件，将数据写入文件并再次为我们关闭来简化此操作：
+
+```perl6
+spurt "testfile", "data and stuff\n";
+```
+
+默认情况下，所有（文本）文件都写为 UTF-8，但是如果需要，可以通过 `:enc` 选项指定显式编码：
+
+```perl6
+spurt "testfile", "latin1 text: äöüß", enc => "latin1";
+```
+
+要将格式化的字符串写入文件, 请使用 link:https://docs.perl6.org/type/IO::Handle[IO::Handle] 的 link:https://docs.perl6.org/routine/printf[printf] 函数。
+
+```perl6
+my $fh = open "testfile", :w;
+$fh.printf("formatted data %04d\n", 42);
+$fh.close;
+```
+
+要追加到文件，请在显式地打开文件句柄时指定 `:a` 选项，
+
+```perl6
+my $fh = open "testfile", :a;
+$fh.print("more data\n");
+$fh.close;
+```
+
+或者使用等效的 `say`，因此不再需要显式的换行符了,
+
+```perl6
+my $fh = open "testfile", :a;
+$fh.say("more data");
+$fh.close;
+```
+
+或者甚至在调用 `spurt` 时加上 `:append` 选项:
+
+```perl6
+spurt "testfile", "more data\n", :append;
+```
+
+要将二进制数据显式地写入文件，请使用 `:bin` 选项打开它。然后输入/输出操作将使用 `Buf` 类型而不是 `Str` 类型。
+
+=== 复制和重命名文件
+
+例程 `copy`, `rename`, 和 `move` 是可用的以避免低级别的系统命令。 在 link:https://docs.perl6.org/routine/copy[copy], link:https://docs.perl6.org/routine/rename[rename], 和 link:https://docs.perl6.org/routine/move[move] 查看详情. 一些例子:
+
+```perl6
+my $filea = 'foo';
+my $fileb = 'foo.bak';
+my $filec = '/disk1/foo';  # note 'diskN' is assumed to be a physical storage device 
+ 
+copy $filea, $fileb;              # overwrites $fileb if it exists 
+copy $filea, $fileb, :createonly; # fails if $fileb exists 
+ 
+rename $filea, 'new-foo';              # overwrites 'new-foo' if it exists 
+rename $filea, 'new-foo', :createonly; # fails if 'new-foo' exists 
+ 
+# use move when a system-level rename may not work 
+move $fileb, '/disk2/foo';              # overwrites '/disk2/foo' if it exists 
+move $fileb, '/disk2/foo', :createonly; # fails if '/disk2/foo' exists 
+```
+
+=== 检查文件和目录
+
+在 `IO::Handle` 对象上使用 `e` 方法来测试文件或目录是否存在。
+
+```perl6
+if "nonexistent_file".IO.e {
+    say "file exists";
+}
+else {
+    say "file doesn't exist";
+}
+```
+
+也可以使用冒号对语法来实现相同的功能：
+
+```perl6
+if "path/to/file".IO ~~ :e {
+    say 'file exists';
+}
+my $file = "path/to/file";
+if $file.IO ~~ :e {
+    say 'file exists';
+}
+```
+
+与文件存在检查类似，也可以检查路径是否是目录。例如，假设文件 `testfile` 和目录  `lib` 存在，我们将从存在测试方法 `e` 获得相同的结果，即两者都存在：
+
+```perl6
+say "testfile".IO.e;  # OUTPUT: «True␤» 
+say "lib".IO.e;       # OUTPUT: «True␤» 
+```
+
+但是，由于它们中只有一个是目录，因此目录测试方法 `d` 将给出不同的结果：
+
+```perl6
+say "testfile".IO.d;  # OUTPUT: «False␤» 
+say "lib".IO.d;       # OUTPUT: «True␤» 
+```
+
+当我们通过文件测试方法 `f` 检查路径是否是文件时，结果自然会反过来：
+
+```perl6
+say "testfile".IO.f;  # OUTPUT: «True␤» 
+say "lib".IO.f;       # OUTPUT: «False␤» 
+```
+
+还有其他方法可用于查询文件或目录，一些有用的方法是：
+
+```perl6
+my $f = "file";
+ 
+say $f.IO.modified; # return time of last file (or directory) change 
+say $f.IO.accessed; # return last time file (or directory) was read 
+say $f.IO.s;        # return size of file (or directory inode) in bytes 
+```
+
+更多方法和详细信息请查看 link:https://docs.perl6.org/type/IO::Path[IO::Path].
+
+=== 获取目录列表
+
+要列出当前目录的内容，请使用 `dir` 函数。它返回 link:https://docs.perl6.org/type/IO::Path[IO::Path] 对象的列表。
+
+```perl6
+say dir;          # OUTPUT: «"/path/to/testfile".IO "/path/to/lib".IO␤» 
+```
+
+要列出给定目录中的文件和目录，只需将路径作为参数传递给 `dir`：
+
+```perl6
+say dir "/etc/";  # OUTPUT: «"/etc/ld.so.conf".IO "/etc/shadow".IO ....␤» 
+```
+
+=== 创建和移除目录
+
+要创建一个新目录，只需使用目录名作为参数调用函数 `mkdir`：
+
+```perl6
+mkdir "newdir";
+```
+
+该函数在成功时返回创建目录的名称，在失败时返回 `Nil`。因此，标准的 Perl 惯用法按预期工作：
+
+```perl6
+mkdir "newdir" or die "$!";
+```
+
+使用 `rmdir` 来移除*空*目录:
+
+```perl6
+rmdir "newdir" or die "$!";
+```

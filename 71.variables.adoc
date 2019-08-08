@@ -1,0 +1,1030 @@
+变量名以一个叫做魔符 sigil 的特殊字符开头, 后面跟着一个可选的第二个叫做 `twigil` 的特殊字符, 然后是一个标识符.
+
+## Sigils
+
+|===
+|符号	 |  类型约束	             |  默认类型    | Flattens      | Assignment
+|$	     |Mu (no type constraint)    | Any          |No             |   item
+|&       |Callable	                 | Callable     |No             |   item
+|@	     |Positional                 | Array        |Yes            |   list
+|%	     |Associative	             | Hash         |Yes            |   list
+|===
+
+例子:
+
+
+```perl6
+my $square = 9 ** 2;
+my @array  = 1, 2, 3;   # Array variable with three elements
+my %hash   = London => 'UK', Berlin => 'Germany';
+```
+
+默认类型可以使用 `is` 关键字设置。
+
+```perl6
+class FailHash is Hash {
+    has Bool $!final = False;
+    multi method AT-KEY ( ::?CLASS:D: Str:D \key ){
+        fail X::OutOfRange.new(:what("Hash key"), :got(key), :range(self.keys)) if $!final && !self.EXISTS-KEY(key);
+        callsame
+    }
+
+    method finalize() {
+        $!final = True
+    }
+}
+
+my %h is FailHash = oranges => "round", bananas => "bendy";
+say %h<oranges>;
+# OUTPUT «round␤»
+%h.finalize;
+say %h<cherry>;
+CATCH { default { put .^name, ': ', .Str } }
+# OUTPUT «X::OutOfRange: Hash key out of range. Is: cherry, should be in (oranges bananas)»
+```
+
+
+不带符号的变量也是可行的, 查看 link:http://doc.perl6.org/language/variables#Sigilless_variables[无符号变量].
+
+## 项和列表赋值
+
+有两种类型的赋值, item 赋值和 list 赋值. 两者都使用 = 号操作符. 根据 = 号左边的语法来区别 = 是 item 赋值还是 list 赋值.
+
+Item 赋值把等号右侧的值放到左侧的变量(容器)中.
+
+例如, link:https://docs.perl6.org/type/Array[数组]变量(@符号)在列表赋值时清空数组自身, 然后把等号右侧的值都放进数组自身中. 跟 Item 赋值相比, 这意味着等号左侧的变量类型始终是 Array, 不管右侧是什么类型.
+
+赋值类型(item 或 list)取决于当前表达式或声明符看到的第一个上下文:
+
+```perl6
+my $foo = 5;            # item assignment
+say $foo.perl;          # 5
+
+my @bar = 7, 9;         # list assignment
+say @bar.WHAT;          # Array
+say @bar.perl;          # [7, 9]
+
+(my $baz) = 11, 13;     # list assignment
+say $baz.WHAT;          # Parcel
+say $baz.perl;          # (11, 13)
+```
+
+因此, 包含在列表赋值中的赋值行为依赖于表达式或包含表达式的声明符。
+例如, 如果内部赋值是一个声明符(例如 my), 就使用 item 赋值, 它比逗号和列表赋值的优先级更高:
+
+```perl6
+my @array;
+@array = my $num = 42, "str";   # item assignment: uses declarator
+say @array.perl;                # [42, "str"] (an Array)
+say $num.perl;                  # 42 (a Num)
+```
+
+类似地, 如果内部赋值是一个用于声明符初始化的表达式, 则内部表达式的上下文决定赋值的类型:
+
+```perl6
+my $num;
+my @array = $num = 42, "str";    # item assignment: uses expression
+say @array.perl;                 # [42, "str"] (an Array)
+say $num.perl;                   # 42 (a Num)
+
+my ( @foo, $bar );
+@foo = ($bar) = 42, "str";       # list assignment: uses parens
+say @foo.perl;                   # [42, "str"] (an Array)
+say $bar.perl;                   # $(42, "str")  (a Parcel)
+```
+
+然而, 如果内部赋值既不是声明符又不是表达式, 而是更大的表达式的一部分, 更大的表达式的上下文决定赋值的类型:
+
+```perl6
+my ( @array, $num );
+@array = $num = 42, "str";    # list assignment
+say @array.perl;              # [42, "str"] (an Array)
+say $num.perl;                # [42, "str"] (an Array)
+```
+
+这是因为整个表达式是 `@array = $num = 42, "str"`, 而 `$num = 42` 不是单独的表达式.
+
+查看link:https://docs.perl6.org/language/operators[操作符]获取关于优先级的更多详情。
+
+## 无符号变量
+
+在 Perl 6 中创建不带符号的变量也是可能的:
+
+```perl6
+my \degrees = pi / 180;
+my \θ       = 15 * degrees;
+```
+
+然而, 这些无符号变量并不创建link:https://docs.perl6.org/language/containers[容器]. 那意味着上面的 `degrees` 和 `θ` 实际上直接代表 `Nums`. 为了说明, 我们定义一个无符号变量后再赋值:
+
+```perl6
+θ = 3; # Dies with the error "Cannot modify an immutable Num"
+```
+
+无符号变量不强制上下文, 所以它们可被用于原样地传递某些东西:
+
+```perl6
+sub logged(&f, |args) {
+    say('Calling ' ~ &f.name ~ ' with arguments ' ~ args.perl);
+    my \result = f(|args);
+    #  ^^^^^^^ not enforcing any context here
+    say(&f.name ~ ' returned ' ~ result.perl);
+    return |result;
+}
+```
+
+## Twigils
+
+`Twigils` 影响变量的`作用域`。请记住 twigils 对基本的魔符插值没有影响，那就是，如果  `$a` 内插， `$^a`, `$*a`, `$=a`, `$?a`, `$.a`, 等等也会内插. 它仅仅取决于 `$`.
+
+|===
+|Twigil|Scope
+|*     |动态的
+|!     |属性(类成员)
+|?     |编译时变量
+|.     |方法(并非真正的变量)
+|<     |匹配对象索引(并非真正的变量)
+|^     |自我声明的形式位置参数
+|:     |自我声明的形式命名参数
+|=     |Pod 变量
+|~     |子语言
+|===
+
+## * Twigil
+
+动态变量通过 caller 查找, 不是通过外部作用域。例如:
+
+```perl6
+    my $lexical   = 1;
+    my $*dynamic1 = 10;
+    my $*dynamic2 = 100;
+
+    sub say-all() {
+        say "$lexical, $*dynamic1, $*dynamic2";
+    }
+
+    # prints 1, 10, 100
+    say-all();
+
+    {
+        my $lexical   = 2;
+        my $*dynamic1 = 11;
+        $*dynamic2    = 101; # 注意,这儿没有使用 my 来声明
+
+        # prints 1, 11, 101
+        say-all();
+    }
+
+    # prints 1, 10, 101
+    say-all();
+```
+
+第一次调用 `&say-all` 时, 就像你期望的一样, 它打印 "1, 10, 100"。可是第二次它打印 "1, 11, 101"。 这是因为 `$lexical` 不是在调用者的作用域内被查找, 而是在 `&say-all` 被定义的作用域里被查找的。这两个动态作用域变量在调用者的作用域内被查找, 所以值为 `11` 和 `101`。第三次调用 `&say-all` 后,  `$*dynamic1` 不再是 11 了. 但是 `$*dynamic2` 仍然是 101。这源于我们在块中声明了一个新的动态变量 `$*dynamic1` 的事实并且没有像我们对待 `$*dynamic2` 那样把值赋值给旧的变量。
+
+动态变量与其他变量类型在引用一个未声明的动态变量上不同的是前者不是一个编译时错误，而是运行时 link:https://docs.perl6.org/type/Failure[failure]，这样一个动态变量可以在未定义时使用只要在把它用作任何其它东西的时候检查它是否定义过:
+
+```perl6
+sub foo() {
+    $*FOO // 'foo';
+}
+
+say foo; # -> 'foo'
+
+my $*FOO = 'bar';
+
+say foo; # -> 'bar'
+```
+
+## ! Twigil
+
+属性是变量, 存在于每个类的实例中. 通过 `!` 符号它们可以从类的里面直接被访问到:
+
+```perl6
+    class Point {
+        has $.x;
+        has $.y;
+
+        method Str() {
+            "($!x, $!y)"
+        }
+    }
+```
+
+注意属性是怎样被声明为 `$.x` 和 `$.y` 的, 但是仍然能够通过 `$!x` 和 `$!y` 访问到属性. 这是因为 在 Perl 6 中, 所有的属性都是`私有的`, 并且在类中能使用 `$!attribute-name` 直接访问这些属性. Perl 6 能自动为你生成访问方法. 关于对象、类和它们的属性和方法的详情, 请查看link:https://docs.perl6.org/language/objects[面向对象].
+
+## ? Twigil
+
+编译时"常量", 可通过 `?` twigil 访问. 编译器对它们很熟悉, 并且编译后不能被修改. 常用的一个例子如下:
+
+```perl6
+say "$?FILE: $?LINE"; # prints "hello.pl: 23" if this is the 23 line of a
+                      # file named "hello.pl".
+```
+
+关于这些特殊变量的列表请查看link:https://docs.perl6.org/language/variables#Compile-time_variables[编译时变量]。
+
+尽管不能在运行时改变它们, 用户可以(重新)定义这种常量.
+
+```perl6
+constant $?TABSTOP = 4; # this causes leading tabs in a heredoc or in a POD
+                        # block's virtual margin to be counted as 4 spaces.
+```
+
+## . Twigil
+
+`.` twigil 真的不是用于变量的. 实际上, 看下面的代码:
+
+```perl6
+    class Point {
+        has $.x;
+        has $.y;
+
+        method Str() {
+            "($.x, $.y)" # 注意我们这次使用 . 而不是 !
+        }
+    }
+```
+
+对 `self`(自身)调用了方法 `x` 和方法 `y`, 这是自动为你生成的, 因为在你声明你的属性的时候, 你使用的是 `.` twigil 。 注意,  子类可能会覆盖那些方法. 如果你不想这个发生, 请使用 `$!x` 和 `$!y` 代替。
+
+`.` twigil 只是调用了一个方法也表明下面是可能的
+
+```perl6
+    class SaySomething {
+        method a() { say "a"; }
+        method b() { $.a; }
+    }
+
+    SaySomething.b; # prints "a"
+```
+
+关于对象、类和它们的属性和方法的详情, 请查看link:https://docs.perl6.org/language/objects[面向对象].
+
+
+## < Twigil
+
+ `<` twigil 是 `$/<...>` 的别名, 其中,  `$/` 是匹配变量. 关于匹配变量的更多详情请查看 link:https://docs.perl6.org/language/variables#The_%24%2F_Variable[$/变量]和link:https://docs.perl6.org/type/Match[类型匹配]
+
+## ^ Twigil
+
+`^` twigil 为 block 块 或 子例程 声明了一个形式位置参数.  形如 `$^variable` 的变量是一种占位变量. 它们可用在裸代码块中来声明代码块的形式参数. 看下面代码中的块:
+
+```perl6
+for ^4 {
+    say "$^seconds follows $^first";
+}
+```
+
+它打印出:
+
+```perl6
+1 follows 0
+3 follows 2
+```
+
+有两个形式参数，就是 `$first` 和 `$second`.  注意, 尽管 `$^second` 在代码中出现的比 `$^first` 早,  `$^first` 依然是代码块中的第一个形式参数. 这是因为占位符变量是以 Unicode 顺序排序的.
+
+子例程也能使用占位符变量, 但是只有在子例程没有显式的参数列表时才行. 这对普通的块也适用
+
+```perl6
+sub say-it    { say $^a; } # valid
+sub say-it()  { say $^a; } # invalid
+              { say $^a; } # valid
+-> $x, $y, $x { say $^a; } # 非法, 已经有参数列表 $x,$y,$x 了
+```
+
+占位符变量语法上不能有类型限制. 也注意, 也不能使用单个大写字母的占位符变量, 如 `$^A`
+
+## : Twigil
+
+`:` twigil 为块或子例程声明了一个形式**命名参数**。使用这种形式声明的变量也是占位符变量的一种类型。因此适用于使用 `^` twigil 声明的变量的东西在这儿也适用(除了它们不是位置的以外, 因此没有使用 Unicode 顺序排序)。所以这个:
+
+```perl6
+say { $:add ?? $^a + $^b !! $^a - $^b }( 4, 5 ) :!add
+# OUTPUT:
+# -1
+```
+
+查看 link:https://docs.perl6.org/routine/%5E[^]获取关于占位符变量的更多细节。
+
+## = Twigil
+
+`=` twigil 用于访问 Pod 变量。当前文件中的每个 Pod 块都能通过一个 Pod 对象访问到, 例如 `$=data`, `$=SYNOPSIS` 或 `=UserBlock`, 即：一个和想要的块同名的变量加上一个 `=` twigil。
+
+```perl6
+=begin Foo
+...
+=end Foo
+
+#after that, $=Foo gives you all Foo-Pod-blocks
+```
+
+您可以通过 `$=pod`访问 Pod 树，它包含所有作为分级数据结构的Pod结构。
+
+请注意，所有这些 `$=someBlockName` 都支持位置和关联角色。
+
+
+## ~ Twigil
+
+注意: Slangs（俚语）在 Rakudo 中还没有被实现。 NYI = Not Yet Implemented.
+
+`~` twigil 是指子语言（称为俚语）。下面是有用的：
+
+|===
+|变量名|说 明
+|$~MAIN       |the current main language (e.g. Perl statements)
+|$~Quote      |the current root of quoting language
+|$~Quasi      |the current root of quasiquoting language
+|$~Regex      |the current root of regex language
+|$~Trans      |the current root of transliteration language
+|$~P5Regex    |the current root of the Perl 5 regex language
+|===
+
+你在你当前的词法作用域中扩充这些语言。
+
+```perl6
+use MONKEY-TYPING;
+augment slang Regex {  # derive from $~Regex and then modify $~Regex
+    token backslash:std<\Y> { YY };
+}
+```
+
+## 变量声明符和作用域
+
+通常, 使用 `my` 关键字创建一个新的变量就足够了:
+
+
+```perl6
+my $amazing-variable = "World";
+say "Hello $amazing-variable!"; # Hello World!
+```
+
+然而, 有很多声明符能在 link:https://docs.perl6.org/language/variables#Twigils[Twigils] 的能力之外改变作用域的细节。
+
+|===
+|声明符    |作用
+|my        |作为词法作用域名字的开头
+|our       |作为包作用域名字的开头
+|has       |作为属性名的开头
+|anon      |作为私有名字的开头
+|state     |作为词法作用域但是持久名字的开头
+|augment   |给已存在的名字添加定义
+|supersede |替换已存在名字的定义
+|===
+
+还有两个类似于声明符的前缀, 但是作用于预定义变量:
+
+|===
+|前缀 |作用
+|temp | 在作用域的最后恢复变量的值
+|let  | 如果 block 成功退出就恢复变量的值
+|===
+
+### my 声明符
+
+使用 `my` 声明一个变量给变量一个词法作用域. 这意味着变量只在当前块中存在.例如:
+
+```perl6
+{
+    my $foo = "bar";
+    say $foo; # -> "bar"
+}
+say $foo; # !!! "Variable '$foo' is not declared"
+```
+
+它抛出异常,因为只要我们在同一个作用域内 `$foo` 才被定义. 此外, 词法作用域意味着变量能在新的作用域内被临时地重新定义:
+
+
+```perl6
+
+my $location = "outside";
+
+sub outer-location {
+    # Not redefined:
+    say $location;
+}
+
+outer-location; # -> "outside"
+
+sub in-building {
+    my $location = "inside";
+    say $location;
+}
+
+in-building;    # -> "inside"
+outer-location; # -> "outside"
+```
+
+
+
+如果变量被重新定义了, 任何引用外部变量的代码会继续引用外部变量.
+所以, 在这儿, `&outer-location` 仍然打印外部的 `$location`:
+
+
+```perl6
+sub new-location {
+    my $location = "nowhere"
+    outer-location;
+}
+
+new-location; # -> "outside"
+```
+
+为了让 `new-location()` 能打印 `nowwhere`, 需要使用 `*` link:https://docs.perl6.org/language/variables#The_%2A_Twigil[twigil] 让 `$location` 变为动态变量.
+对于子例程来说, `my` 是默认作用域, 所以 `my sub x( ) { }` 和 `sub x( ) { }` 是一样的.
+
+### our 声明符
+
+our 跟 `my` 的作用类似, 除了把别名引入到符号表之外:
+
+```perl6
+module M {
+    our $Var;
+    # $Var available here
+}
+
+# Available as $M::Var here.
+```
+
+### 声明一组变量
+
+声明符 `my` 和 `our` 接收一组扩在圆括号中的变量作为参数来一次性声明多个变量。
+
+```perl6
+my (@a, $s, %h);
+```
+
+这可以和解构赋值结合使用。任何对这样一个列表的赋值会取得左侧列表中提供的元素数量并且从右侧列表中把对应的值赋值给它们。没有得到赋值的元素会根据变量的类型得到一个未定义值。
+
+```perl6
+my (Str $a, Str $b, Int $c) = <a b>;
+say [$a, $b, $c].perl;
+# OUTPUT«["a", "b", Int]␤»
+```
+
+要把列表解构到一个单个的值中, 通过使用 `($var,)` 创建一个带有一个值的列表字面值。当使用了一个变量声明符时只在单个变量周围提供一个圆括号就足够了。
+
+```perl6
+sub f { 1,2,3 };
+my ($a) = f;
+say $a.perl;
+# OUTPUT«1␤»
+```
+
+要跳过列表中的元素, 使用匿名状态变量 `$`。
+
+```perl6
+my ($,$a,$,%h) = ('a', 'b', [1,2,3], {:1th});
+say [$a, %h].perl;
+# OUTPUT«["b", {:th(1)}]␤»
+```
+
+### has 声明符
+
+`has` 作用在类的实例或 role 的属性上, 还有类或 roles 的方法上. has 隐式作用于方法上, 所以 `has method x() {}` 和 `method x() {}` 做得是相同的事情。
+
+查看link:https://docs.perl6.org/language/objects[面向对象]获取更多文档和例子。
+
+```perl6
+has method x( ) { }
+```
+
+等价于:
+
+```perl6
+method x( ) { }
+```
+
+### anon 声明符
+
+`anon` 声明符阻止符号本安装在词法作用域内, 还有方法表中, 和其它任何地方.
+例如, 你可以使用 `anon` 声明一个知道自己名字的子例程, 但是仍然不会被安装到作用域内:
+
+```perl6
+my %operations =
+    half   => anon sub half($x)   { $x / 2  },
+    square => anon sub square($x) { $x * $x },
+    ;
+say %operations<square>.name;       # square
+say %operations<square>(8);         # 64
+```
+
+### state 声明符
+
+`state` 声明词法作用域变量, 就像 my 那样。然而, **初始化只发生一次**, 就在正常执行流中第一次遇见初始化的时候。因此, state 变量会在闭合块或 程序的多次执行**之间**保留它们的值。
+
+因此, 下面这个子例程:
+
+```perl6
+sub a {
+    state @x;
+    state $l = 'A';
+    @x.push($l++);
+};
+
+say a for 1..6;
+```
+
+会持续增加 `$l` 并在每次被调用时把它追加到 @x 中, 所以它会打印出:
+
+```
+[A]
+[A B]
+[A B C]
+[A B C D]
+[A B C D E]
+[A B C D E F]
+```
+
+This works per "clone" of the containing code object, as in this example:
+
+```perl6
+({ state $i = 1; $i++.say; } xx 3).map: {$_(), $_()}; # says 1 then 2 thrice
+```
+
+注意，这不是一个线程安全的解构, 当同一个 block 的同一个克隆运行在多个线程中时。要知道方法只有每个类一个克隆，而不是每个对象。
+
+至于 `my`，声明多个状态变量必须放置在圆括号中, 而声明一个单一变量，圆括号可以省略。
+
+请注意，许多操作符都伴随着隐式绑定，什么会导致超距作用。使用 `.clone` 或强迫创建一个可以绑定的新容器。
+
+```perl6
+my @a;
+sub f() {
+    state $i;
+    $i++;
+    @a.push: "k$i" => $i # <-- .clone goes here
+};
+f for 1..3;
+dd @a; # «Array $var = $[:k1(3), :k2(3), :k3(3)]»
+```
+
+所有的状态变量都是线程间共享的。这个结果可能是你不希望得到的或危险的。
+
+```perl6
+sub code(){ state $i = 0; say ++$i; $i };
+await
+    start { loop { last if code() >= 5 } },
+    start { loop { last if code() >= 5 } };
+
+# OUTPUT«1␤2␤3␤4␤4␤3␤5␤»
+# OUTPUT«2␤1␤3␤4␤5␤»
+# many other more or less odd variations can be produced
+```
+
+### $ 变量
+
+和显式地声明命名状态变量一样, `$` 能够用作不带显式状态声明的匿名状态变量。
+
+```perl6
+say "1-a 2-b 3-c".subst(:g, /\d/, {<one two three>[$++]});
+# OUTPUT«one-a two-b three-c␤»
+```
+
+更进一步, 状态变量不需要存在于子例程中。你可以, 举个例子, 在单行程序中使用 `$` 在文件中编号行号。
+
+```perl6
+perl6 -ne 'say ++$ ~ " $_"' example.txt
+```
+
+实际上词法范围内每个对 `$` 的引用都是是一个**单独的**变量。
+
+```perl6
+perl6 -e '{ say ++$; say $++  } for ^5'
+# OUTPUT«1␤0␤2␤1␤3␤2␤4␤3␤5␤4␤»
+```
+
+如果在作用域内你需要多次引用 `$` 的值, 那么它应该被拷贝到一个新的变量中。
+
+```perl6
+sub foo() {
+    given ++$ {
+        when 1 {
+            say "one";
+        }
+        when 2 {
+            say "two";
+        }
+        when 3 {
+            say "three";
+        }
+        default {
+            say "many";
+        }
+    }
+}
+
+foo() for ^3;
+# OUTPUT«one␤two␤three␤»
+```
+
+### @ 变量
+
+和 `$` 变量类似, 也有一个位置匿名状态变量 `@`。
+
+```perl6
+sub foo($x) {
+    say (@).push($x);
+}
+
+foo($_) for ^3;
+
+# OUTPUT:
+# [0]
+# [0 1]
+# [0 1 2]
+```
+
+这里的 `@` 是用圆括号括起来了以和名为 `@.push` 的类成员变量消除歧义。索引访问并不需要这种歧义，但你需要拷贝这个值，以便用它做任何有用的事情。
+
+```perl6
+sub foo($x) {
+    my $v = @;
+    $v[$x] = $x;
+    say $v;
+}
+
+foo($_) for ^3;
+
+# OUTPUT:
+# [0]
+# [0 1]
+# [0 1 2]
+```
+
+就和 `$` 一样, 作用域中的每次提及 `@` 就引入了一个新的匿名数组。
+
+### % 变量
+
+最后, 还有一个关联匿名状态变量 `%`。
+
+```perl6
+sub foo($x) {
+    say (%).push($x => $x);
+}
+
+foo($_) for ^3;
+
+# OUTPUT:
+# 0 => 0
+# 0 => 0, 1 => 1
+# 0 => 0, 1 => 1, 2 => 2
+```
+
+关于歧义的同样警告适用。正如你可能期望，索引访问也有可能（使用复制以使之有用）。
+
+```perl6
+sub foo($x) {
+    my $v = %;
+    $v{$x} = $x;
+    say $v;
+}
+
+foo($_) for ^3;
+
+# OUTPUT:
+# 0 => 0
+# 0 => 0, 1 => 1
+# 0 => 0, 1 => 1, 2 => 2
+```
+
+就像其它的匿名状态变量一样, 在给定作用域中每次提及 `%` 最终都会引入一个单独的变量。
+
+### augment 声明符
+
+使用 `augment`, 你可以给已经存在的类或 grammars 增加属性和方法.
+
+因为类通常使用 our 作用域, 因此是全局的, 这意味着修改全局状态, 这是强烈不鼓励的, 对于大部分情况, 有更好的方法.
+
+```perl6
+# don't do this
+use MONKEY-TYPING;
+augment class Int {
+    method is-answer { self == 42 }
+}
+say 42.is-answer;       # True
+```
+
+### temp 前缀
+
+像 my 一样, temp 在作用域的末尾恢复旧的变量值. 然而, temp 不创建新的变量.
+
+```perl6
+my $in = 0; # temp will "entangle" the global variable with the call stack
+            # that keeps the calls at the bottom in order.
+sub f(*@c) {
+    (temp $in)++;
+     "<f>\n"
+     ~ @c>>.indent($in).join("\n")
+     ~ (+@c ?? "\n" !! "")
+     ~ '</f>'
+};
+sub g(*@c) {
+    (temp $in)++;
+    "<g>\n"
+    ~ @c>>.indent($in).join("\n")
+    ~ (+@c ?? "\n" !! "")
+    ~ "</g>"
+};
+print g(g(f(g()), g(), f()));
+
+# OUTPUT:
+# <g>
+#  <g>
+#   <f>
+#    <g>
+#    </g>
+#   </f>
+#   <g>
+#   </g>
+#   <f>
+#   </f>
+#  </g>
+# </g>
+```
+
+### let 前缀
+
+跟 temp 类似, 如果 block 没有成功退出则恢复之前的值。成功的退出意味着该 block 返回了一个定义过的值或一个列表。
+
+```perl6
+my $answer = 42;
+
+{
+    let $answer = 84;
+    die if not Bool.pick;
+    CATCH {
+        default { say "it's been reset :(" }
+    }
+    say "we made it 84 sticks!";
+}
+
+say $answer;
+```
+
+在上面的例子中, 如果 `Bool.pick` 返回 true, 那么答案会保持为 84, 因为那个 block 返回了一个定义了的值(say 返回 true)。
+否则那个 `die` 语句会让那个 block 不成功地退出, 把答案重新设置为 42。
+
+## 类型约束和初始化
+
+变量可以有类型约束, 约束在声明符和变量名之间:
+
+```perl6
+my Int $x = 42;
+$x = 'a string'; # throws an X::TypeCheck::Assignment error
+CATCH { default { put .^name, ': ', .Str } }
+# OUTPUT: X::TypeCheck::Assignment: Type check failed in assignment to $x; expected Int but got Str ("a string")
+```
+
+如果一个标量有类型约束但是没有初始值, 它会使用类型约束的类型对象来初始化.
+
+```perl6
+my Int $x;
+say $x.^name;    # Int
+say $x.defined;  # False
+```
+
+没有显式类型约束的标量的类型为 Mu, 但是默认会是 Any 类型的对象.
+
+带有 @ 符号的变量会被初始化为空的数组; 带有 % 符号的变量会被初始化为空的散列.
+
+变量的默认值可以使用 `is default` 特性设置, 通过把 Nil 赋值给变量来重新应用默认值:
+
+```perl6
+my Real $product is default(1);
+say $product;                       # 1
+$produce *= 5;
+say $product;                       # 5
+$product = Nil;
+say $product;                       # 1
+```
+
+## 默认的有定义的变量指令
+
+为了强制所有的变量拥有一个有定义的约束, 使用 `use variables :D` 指令。这个指令是词法作用域的并且可以使用 `use variables :_` 指令进行切换。
+
+```perl6
+use variables :D;
+my Int $i;
+# OUTPUT«===SORRY!=== Error while compiling <tmp>␤Variable definition of type Int:D (implicit :D by pragma) requires an initializer ...
+my Int $i = 1; # that works
+{ use variables :_; my Int $i; } # 在这个 block 中关掉它
+```
+
+请注意, 赋值 Nil 会把这个变量恢复为它的默认值。一个有定义的约束类型的默认值是类型名加上 `:D`(例如 `Int:D`)。That means a definedness contraint is no guarantee of definedness. 这只适用于变量初始化, 不适用于签名。
+
+## 特殊变量
+
+**Pre-defined lexical variables**
+
+每个代码块中都有3个特别的变量:
+
+|===
+|变量 |意义    
+|$_	  |特殊变量
+|$/	  |正则匹配
+|$!	  |异常
+|===
+
+### $_
+
+`$_` 是特殊变量，在没有显式标识的代码块中，它是默认参数。所以诸如 `for @array { ... }` 和 `given $var { ... }` 之类的结构会将变量绑定给 `$_`.
+
+```perl6
+for <a b c> { say $_ }  # sets $_ to 'a', 'b' and 'c' in turn
+say $_ for <a b c>;     # same, even though it's not a block
+given 'a'   { say $_ }  # sets $_ to 'a'
+say $_ given 'a';       # same, 尽管这不是一个块
+```
+
+CATCH 块将 `$_` 设置为捕获到的异常。 `~~` 智能匹配操作符。
+对 `$_` 调用一个方法可以省略特殊变量 `$_` 的名字，从而写的更短：
+
+```perl6
+.say;                   # 与 $_.say 相同
+```
+
+`m/regex/` 和 `/regex/` 正则匹配 和 `s/regex/subst/` 替换是作用于 `$_` 上的.
+
+```perl6
+say "Looking for strings with non-alphabetic characters...";
+for <ab:c d$e fgh ij*> {
+    .say if m/<!alpha>/;
+}
+```
+
+输出:
+
+```perl6
+Looking for strings with non-alphabetic characters...
+ab:c
+d$e
+ij*
+```
+
+### $/
+
+`$/` 是匹配变量。它存储着最近一次link:https://docs.perl6.org/language/regexes[正则]匹配的结果，通常包含 link:https://docs.perl6.org/type/Match[Match] 类型的对象。
+
+```perl6
+'abc 12' ~~ /\w+/;  # 设置 $/ 为一个Match 对象
+say $/.Str;         # abc
+```
+
+`Grammar.parse` 方法会把调用者的 `$/` 设置为 `Match object` 的结果。看下面的代码:
+
+```perl6
+use XML::Grammar; # panda install XML
+XML.Grammar.parse("<p>some text</p>");
+say $/;
+
+# OUTPUT:
+# ｢<p>some text</p>｣
+#  root => ｢<p>some text</p>｣
+#   name => ｢p｣
+#   child => ｢some text｣
+#    text => ｢some text｣
+#    textnode => ｢some text｣
+#  element => ｢<p>some text</p>｣
+#   name => ｢p｣
+#   child => ｢some text｣
+#    text => ｢some text｣
+#    textnode => ｢some text｣
+```
+
+其他匹配变量是 `$/` 元素的别名：
+
+```perl6
+$0          # same as $/[0]
+$1          # same as $/[1]
+$<named>    # same as $/<named>
+```
+
+### 位置属性
+
+如果正则中有捕获分组, `$/` 中会有位置属性. 它们由圆括号组成.
+
+```perl6
+'abbbbbcdddddeffg' ~~ / a (b+) c (d+ef+) g /;
+say $/[0]; # ｢bbbbb｣
+say $/[1]; # ｢dddddeff｣
+```
+
+这些捕获分组也能使用 `$0`,`$1`,`$2` 等便捷形式取得:
+
+```perl6
+say $0; # ｢bbbbb｣
+say $1; # ｢dddddeff｣
+```
+
+要获取所有的位置属性, 使用 `$/.list`, `@$/`,`@( )` 中的任意一个都可以:
+
+```perl6
+say @().join; # bbbbbdddddeff
+```
+
+### 命名属性
+
+如果正则中有命名捕获分组, `$/` 可以有命名属性, 或者正则调用了另一个正则:
+
+```perl6
+'I.... see?' ~~ / \w+ $<punctuation>=[ <-[\w\s]>+ ] \s* $<final-word> = [ \w+ . ] /;
+say $/<punctuation>; # ｢....｣
+say $/<final-word>;  # ｢see?｣
+```
+
+这些命名捕获分组也能使用便捷形式的 `$<named>` 获取:
+
+```perl6
+say $<punctuation>; # ｢....｣
+say $<final-word>;  # ｢see?｣
+```
+
+要获取所有的命名属性, 使用 `$/.hash`,  `%$/`, `%()`中的任何一个:
+
+```perl6
+say %().join;  # "punctuation     ....final-word  see?"
+```
+
+### $! 变量
+
+`$!` 是错误变量. 如果 `try` block 或语句前缀捕获到异常, 那个异常就会被存储在 `$!` 中。如果没有捕获到异常, 那么 `$!` 会被设置为 Any 类型对象。
+注意, `CATCH` 块不设置 `$!`。CATCH 在 block 中把 `$_` 设置为捕获到的异常。
+
+## 编译时变量
+
+|===
+|Compile-time Variables|说明
+|$?FILE     |  所在文件
+|$?LINE     |  所在行
+|::?CLASS   |  所在类
+|&?ROUTINE  |  所在子例程
+|&?BLOCK    |  所在块
+|%?LANG     |  What is the current set of interwoven languages?
+|%?RESOURCES|  The files associated with the "Distribution" of the current compilation unit.
+|===
+
+```perl6
+for '.' {
+    .Str.say when !.IO.d;
+    .IO.dir()>>.&?BLOCK when .IO.d # lets recurse a little!
+}
+```
+
+
+其它编译时变量：
+
+|===
+|Compile-time Variables|说明
+|$?PACKAGE	|所在包
+|$?MODULE	|所在模块
+|$?CLASS	|所在类(as variable)
+|$?ROLE	    |所在角色(as variable)
+|$?GRAMMAR	|所在 grammar
+|$?TABSTOP	|在 heredoc 或 虚拟边距中 tab 有多少空格
+|$?USAGE	|从 MAIN 程序的签名中生成的使用信息
+|$?ENC	    |Str.encode/Buf.decode/various IO 方法的默认编码.
+|===
+
+## 动态变量
+
+|===
+|Dynamic Variable|说明     
+|$*ARGFILES	|神奇的命令行输入句柄
+|@*ARGS	    |来自命令行的参数
+|$*IN	    |标准输入文件句柄, AKA stdin
+|$*OUT	    |标准输出文件句柄, AKA stdout
+|$*ERR	    |标准错误文件句柄, AKA stderr
+|%*ENV	    |环境变量
+|$*REPO	    |存储安装过的/加载了的模块信息的变量
+|$*TZ	    |系统的本地时区.
+|$*CWD	    |当前工作目录.
+|$*KERNEL	|在哪个内核下运行
+|$*DISTRO	|在哪个操作系统分发下运行
+|$*VM	|在哪个虚拟机下运行
+|$*PERL	|在哪个 Perl 下运行
+|$*PID	|当前进程的进程 ID
+|$*PROGRAM-NAME	|当前可执行程序的路径就像它通过命令行键入一样, 或 -e 如果 perl 引用了 -e 标记
+|$*PROGRAM	|正被执行的 Perl 程序的位置( 以 IO::Path 对象的形式)
+|$*EXECUTABLE	|当前运行的可执行 perl 的绝对路径
+|$*EXECUTABLE-NAME |当前运行的可执行 perl 程序的名字。(e.g. perl6-p, perl6-m, Niecza.exe) 
+|$*USER	|正在运行该程序的用户. 它是一个被求值为 "username (uid)" 的对象. 它只有在被当作字符串时才被求值为用户名, 如果被当作数字则被求值为数值化的用户 id。
+|$*GROUP|运行程序的用户的主要组. 它是被计算为  "groupname (gid)" 的对象.它只有在被当作字符串时才被求值为组名, 如果被当作数字则被求值为数值化的组 id。
+|$*HOME	|代表当前运行程序的用户家目录的 IO::Path 对象。如果家目录不确定则为 Nil。
+|$*SPEC	|程序运行的平台的合适的 IO::Spec 子类, 对于特定操作系统代码,使用智能匹配: say "We are on Windows!" if $*SPEC ~~ IO::Spec::Win32
+|$*TMPDIR   |   代表着 "系统临时目录" 的 IO::Path 对象 
+|$*TOLERANCE|	由 <=~=> 操作符使用并且任何依赖它的操作, 来决定两个值是否近似地相等, 默认为 1e-15。
+|$*THREAD   |   代表当前执行线程的 Thread 对象。
+|$*SCHEDULER|	代表当前默认调度程序的 ThreadPoolScheduler 对象。
+|===
+
+注意 `$*SCHEDULER` 的用法:
+
+对于当前的 Rakudo, 这个默认在方法 `.hyper` 和 `.race` 上采用最大 16 个线程。要更改线程的最大数量, 要么在运行 perl 之前设置环境变量  RAKUDO_MAX_THREADS 的值, 要么在使用 .hyper 或 .race 之前创建一个默认改变了的作用域的拷贝:
+
+```perl6
+my $*SCHEDULER = ThreadPoolScheduler.new( max_threads => 64 );
+```
+
+这种行为在 spec 测试中没有被测试并且还会变化。
+

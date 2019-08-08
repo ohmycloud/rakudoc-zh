@@ -1,0 +1,342 @@
+Perl 6 中的异常是保存有关错误信息的对象。例如，错误可能是意外接收数据或网络连接不再可用，或者丢失文件。异常对象存储的信息是关于错误条件的人类可读消息，错误引发的回溯等等。
+
+所有内置异常都继承自 link:https://docs.perl6.org/type/Exception[Exception]，它提供了一些基本行为，包括回溯的存储和回溯打印机的接口。
+
+## 热异常
+
+通过调用带有描述错误的 link:https://docs.perl6.org/routine/die[die] 函数来使用热异常：
+
+```perl6
+die "oops, something went wrong";
+# RESULT: «oops, something went wrong in block <unit> at my-script.p6:1␤» 
+```
+
+值得注意的是，`die` 会将错误消息打印到标准错误 `$*ERR`。
+
+## 类型化的异常
+
+类型化异常提供有关异常对象中存储的错误的更多信息。
+
+例如，如果在对象上执行 `.zombie copy` 时，所需的路径 `foo/bar` 变得不可用，则可以引发 link:https://docs.perl6.org/type/X::IO::DoesNotExist[X::IO::DoesNotExist]异常：
+
+```perl6
+die X::IO::DoesNotExist.new(:path("foo/bar"), :trying("zombie copy"))
+ 
+# RESULT: «Failed to find 'foo/bar' while trying to do '.zombie copy' 
+#          in block <unit> at my-script.p6:1» 
+```
+
+请注意对象如何为回溯提供有关出错的信息。代码的用户现在可以更轻松地找到并纠正问题。
+
+## 捕获异常
+
+通过提供 `CATCH` 块可以处理异常情况：
+
+```perl6
+die X::IO::DoesNotExist.new(:path("foo/bar"), :trying("zombie copy"));
+ 
+CATCH {
+    when X::IO { $*ERR.say: "some kind of IO exception was caught!" }
+}
+ 
+# OUTPUT: «some kind of IO exception was caught!» 
+```
+
+在这里，我们说如果发生 `X::IO` 类型的任何异常，那么消息 `some kind of IO exception was caught!` 会被发送到 *stderr*，这是 `$*ERR.say` 所做的事情，在那一刻构成标准错误设备的任何内容上显示，默认情况下可能是控制台。
+
+`CATCH` 块使用类似于 `given/when` 对选项进行智能匹配的智能匹配，因此可以捕获和处理 `when` 块内的各种类别的异常。
+
+要处理所有异常，请使用 `default` 语句。此示例打印出与普通回溯打印机几乎相同的信息。
+
+```perl6
+CATCH {
+     default {
+         $*ERR.say: .message;
+         for .backtrace.reverse {
+             next if .file.starts-with('SETTING::');
+             next unless .subname;
+             $*ERR.say: "  in block {.subname} at {.file} line {.line}";
+         }
+     }
+}
+```
+
+请注意，匹配目标是一个角色。要允许用户定义的异常以相同的方式匹配，它们必须实现给定的角色。仅存在于同一名称空间中看起来相似但在 `CATCH` 块中不匹配。
+
+## 异常处理程序和闭合块
+
+在 `CATCH` 处理异常之后，退出包围 `CATCH` 块的块。
+
+换句话说，即使成功处理异常，封闭块中的其余代码也永远不会被执行。
+
+```perl6
+die "something went wrong ...";
+ 
+CATCH {
+    # will definitely catch all the exception 
+    default { .Str.say; }
+}
+ 
+say "This won't be said.";   # but this line will be never reached since 
+                             # the enclosing block will be exited immediately 
+# OUTPUT: «something went wrong ...␤» 
+```
+
+和这个作对比：
+
+```perl6
+CATCH {
+ 
+  CATCH {
+      default { .Str.say; }
+  }
+ 
+  die "something went wrong ...";
+ 
+}
+ 
+say "Hi! I am at the outer block!"; # OUTPUT: «Hi! I am at the outer block!␤» 
+```
+
+有关如何将控制权返回到发生异常的位置，请参阅link:https://docs.perl6.org/language/exceptions#Resuming_of_exceptions[恢复异常]。
+
+## try 块
+
+`try` 块是一个普通块，它隐式打开 link:https://docs.perl6.org/language/pragmas#index-entry-fatal-fatal[use fatal pragma] 编译指示，并包含一个隐式 `CATCH` 块，它会删除异常，这意味着您可以使用它来包含它们。 捕获的异常存储在$中！ 变量，它包含 `Exception` 类型的值。
+
+像这样的普通块将会失败：
+
+```perl6
+{
+    my $x = +"a";
+    say $x.^name;
+} # OUTPUT: «Failure␤» 
+```
+
+但是，`try` 块将包含异常并将其放入 `$!` 变量：
+
+```perl6
+try {
+    my $x = +"a";
+    say $x.^name;
+}
+ 
+if $! { say "Something failed!" } # OUTPUT: «Something failed!␤» 
+say $!.^name;                     # OUTPUT: «X::Str::Numeric␤» 
+```
+
+在这样的块中抛出的任何异常都将被 `CATCH` 块捕获，无论是隐式的还是由用户提供的。在后一种情况下，任何未处理的异常都将被重新抛出。如果您选择不处理异常，则它们将被块包含。
+
+```perl6
+try {
+    die "Tough luck";
+    say "Not gonna happen";
+}
+ 
+try {
+    fail "FUBAR";
+}
+```
+
+在上面的两个 `try` 块中，异常将包含在块中，但不会运行 `say` 语句。但我们可以处理它们：
+
+```perl6
+class E is Exception { method message() { "Just stop already!" } }
+ 
+try {
+    E.new.throw; # this will be local 
+ 
+    say "This won't be said.";
+}
+ 
+say "I'm alive!";
+ 
+try {
+    CATCH {
+        when X::AdHoc { .Str.say; .resume }
+    }
+ 
+    die "No, I expect you to DIE Mr. Bond!";
+ 
+    say "I'm immortal.";
+ 
+    E.new.throw;
+ 
+    say "No, you don't!";
+}
+```
+
+这会输出：
+
+```
+I'm alive!
+No, I expect you to DIE Mr. Bond!
+I'm immortal.
+Just stop already!
+  in block <unit> at exception.p6 line 21
+```
+
+由于 `CATCH` 块只处理 `die` 语句抛出的 `X::AdHoc` 异常，而不处理 `E` 异常。 如果没有 `CATCH` 块，所有异常都将被包含和删除，如上所示。 恢复将在异常抛出后立即恢复执行; 在这种情况下，在 `die` 语句中。 有关详细信息，请参阅有关link:https://docs.perl6.org/language/exceptions#Resuming_of_exceptions[恢复异常]的部分。
+
+`try-block` 是一个普通的块，因此将其最后一个语句视为自身的返回值。 因此，我们可以将其用作右手边。
+
+```perl6
+say try { +"99999" } // "oh no"; # OUTPUT: «99999␤» 
+say try { +"hello" } // "oh no"; # OUTPUT: «oh no␤» 
+```
+
+通过返回表达式的返回值来间接尝试块支持 `else` 块，如果抛出异常，则返回 link:https://docs.perl6.org/type/Nil[Nil]。
+
+```perl6
+with try +"♥" {
+    say "this is my number: $_"
+} else {
+    say "not my number!"
+}
+# OUTPUT: «not my number!␤» 
+```
+
+`try` 也可以和语句一块用而非块：
+
+```perl6
+say try "some-filename.txt".IO.slurp // "sane default";
+# OUTPUT: «sane default␤» 
+```
+
+`try` 实际导致的是，通过 `use fatal pragma`，立即抛出在其范围内发生的异常，但通过这样做，从抛出异常的点调用 `CATCH` 块，定义其范围。
+
+```perl6
+my $error-code = "333";
+sub bad-sub {
+    die "Something bad happened";
+}
+try {
+    my $error-code = "111";
+    bad-sub;
+ 
+    CATCH {
+        default {
+            say "Error $error-code ", .^name, ': ',.Str
+        }
+    }
+}
+# OUTPUT: «Error 111 X::AdHoc: Something bad happened␤» 
+```
+
+## 抛出异常
+
+可以使用Exception对象的 `.throw` 方法显式抛出异常。
+
+此示例抛出 AdHoc 异常，捕获它并允许代码通过调用 `.resume` 方法从异常点继续。
+
+```perl6
+{
+    X::AdHoc.new(:payload<foo>).throw;
+    "OHAI".say;
+    CATCH {
+        when X::AdHoc { .resume }
+    }
+}
+ 
+"OBAI".say;
+ 
+# OUTPUT: «OHAI␤OBAI␤» 
+```
+
+如果 CATCH 块与抛出的异常不匹配，则将异常的有效负载传递给回溯打印机制。
+
+```perl6
+{
+    X::AdHoc.new(:payload<foo>).throw;
+    "OHAI".say;
+    CATCH {  }
+}
+ 
+"OBAI".say;
+ 
+# RESULT: «foo 
+#          in block <unit> at my-script.p6:1» 
+```
+
+下一个示例不会从异常点恢复。相反，它会在封闭块之后继续，因为捕获了异常，然后在 CATC H块之后控制继续。
+
+```perl6
+{
+    X::AdHoc.new(:payload<foo>).throw;
+    "OHAI".say;
+    CATCH {
+        when X::AdHoc { }
+    }
+}
+ 
+"OBAI".say;
+ 
+# OUTPUT: «OBAI␤» 
+```
+
+throw 可以被视为 die 的方法形式，只是在这种特殊情况下，例程的 sub 和 method 形式有不同的名称。
+
+## 异常恢复
+
+异常会中断控制流并将其从抛出语句后的语句中转移出去。可以恢复用户处理的任何异常，并且控制流将继续使用抛出异常的语句之后的语句。为此，请在异常对象上调用方法 `.resume`。
+
+```perl6
+CATCH { when X::AdHoc { .resume } }         # this is step 2 
+ 
+die "We leave control after this.";         # this is step 1 
+ 
+say "We have continued with control flow."; # this is step 3 
+```
+
+恢复将在导致异常的语句之后和最里面的调用帧中发生
+
+```perl6
+sub bad-sub {
+    die "Something bad happened";
+    return "not returning";
+}
+ 
+{
+    my $return = bad-sub;
+    say "Returned $return";
+    CATCH {
+        default {
+            say "Error ", .^name, ': ',.Str;
+            $return = '0';
+            .resume;
+ 
+        }
+    }
+}
+# OUTPUT: 
+# Error X::AdHoc: Something bad happened 
+# Returned not returning 
+```
+
+在这种情况下，`.resume` 将转到在 `die` 语句之后发生的 `return` 语句。请注意，`$return` 的赋值不起作用，因为 CATCH 语句发生在对 `bad-sub` 的调用中，`bad-sub` 通过 `return` 语句为其分配不返回的值。
+
+## 未捕获的异常
+
+如果抛出异常但未捕获异常，则会导致程序以非零状态代码退出，并且通常会将消息输出到程序的标准错误流。通过在异常对象上调用 `gist` 方法获得此消息。您可以使用它来抑制打印回溯的默认行为以及消息：
+
+```perl6
+class X::WithoutLineNumber is X::AdHoc {
+    multi method gist(X::WithoutLineNumber:D:) {
+            $.payload
+    }
+}
+die X::WithoutLineNumber.new(payload => "message")
+ 
+# prints "message\n" to $*ERR and exits, no backtrace 
+```
+
+## 控制异常
+
+某些关键字会引发控制异常，并自动或由相应的 phaser 处理。任何未处理的控制异常都将转换为正常异常。
+
+```perl6
+{ return; CATCH { default { $*ERR.say: .^name, ': ',.Str } } }
+ 
+# OUTPUT: «X::ControlFlow::Return: Attempt to return outside of any Routine␤» 
+# was CX::Return 
+```

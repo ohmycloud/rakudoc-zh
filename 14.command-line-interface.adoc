@@ -1,0 +1,328 @@
+==  命令行接口 - 概述
+
+Perl 6 脚本的默认命令行界面由三部分组成：
+
+=== 将命令行参数解析为捕获
+
+这将查看 link:https://docs.perl6.org/language/variables#index-entry-%40%2AARGS[@*ARGS] 中的值，根据某些策略解释这些值，并创建一个 `Capture` 对象。解析器的替代方式可以由开发者提供或使用模块安装。
+
+=== 使用该捕获调用提供的MAIN子例程
+
+标准多link:https://docs.perl6.org/language/functions#index-entry-declarator_multi-Multi-dispatch[分重分派]用于使用生成的 `Capture` 对象调用 MAIN 子例程。这意味着您的 MAIN子 例程可能是一个 `multi sub`，其中每个候选程序负责处理给定命令行参数的某些部分。
+
+=== 如果调用 MAIN 失败，则创建/显示使用信息
+
+如果多重分派失败，则应尽可能通知脚本的用户失败的原因。默认情况下，这是通过检查每个 MAIN 候选 sub 的签名以及任何关联的 pod 信息来完成的。然后在 STDERR 上向用户显示结果（如果指定了 `--help`，则在 STDOUT 上显示）。生成使用信息的替代方式可以由开发者提供或使用模块安装。
+
+=== sub MAIN
+
+在运行所有相关的输入phasers（`BEGIN`，`CHECK`，`INIT`，`PRE`，`ENTER`）并执行脚本的主线之后，将执行具有特殊名称 MAIN 的子程序。如果没有 MAIN sub，则不会发生错误：您的脚本只需要在脚本的主线中执行工作，例如参数解析。
+
+从 MAIN sub 的任何正常退出将导致退出代码为 `0`，表示成功。 MAIN 子的任何返回值都将被忽略。如果抛出未在 MAIN 子内部处理的异常，则退出代码将为 `1`。如果调度到 `MAIN` 失败，则在 STDERR 上将显示一条用法消息，退出代码将为 2。
+
+命令行参数存在于 `@*ARGS` 动态变量中，并且可以在调用 MAIN 单元之前在脚本的主线中进行更改。
+
+（多个子 MAIN 的候选者）的签名确定使用标准link:https://docs.perl6.org/language/glossary#index-entry-Multi-Dispatch[多重分派]语义实际调用哪个候选者。
+
+一个简单的例子：
+
+```perl6
+# inside file 'hello.p6' 
+sub MAIN($name) {
+    say "Hello $name, how are you?"
+}
+```
+
+如果您调用该脚本没有任何参数：
+
+```shell
+$ perl6 hello.p6
+Usage:
+  hello.p6 <name>
+```
+
+但是，如果为参数指定默认值，则无论是否指定名称，运行脚本始终有效：
+
+```perl6
+# inside file 'hello.p6' 
+sub MAIN($name = 'bashful') {
+    say "Hello $name, how are you?"
+}
+```
+
+```shell
+$ perl6 hello.p6
+Hello bashful, how are you?
+```
+
+```shell
+$ perl6 hello.p6 Liz
+Hello Liz, how are you?
+```
+
+另一种方法是使 `sub MAIN` 成为一个 `multi sub`：
+
+```perl6
+# inside file 'hello.p6' 
+multi sub MAIN()      { say "Hello bashful, how are you?" }
+multi sub MAIN($name) { say "Hello $name, how are you?"   }
+```
+
+这将提供与上述示例相同的输出。您是否应该使用任何一种方法来实现预期目标完全取决于您。
+
+使用单个位置和多个命名参数的更复杂的示例：
+
+```perl6
+# inside "frobnicate.p6" 
+sub MAIN(
+  Str   $file where *.IO.f = 'file.dat',
+  Int  :$length = 24,
+  Bool :$verbose
+) {
+    say $length if $length.defined;
+    say $file   if $file.defined;
+    say 'Verbosity ', ($verbose ?? 'on' !! 'off');
+}
+```
+
+有了 `file.dat`，这将以这种方式工作：
+
+```shell
+$ perl6 frobnicate.p6
+24
+file.dat
+Verbosity off
+```
+
+或者这样 `--verbose`：
+
+```shell
+$ perl6 frobnicate.p6 --verbose
+24
+file.dat
+Verbosity on
+```
+
+如果文件 `file.dat` 不存在，或者您指定了另一个不存在的文件名，您将获得从 `MAIN` 子的内省创建的标准用法消息：
+
+```shell
+$ perl6 frobnicate.p6 doesntexist.dat
+Usage:
+  frobnicate.p6 [--length=<Int>] [--verbose] [<file>]
+```
+
+虽然您不必在代码中执行任何操作，但它仍然可能被视为有点简洁。但是通过使用 pod 功能提供提示，有一种简单的方法可以更好地使用该消息：
+
+```perl6
+# inside "frobnicate.p6" 
+sub MAIN(
+  Str   $file where *.IO.f = 'file.dat',  #= an existing file to frobnicate 
+  Int  :$length = 24,                     #= length needed for frobnication 
+  Bool :$verbose,                         #= required verbosity 
+) {
+    say $length if $length.defined;
+    say $file   if $file.defined;
+    say 'Verbosity ', ($verbose ?? 'on' !! 'off');
+}
+```
+
+哪个会改善这样的用法消息：
+
+```shell
+$ perl6 frobnicate.p6 doesntexist.dat
+Usage:
+  frobnicate.p6 [--length=<Int>] [--verbose] [<file>]
+ 
+    [<file>]          an existing file to frobnicate
+    --length=<Int>    length needed for frobnication
+    --verbose         required verbosity
+```
+
+=== %*SUB-MAIN-OPTS
+
+通过设置 `%*SUB-MAIN-OPTS` 哈希中的选项，可以在将参数传递给 `sub MAIN {}` 之前更改参数的处理方式。由于动态变量的性质，需要设置 `%*SUB-MAIN-OPTS` 哈希并使用适当的设置填充它。例如：
+
+```perl6
+my %*SUB-MAIN-OPTS =
+  :named-anywhere,    # allow named variables at any location 
+  # other possible future options / custom options 
+;
+sub MAIN ($a, $b, :$c, :$d) {
+    say "Accepted!"
+}
+```
+
+可用选项包括：
+
+=== named-anywhere
+
+默认情况下，传递给程序的命名参数（即 `MAIN`）在任何位置参数后都不会出现。但是，如果将 `%*SUB-MAIN-OPTS<named-anywhere>` 设置为 true 值，则可以在任何位置指定命名参数，即使在位置参数之后也是如此。例如，可以使用以下命令调用上述程序：
+
+```shell
+$ perl6 example.p6 1 --c=2 3 --d=4
+```
+
+=== is hidden-from-USAGE
+
+有时您希望排除MAIN候选者显示在任何自动生成的使用消息中。这可以通过向您不想显示的 MAIN 候选者的规范添加 `hidden-from-USAGE` 特征来实现。扩展前面的例子：
+
+```perl6
+# inside file 'hello.p6' 
+multi sub MAIN() is hidden-from-USAGE {
+    say "Hello bashful, how are you?"
+}
+multi sub MAIN($name) {  #= the name by which you would like to be called 
+    say "Hello $name, how are you?"
+}
+```
+
+因此，如果您只使用命名变量调用此脚本，您将获得以下用法：
+
+```perl6
+$ perl6 hello.p6 --verbose
+Usage:
+  hello.p6 <name> -- the name by which you would like to be called
+```
+
+没有第一个候选者 `hidden-from-USAGE` 特征，它看起来像这样：
+
+```perl6
+$ perl6 hello.p6 --verbose
+Usage:
+  hello.p6
+  hello.p6 <name> -- the name by which you would like to be called
+```
+
+虽然技术上是正确的，但也不能读。
+
+=== MAIN 的单位作用域定义
+
+如果整个程序体驻留在 `MAIN` 中，则可以使用单位声明符，如下所示（调整前面的示例）：
+
+```perl6
+unit sub MAIN(
+  Str   $file where *.IO.f = 'file.dat',
+  Int  :$length = 24,
+  Bool :$verbose,
+);  # <- note semicolon here 
+ 
+say $length if $length.defined;
+say $file   if $file.defined;
+say 'Verbosity ', ($verbose ?? 'on' !! 'off');
+# rest of script is part of MAIN 
+```
+
+请注意，这只适用于只有一个（仅）`sub MAIN` 的情况。
+
+=== sub USAGE 
+
+如果找不到给定命令行参数的 `MAIN` 的多候选者，则调用 sub `USAGE`。如果未找到此类方法，编译器将输出默认用法消息。
+
+```perl6
+#|(is it the answer) 
+multi MAIN(Int $i) { say $i == 42 ?? 'answer' !! 'dunno' }
+#|(divide two numbers) 
+multi MAIN($a, $b){ say $a/$b }
+ 
+sub USAGE() {
+    print Q:c:to/EOH/; 
+    Usage: {$*PROGRAM-NAME} [number]
+ 
+    Prints the answer or 'dunno'.
+EOH
+}
+```
+
+通过只读 `$*USAGE` 变量，sub `USAGE` 内的默认用法消息可用。它将基于可用的 `sub MAIN` 候选者及其参数生成。如前所示，您可以使用 `#|(...)` Pod 块为每个候选项指定其他扩展描述以设置 link:https://docs.perl6.org/routine/WHY[WHY]。
+
+
+=== 拦截 CLI 参数解析(2018.10, v6.d and later)
+
+您可以通过自己提供 `ARGS-TO-CAPTURE` 子例程，或者从生态系统中可用的任何 link:https://modules.perl6.org/search/?q=getopt[Getopt] 模块中导入一个子例程来替换或扩充参数解析的默认方式。
+
+=== sub ARGS-TO-CAPTURE
+
+`ARGS-TO-CAPTURE` 子程序应该接受两个参数：一个 link:https://docs.perl6.org/type/Callable[Callable] 表示要执行的 `MAIN` 单元（因此可以在必要时进行内省）和一个带有来自命令行的参数的数组。它应该返回一个将用于调度 `MAIN` 单元的 link:https://docs.perl6.org/type/Capture[Capture] 对象。一个非常人为的例子，它将根据输入的某个关键字创建一个 `Capture`（在测试脚本的命令行界面时可以很方便）：
+
+```perl6
+sub ARGS-TO-CAPTURE(&main, @args --> Capture) {
+    # if we only specified "frobnicate" as an argument 
+    @args == 1 && @args[0] eq 'frobnicate'
+      # then dispatch as MAIN("foo","bar",verbose => 2) 
+      ?? Capture.new( list => <foo bar>, hash => { verbose => 2 } )
+      # otherwise, use default processing of args 
+      !! &*ARGS-TO-CAPTURE(&main, @args)
+}
+```
+
+请注意，动态变量 link:https://docs.perl6.org/language/variables#%26%2AARGS-TO-CAPTURE[&*ARGS-TO-CAPTURE] 可用于执行捕获处理的默认命令行参数，因此如果您不想，则不必重新发明整个轮子。
+
+=== 拦截使用消息生成（2018.10，v6.d及更高版本）
+
+您可以通过自己提供 `GENERATE-USAGE` 子例程，或者从生态系统中可用的任何 link:https://modules.perl6.org/search/?q=getopt[Getopt] 模块导入一个子例程来替换或扩充默认的使用方式消息生成方式（在向 MAIN 发送失败之后）。
+
+#### sub RUN-MAIN
+
+定义为：
+
+```perl6
+sub RUN-MAIN(&main, $mainline, :$in-as-argsfiles)
+```
+
+该程序允许完全控制 `MAIN` 的处理。它得到一个 `Callable`，它是应该执行的 `MAIN`，主线执行的返回值和其他命名变量:: `in-as-argsfiles` 如果 STDIN 应该被视为 `$*ARGFILES`，它将为 `True`。
+
+如果未提供 `RUN-MAIN`，将运行默认的 `RUN-MAIN` 以查找旧接口的子例程，例如 `MAIN_HELPER` 和 `USAGE`。如果找到，将执行“旧”语义。
+
+```perl6
+class Hero {
+    has @!inventory;
+    has Str $.name;
+    submethod BUILD( :$name, :@inventory ) {
+        $!name = $name;
+        @!inventory = @inventory
+    }
+}
+ 
+sub new-main($name, *@stuff ) {
+    Hero.new(:name($name), :inventory(@stuff) ).perl.say
+}
+ 
+RUN-MAIN( &new-main, Nil );
+```
+
+这将打印生成的对象的名称（第一个参数）。
+
+=== sub GENERATE-USAGE
+
+`GENERATE-USAGE` 子例程应该接受一个 `Callable`，表示由于调度失败而未执行的 `MAIN` 子例程。这可以用于内省。所有其他参数都是设置为发送到MAIN的参数。它应该返回您想要显示给用户的使用信息的字符串。这个例子只是重新创建从处理参数创建的 `Capture`：
+
+```perl6
+sub GENERATE-USAGE(&main, |capture) {
+    capture<foo>:exists
+      ?? "You're not allowed to specify a --foo"
+      !! &*GENERATE-USAGE(&main, |capture)
+}
+```
+
+您还可以使用 multi 子例程来创建相同的效果：
+
+```perl6
+multi sub GENERATE-USAGE(&main, :$foo!) {
+    "You're not allowed to specify a --foo"
+}
+multi sub GENERATE-USAGE(&main, |capture) {
+    &*GENERATE-USAGE(&main, |capture)
+}
+```
+
+请注意，动态变量 link:https://docs.perl6.org/language/variables#%26%2AGENERATE-USAGE[`&*GENERATE-USAGE`] 可用于执行默认使用消息生成，因此您不必重新发明整个轮子。
+
+=== 拦截 MAIN 调用（2018.10之前，v6.e）
+
+较旧的接口使得一个接口完全拦截对 `MAIN` 的调用。这取决于是否存在 `MAIN_HELPER` 子程序，如果在程序的主线中找到 `MAIN` 子程序，则该子程序将被调用。
+
+此接口从未记录过。但是，使用此未记录的界面的任何程序将继续运行，直到 `v6.e`。从 `v6.d` 开始，使用未记录的 API 将导致 `DEPRECATED` 消息。
+
+生态系统模块可以提供新旧接口，以便与旧版本的 Perl 6 兼容：如果较新的 Perl 6 识别出新的（记录的）接口，它将使用它。如果没有可用的新接口子例程，但旧的 `MAIN_HELPER` 接口是，那么它将使用旧接口。
+
+如果模块开发人员决定仅为 `v6.d` 或更高版本提供模块，则可以从模块中删除对旧接口的支持。

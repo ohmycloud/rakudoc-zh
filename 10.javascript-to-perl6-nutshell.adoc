@@ -1,0 +1,886 @@
+== Javascript 到 Perl 6 - 简而言之
+
+此页面试图为有经验的  Node.js 用户提供学习 Perl 6 的方法。这里将解释两种语言之间通用的功能，以及语法和功能上的主要差异。
+
+这不是学习 Perl 6 的教程; 对于中高级技能级别的 Node.js 用户，这只是一个参考。
+
+=== 基础语法
+
+==== "Hello, world!"
+
+Let's start with the typical first program when learning new languages. In Node.js, a hello world program would be written like this:
+
+让我们从学习新语言时第一个典型的程序开始。在 Node.js 中，hello world 程序将编写如下：
+
+```js
+console.log('Hello, world!');
+```
+
+以下是在 Perl 6 中以相同方式编写此内容的几种方法：
+
+```perl6
+say('Hello, world!');
+say 'Hello, world!';
+```
+
+对于 Perl 6 中的函数调用，括号是可选的。虽然分号在 Node.js 中大多是可选的，但对于 Perl 6 中的表达式而言分号是必需的。
+
+现在我们对世界打过招呼了，让我们迎接我们的好朋友 Joe。我们将再次从 Node.js 开始：
+
+```js
+let name = 'Joe';
+console.log('What\'s up,' + name + '?');
+console.log(`What's up, {name}?`);
+console.log("What's up, ", name, "?");
+```
+
+因为他没有听到我们，所以让我再问候他一次，这次是在 Perl 6 中：
+
+```perl6
+my $name = 'Joe';
+say 'What\'s up, ' ~ $name ~ '?';
+say "What's up, $name?";
+say "What's up, ", $name, "?";
+```
+
+这里只有几个不同之处：Perl 6 中的大多数变量都有所谓的 sigils，这就是它名称前面的 `$`，字符串连接使用 `~` 运算符代替 `+`。这两种语言的共同点是支持字符串插值。
+
+基本的例子就到这里了，让我们更详细地解释两种语言之间的相似之处。
+
+==== 变量
+
+Node.js 中的变量可以像这样定义;
+
+```js
+var foo = 1;    // Lexically scoped with functions and modules
+let foo = 1;    // Lexically scoped with blocks
+const foo = 1;  // Lexically scoped with blocks; constant
+ 
+global.foo = 1; // Dynamically scoped; global
+foo = 1;        // Ditto, but implicit; forbidden in strict mode
+```
+
+In Perl 6 there is no equivalent to `var`. An important note to make is that there is no variable hoisting in Perl 6; variables are defined and assigned at the line they're on, not defined at the top of its scope and later assigned at that line.
+
+This is how the equivalent types of variables are defined in Perl 6:
+
+在 Perl 6 中没有 `var` 的等价物。需要注意的一点是，Perl 6 中没有可变的吊装; 变量在它们所在的行上定义和分配，未在其作用域的顶部定义，稍后在该行赋值。
+
+这是在 Perl 6 中定义等效类型的变量的方式：
+
+```perl6
+my $foo = 1;      # Lexically scoped with blocks 
+our $foo = 1;     # Lexically scoped with blocks and modules 
+constant foo = 1; # Lexically scoped with blocks and modules; constant 
+ 
+my $*foo = 1;       # Dynamically scoped with blocks 
+OUR::<$foo> = 1;    # Dynamically scoped with blocks and modules 
+GLOBAL::<$foo> = 1; # Dynamically scoped; global 
+```
+
+Use `my` where you'd use `let`, `our` for variables you'd define in the outermost scope needed, and `constant` where you'd uses `const`.
+
+Dynamically scoped variables are not referred to in the same way as lexically scoped ones like they are in Node.js. User-defined ones use either a `$*`, `@*`, `%*`, or `&*` twigil. Refer to the documentation on link:https://docs.perl6.org/language/variables[variables] for more information on sigils, twigils, and variable containers.
+
+Variables in Node.js can override others from outer scopes with the same name (though linters will usually complain about it depending on how they're configured):
+
+使用`my`您使用的位置`let`，`our`您需要在最外层范围内定义的变量以及`constant`您使用的位置`const`。
+
+动态范围变量的引用方式与它们在Node.js中的词汇范围变量相同。用户定义的那些使用一个`$*`，`@*`，`%*`，或`&*`twigil。有关sigils，twigils和变量容器的更多信息，请参阅有关link:https://docs.perl6.org/language/variables[变量]的文档。
+
+Node.js中的变量可以覆盖具有相同名称的外部作用域中的其他变量（尽管linters通常会根据它们的配置方式来抱怨它）：
+
+```js
+let foo = 1;
+function logDupe() {
+    let foo = 2;
+    console.log(foo);
+}
+ 
+logDupe(2);       // 2
+console.log(foo); // 1
+```
+
+Perl 6 also allows this:
+
+Perl 6 也允许这样：
+
+```perl6
+my $foo = 1;
+sub log-dupe {
+    my $foo = 2;
+    say $foo;
+}
+ 
+log-dupe; # 2 
+say $foo; # 1 
+```
+
+==== 运算符
+
+===== 赋值
+
+The `=` operator works the same across both languages.
+
+The `:=` operator in Perl 6 binds a value to a variable. Binding a variable to another variable gives them the same value and container, meaning mutating attributes of one will mutate the other's as well. Bound variables cannot be reassigned with `=` or mutated with `++`, `--`, etc. but they can be bound to another value again:
+
+`=` 运算符可以跨两种语言相同。
+
+Perl 6 中的 `:=` 运算符将值绑定到变量。将变量绑定到另一个变量会为它们提供相同的值和容器，这意味着一个变量属性也会改变另一个变量。绑定变量不能被重新分配`=`或突变`++`，`--`等，但它们可以被重新绑定到另一个值：
+
+```perl6
+my %map;            # This is a hash, roughly equivalent to a JS object or map 
+my %unbound = %map;
+my %bound := %map;
+%map<foo> = 'bar';
+say %unbound;       # {} 
+say %bound;         # {foo => bar} 
+ 
+%bound := %unbound;
+say %bound;         # {} 
+```
+
+===== 相等
+
+Node.js has two equality operators: `==` and `===`.
+
+`==` is the loose equality operator. When comparing operands with the same type, it will return true if both operands are equal. However, if the operands are different types, they are both cast to their primitives before being compared, meaning these will return true:
+
+Node.js有两个相等运算符：`==`和`===`。
+
+`==`是松散的平等算子。比较具有相同类型的操作数时，如果两个操作数相等，则返回true。但是，如果操作数是不同的类型，它们在被比较之前都被转换为它们的基元，这意味着它们将返回true：
+
+```perl6
+console.log(1 == 1);   // true
+console.log('1' == 1); // true
+console.log([] == 0);  // true
+```
+
+Similarly, in Perl 6, both operands are cast to Numeric before comparison if they don't share the same type:
+
+类似地，在Perl 6中，如果它们不共享相同的类型，则在比较之前将两个操作数强制转换为Numeric：
+
+```perl6
+say 1 == 1;       # True 
+say '1' == 1;     # True 
+say [1,2,3] == 3; # True, since the array has three elements 
+```
+
+The inverse of `==` is `!=`.
+
+Perl 6 has another operator similar to `==`: `eq`. Instead of casting operands to Numeric if they're different types, `eq` will cast them to strings:
+
+倒数`==`是`!=`。
+
+Perl 6有另一个类似于的运算符`==`：`eq`。如果它们是不同的类型，而不是将操作数转换为Numeric，而不是`eq`将它们转换为字符串：
+
+```perl6
+say '1' eq '1'; # True 
+say 1 eq '1';   # True 
+```
+
+The inverse of `eq` is `ne` or `!eq`.
+
+`===` is the strict equality operator. This returns true if both operands are the same value. When comparing objects, this will *only* return true if they are the exact same object:
+
+逆的`eq`是`ne`或`!eq`。
+
+`===`是严格的相等运算符。如果两个操作数是相同的值，则返回true。比较对象时，如果它们是完全相同的对象，*则只*返回true：
+
+```js
+console.log(1 === 1);   // true
+console.log('1' === 1); // false
+console.log({} === {}); // false
+ 
+let obj = {};
+let obj2 = obj;
+console.log(obj === obj2); // true;
+```
+
+In Perl 6, the operator behaves the same, with one exception: two objects that have the same value, but different containers, will return false:
+
+在Perl 6中，运算符的行为相同，但有一个例外：两个具有相同值但容器不同的对象将返回false：
+
+```perl6
+say 1 === 1; # True 
+say '1' === 1; # True 
+say {} === {};  # False 
+ 
+my \hash = {};
+my %hash = hash;
+say hash === %hash; # False 
+```
+
+In the last case it's the same object, but containers are different, which is why it returns False.
+
+The inverse of `===` is `!==`.
+
+This is where Perl 6's other equality operators are useful. If the values have different containers, the `eqv` operator can be used. This operator can be also be used to check for deep equality, which you would normally need to use a library for in Node.js:
+
+在最后一种情况下，它是相同的对象，但容器是不同的，这就是它返回False的原因。
+
+倒数`===`是`!==`。
+
+这是Perl 6的其他相等运算符很有用的地方。如果值具有不同的容器，则`eqv`可以使用操作员。此运算符也可用于检查深度相等性，通常需要在Node.js中使用库：
+
+```perl6
+say {a => 1} eqv {a => 1}; # True; 
+ 
+my \hash = {};
+my %hash := hash;
+say hash eqv %hash; # True 
+```
+
+In the case you need to check if two variables have the same container and value, use the `=:=` operator.
+
+如果您需要检查两个变量是否具有相同的容器和值，请使用`=:=`运算符。
+
+```perl6
+my @arr = [1,2,3];
+my @arr2 := @arr;   # Bound variables keep the container of the other variable 
+say @arr =:= @arr2; # True 
+```
+
+===== Smartmatching
+
+Perl 6 has one last operator for comparing values, but it is not exactly an equality operator. This is `~~`, the smartmatch operator. This has several uses: it can be used like `instanceof` in Node.js, to match a regex, and to check if a value is a key in a hash, bag, set, or map:
+
+Perl 6有一个用于比较值的最后一个运算符，但它不完全是一个相等运算符。这就是`~~`smartmatch运营商。这有几个用途：它可以像`instanceof`在Node.js中一样使用，以匹配正则表达式，并检查值是否是散列，包，集或映射中的键：
+
+```perl6
+say 'foo' ~~ Str; # True 
+ 
+my %hash = a => 1;
+say 'a' ~~ %hash; # True 
+ 
+my $str = 'abc';
+$str ~~ s/abc/def/; # Mutates $str, like foo.replace('abc', 'def') 
+say $str;           # def 
+```
+
+While we are talking about `instanceof`, the equivalent to the `constructor` property on Node.js objects in Perl 6 is the `WHAT`attribute:
+
+在我们讨论的时候`instanceof`，`constructor`Perl 6中Node.js对象的属性相当于`WHAT`属性：
+
+```js
+console.log('foo'.constructor); // OUTPUT: String
+say 'foo'.WHAT; # OUTPUT: Str 
+```
+
+===== Numeric
+
+Node.js has `+`, `-`, `/`, `*`, `%`, and (in ES6) `**` as numeric operators. When the operands are different types, similarly to the equality operators, are cast to their primitives before following through with the operation, making this possible:
+
+Node.js的有`+`，`-`，`/`，`*`，`%`，和（在ES6）`**`作为数字运算符。当操作数是不同类型时，类似于相等运算符，在执行操作之前会转换为它们的基元，从而使这成为可能：
+
+```js
+console.log(1 + 2);   // 3
+console.log([] + {}); // [object Object]
+console.log({} + []); // 0
+```
+
+In Perl 6, again, they are converted to a Numeric type, as before:
+
+在Perl 6中，它们再次转换为数字类型，如前所述：
+
+```perl6
+say 1 + 2;        # 3 
+say [] + {};      # 0 
+say {} + [1,2,3]; # 3 
+```
+
+In addition, Perl 6 has `div` and `%%`. `div` behaves like `int` division in C, while `%%` checks if one number is cleanly divisible by another or not:
+
+另外，Perl 6有`div`和`%%`。`div`表现得像`int`C中的分裂，同时`%%`检查一个数字是否可以被另一个数字完全整除：
+
+```perl6
+say 4 div 3; # 1 
+say 4 %% 3;  # False 
+say 6 %% 3;  # True 
+```
+
+===== Bitwise
+
+Node.js has `&`, `|`, `^`, `~`, `<<`, `>>`, `>>>`, and `~` for bitwise operators:
+
+Node.js的有`&`，`|`，`^`，`~`，`<<`，`>>`，`>>>`，和`~`对位运算符：
+
+```js
+console.log(1 << 1);  // 2
+console.log(1 >> 1);  // 0
+console.log(1 >>> 1); // 0
+console.log(1 & 1);   // 1
+console.log(0 | 1);   // 1
+console.log(1 ^ 1);   // 0
+console.log(~1);      // -2
+```
+
+In Perl 6, there is no equivalent to `>>>`. All bitwise operators are prefixed with `+`, however two's complement uses `+^` instead of `~`:
+
+在Perl 6中，没有相当于`>>>`。所有按位运算符都以前缀为前缀`+`，但是使用两个补码`+^`而不是`~`：
+
+```perl6
+say 1 +< 1; # 2 
+say 1 +> 1; # 0 
+            # No equivalent for >>> 
+say 1 +& 1; # 1 
+say 0 +| 1; # 1 
+say 1 +^ 1; # 0 
+say +^1;    # -2 
+```
+
+===== Custom operators and operator overloading
+
+Node.js does not allow operator overloading without having to use a Makefile or build Node.js with a custom version of V8. Perl 6 allows custom operators and operator overloading natively! Since all operators are subroutines, you can define your own like so:
+
+Node.js不允许运算符重载而不必使用Makefile或使用自定义版本的V8构建Node.js. Perl 6允许自定义操作符和操作符本机重载！由于所有运算符都是子程序，因此您可以像这样定义自己的运算符：
+
+```perl6
+multi sub infix:<||=>($a, $b) is equiv(&infix:<+=>) { $a || $b }
+ 
+my $foo = 0;
+$foo ||= 1;
+say $foo; # OUTPUT: 1 
+```
+
+Operators can be defined as `prefix`, `infix`, or `postfix`. The `is tighter`, `is equiv`, and `is looser` traits optionally define the operator's precedence. In this case, `||=` has the same precedence as `+=`.
+
+Note how `multi` is used when declaring the operator subroutines. This allows multiple subroutines with the same name to be declared while also having different signatures. This will be explained in greater detail in the link:https://docs.perl6.org/language/js-nutshell#Functions[Functions] section. For now, all we need to know is that it allows us to override any native operator we want:
+
+运算符可以定义为`prefix`，`infix`，或`postfix`。的`is tighter`，`is equiv`和`is looser`性状选择定义操作的优先级。在这种情况下，`||=`具有相同的优先级`+=`。
+
+注意`multi`在声明操作符子例程时如何使用。这允许声明具有相同名称的多个子例程，同时具有不同的签名。这将在“ link:https://docs.perl6.org/language/js-nutshell#Functions[功能”]部分中详细说明。目前，我们需要知道的是它允许我们覆盖我们想要的任何本机运算符：
+
+```perl6
+=== Using the `is default` trait here forces this subroutine to be chosen first, 
+=== so long as the signature of the subroutine matches. 
+multi sub prefix:<++>($a) is default { $a - 1 }
+ 
+my $foo = 1;
+say ++$foo; # OUTPUT: 0 
+```
+
+==== Control flow
+
+===== if/else
+
+You should be familiar with how `if`/`else` looks in JavaScript:
+
+您应该熟悉 JavaScript 中的 `if`/ `else`：
+
+```js
+let diceRoll = Math.ceil(Math.random() * 6) + Math.ceil(Math.random() * 6);
+if (diceRoll === 2) {
+    console.log('Snake eyes!');
+} else if (diceRoll === 16) {
+    console.log('Boxcars!');
+} else {
+    console.log(`Rolled ${diceRoll}.`);
+}
+```
+
+In Perl 6, `if`/`else` works largely the same, with a few key differences. One, parentheses are not required. Two, `else if` is written as `elsif`. Three, the if clause may be written *after* a statement:
+
+在Perl 6中，`if`/的`else`工作方式基本相同，只有一些关键的区别。一，括号不是必需的。二，`else if`写成`elsif`。三，if语句可以*在*声明*后*写出：
+
+```perl6
+my Int $dice-roll = ceiling rand * 12 + ceiling rand * 12;
+if $dice-roll == 2 {
+    say 'Snake eyes!';
+} elsif $dice-roll == 16 {
+    say 'Boxcars!';
+} else {
+    say "Rolled $dice-roll.";
+}
+```
+
+Alternatively, though less efficient, this could be written to use `if` after statements:
+
+或者，虽然效率较低，但可以`if`在语句后使用：
+
+```perl6
+my Int $dice-roll = ceiling rand * 12 + ceiling rand * 12;
+say 'Snake eyes!'        if $dice-roll == 2;
+say 'Boxcars!'           if $dice-roll == 16;
+say "Rolled $dice-roll." if $dice-roll !~~ 2 | 16;
+```
+
+Perl 6 also has `when`, which is like `if`, but if the condition given is true, no code past the `when` block within the block it's in is executed:
+
+Perl 6也有`when`，就像是`if`，但是如果给出的条件为真，`when`那么执行它所执行的块中没有代码超过块：
+
+```perl6
+{
+    when True {
+        say 'In when block!'; # OUTPUT: In when block! 
+    }
+    say 'This will never be output!';
+}
+```
+
+Additionally, Perl 6 has `with`, `orwith`, and `without`, which are like `if`, `else if`, and `else` respectively, but instead of checking whether their condition is true, they check if it's defined.
+
+此外，Perl 6的有`with`，`orwith`和`without`，这是一样`if`，`else if`和，`else`分别但是，不是检查自己的条件是否为真，他们检查，如果它被定义。
+
+===== switch
+
+Switch statements are a way of checking for equality between a given value and a list of values and run some code if one matches. `case` statements define each value to compare to. `default`, if included, acts as a fallback for when the given value matches no cases. After matching a case, `break` is typically used to prevent the code from the cases that follow the one matched from being executed, though rarely this is intentionally omitted.
+
+Switch语句是一种检查给定值和值列表之间相等性的方法，并在匹配时运行一些代码。`case`语句定义要比较的每个值。`default`，如果包含，则作为给定值不匹配任何情况的后备。在匹配案例之后，`break`通常用于防止代码跟随匹配的案例执行，尽管很少有意省略。
+
+```js
+const ranklist = [2, 3, 4, 5, 6, 7, 8, 9, 'Jack', 'Queen', 'King', 'Ace'];
+const ranks    = Array.from(Array(3), () => ranklist[Math.floor(Math.random() * ranks.length)]);
+let   score    = 0;
+ 
+for (let rank of ranks) {
+    switch (rank) {
+        case 'Jack':
+        case 'Queen':
+        case 'King':
+            score += 10;
+            break;
+        case 'Ace';
+            score += (score <= 11) ? 10 : 1;
+            break;
+        default:
+            score += rank;
+            break;
+    }
+}
+```
+
+In Perl 6, `given` can be used like switch statements. There is no equivalent to `break` since `when` blocks are most commonly used like `case` statements. One major difference between `switch` and `given` is that a value passed to a `switch` statement will only match cases that are exactly equal to the value; `given` values are smartmatched (`~~`) against the `when` values.
+
+在Perl 6中，`given`可以像switch语句一样使用。没有相应的，`break`因为`when`块最常用于`case`语句。`switch`和之间的一个主要区别`given`是传递给`switch`语句的值只匹配与值完全相等的情况; `given`值是`~~`针对值的smartmatched（）`when`。
+
+```perl6
+my     @ranklist = [2, 3, 4, 5, 6, 7, 8, 9, 'Jack', 'Queen', 'King', 'Ace'];
+my     @ranks    = @ranklist.pick: 3;
+my Int $score    = 0;
+ 
+for @ranks -> $rank {
+    # The when blocks implicitly return the last statement they contain. 
+    $score += do given $rank {
+        when 'Jack' | 'Queen' | 'King' { 10 }
+        when 'Ace' { $score <= 11 ?? 10 !! 1 }
+        default { $_ }
+    };
+}
+```
+
+If there are multiple `when` blocks that match the value passed to `given` and you wish to run more than one of them, use `proceed`. `succeed` may be used to exit both the `when` block it's in and the given block, preventing any following statements from being executed:
+
+如果有多个`when`块与传递的值匹配，`given`并且您希望运行多个块，请使用`proceed`。`succeed`可用于退出`when`它所在的块和给定的块，防止执行以下任何语句：
+
+```perl6
+given Int {
+    when Int     { say 'Int is Int';     proceed }
+    when Numeric { say 'Int is Numeric'; proceed }
+    when Any     { say 'Int is Any';     succeed }
+    when Mu      { say 'Int is Mu'               } # Won't output 
+}
+ 
+=== OUTPUT: 
+=== Int is Int 
+=== Int is Numeric 
+=== Int is Any 
+```
+
+===== for, while, and do/while
+
+There are three different types of for loops in JavaScript:
+
+JavaScript中有三种不同类型的for循环：
+
+```js
+// C-style for loops
+const letters = {};
+for (let ord = 0x61; ord <= 0x7A; ord++) {
+    let letter = String.fromCharCode(ord);
+    letters[letter] = letter.toUpperCase();
+}
+ 
+// for..in loops (typically used on objects)
+for (let letter in letters) {
+    console.log(letters[letter]);
+    # OUTPUT: 
+    # A 
+    # B 
+    # C 
+    # etc. 
+}
+ 
+// for..of loops (typically used on arrays, maps, and sets)
+for (let letter of Object.values(letters)) {
+    console.log(letter);
+    # OUTPUT: 
+    # A 
+    # B 
+    # C 
+    # etc. 
+}
+```
+
+Perl 6 `for` loops most closely resemble `for..of` loops, since they work on anything as long as it's iterable. C-style loops are possible to write using `loop`, but this is discouraged since they're better written as `for` loops using ranges. Like `if` statements, `for` may follow a statement, with the current iteration being accessible using the `$_` variable (known as "it"). Methods on `$_` may be called without specifying the variable:
+
+Perl 6 `for`循环最接近`for..of`循环，因为只要它是可迭代的，它们就可以处理任何东西。C风格的循环可以使用`loop`，但不鼓励这样做，因为它们更好地编写为`for`使用范围的循环。类似`if`语句，`for`可以遵循一个语句，当前迭代可以使用`$_`变量（称为“它”）访问。`$_`可以在不指定变量的情况下调用方法：
+
+```perl6
+my Str %letters{Str};
+%letters{$_} = .uc for 'a'..'z';
+.say for %letters.values;
+=== OUTPUT: 
+=== A 
+=== B 
+=== C 
+=== etc. 
+```
+
+`while` loops work identically between JavaScript and Perl 6. Perl 6 also has `until` loops, where instead of iterating until the given condition is false, they iterate until the condition is true.
+
+`do/while` loops are known as `repeat/while` loops in Perl 6. Likewise with `while`, `repeat/until` loops also exist and loop until the given condition is false.
+
+To write infinite loops in Perl 6, use `loop` rather than `for` or `while`.
+
+In JavaScript, `continue` is used to skip to the next iteration in a loop, and `break` is used to exit a loop early:
+
+`while`循环在JavaScript和Perl 6之间的工作相同.Perl 6也有`until`循环，而不是迭代直到给定条件为假，它们迭代直到条件为真。
+
+`do/while`循环`repeat/while`在Perl 6 中称为循环。同样`while`，`repeat/until`循环也存在并循环，直到给定条件为假。
+
+要在Perl 6中编写无限循环，请使用`loop`而不是`for`或`while`。
+
+在JavaScript中，`continue`用于跳转到循环中的下一个迭代，并`break`用于提前退出循环：
+
+```js
+let primes = new Set();
+let i      = 2;
+ 
+do {
+    let isPrime = true;
+    for (let prime of primes) {
+        if (i % prime == 0) {
+            isPrime = false;
+            break;
+        }
+    }
+    if (!isPrime) continue;
+    primes.add(i);
+} while (++i < 20);
+ 
+console.log(primes); # OUTPUT: Set { 2, 3, 5, 7, 11, 13, 17, 19 } 
+```
+
+In Perl 6, these are known as `next` and `last` respectively. There is also `redo`, which repeats the current iteration without evaluating the loop's condition again.
+
+`next`/`redo`/`last` statements may be followed by a label defined before an outer loop to make the statement work on the loop the label refers to, rather than the loop the statement is in:
+
+在Perl 6中，这些分别称为`next`和`last`。还有`redo`，它重复当前迭代而不再评估循环的条件。
+
+`next`/ `redo`/ `last`语句后跟一个在外部循环之前定义的标签，以使该语句在标签所引用的循环上起作用，而不是该语句所在的循环：
+
+```perl6
+my %primes is SetHash;
+my Int $i = 2;
+ 
+OUTSIDE:
+repeat {
+    next OUTSIDE if $i %% $_ for %primes.keys;
+    %primes{$i}++;
+} while ++$i < 20;
+ 
+say %primes; # OUTPUT: SetHash(11 13 17 19 2 3 5 7) 
+```
+
+===== do
+
+`do` is not currently a feature in JavaScript, however a proposal has been made to link:https://github.com/tc39/proposal-do-expressions[add it to ECMAScript]. `do` expressions evaluate a block and return the result:
+
+`do`目前不是JavaScript中的一项功能，但已提出link:https://github.com/tc39/proposal-do-expressions[将其添加到ECMAScript]的提案。`do`表达式计算一个块并返回结果：
+
+```perl6
+constant VERSION        = v2.0.0;
+constant VERSION_NUMBER = do {
+    my @digits = VERSION.Str.comb(/\d+/);
+    :16(sprintf "%02x%02x%04x", |@digits)
+};
+say VERSION_NUMBER; # OUTPUT: 33554432 
+```
+
+==== Types
+
+===== Creating types
+
+In JavaScript, types are created by making a class (or a constructor in ES5 and earlier). If you've used TypeScript, you can define a type as a subset of other types like so:
+
+在JavaScript中，通过创建类（或ES5及更早版本中的构造函数）来创建类型。如果您使用过TypeScript，则可以将类型定义为其他类型的子集，如下所示：
+
+```js
+type ID = string | number;
+```
+
+In Perl 6, classes, roles, subsets, and enums are considered types. Creating classes and roles will be discussed in link:https://docs.perl6.org/language/js-nutshell#Object-oriented_programming[the OOP section of this article]. Creating an ID subset can be done like so:
+
+在Perl 6中，类，角色，子集和枚举被视为类型。创建类和角色将在本文link:https://docs.perl6.org/language/js-nutshell#Object-oriented_programming[的OOP部分中讨论]。创建ID子集可以这样完成：
+
+```perl6
+subset ID where Str | Int;
+```
+
+See the documentation on link:https://docs.perl6.org/language/typesystem#subset[subset] and link:https://docs.perl6.org/type/Junction[Junction] for more information.
+
+TypeScript enums may have numbers or strings as their values. Defining the values is optional; by default, the value of the first key is 0, the next key, 1, the next, 2, etc. For example, here is an enum that defines directions for extended ASCII arrow symbols (perhaps for a TUI game):
+
+有关更多信息，请参阅link:https://docs.perl6.org/language/typesystem#subset[子集]和link:https://docs.perl6.org/type/Junction[连接]的文档。
+
+TypeScript枚举可以包含数字或字符串作为其值。定义值是可选的; 默认情况下，第一个键的值为0，下一个键为1，下一个键为2，等等。例如，这是一个枚举，用于定义扩展ASCII箭头符号的方向（可能用于TUI游戏）：
+
+```js
+enum Direction (
+    UP    = '↑',
+    DOWN  = '↓',
+    LEFT  = '←',
+    RIGHT = '→'
+);
+```
+
+Enums in Perl 6 may have any type as their keys' values. Enum keys (and optionally, values) can be defined by writing `enum`, followed by the name of the enum, then the list of keys (and optionally, values), which can be done using link:https://docs.perl6.org/language/quoting#Word_quoting%3A_%3C_%3E[< >], link:https://docs.perl6.org/language/quoting#Word_quoting_with_interpolation_and_quote_protection%3A_%C2%AB_%C2%BB[« »], or link:https://docs.perl6.org/language/operators#term_%28_%29[( )]. `( )` must be used if you want to define values for the enum's keys. Here is the Direction enum as written in Perl 6:
+
+Perl 6中的枚举可以使用任何类型作为其键值。枚举键（以及可选的值）可以通过写入来定义`enum`，然后是枚举的名称，然后是键列表（以及可选的值），可以使用link:https://docs.perl6.org/language/quoting#Word_quoting%3A_%3C_%3E[<>]，link:https://docs.perl6.org/language/quoting#Word_quoting_with_interpolation_and_quote_protection%3A_%C2%AB_%C2%BB[«»]或link:https://docs.perl6.org/language/operators#term_%28_%29[（）来完成]。`( )`如果要为枚举键定义值，则必须使用。这是Perl 6中编写的Direction枚举：
+
+```perl6
+enum Direction (
+    UP    => '↑',
+    DOWN  => '↓',
+    LEFT  => '←',
+    RIGHT => '→'
+);
+```
+
+See the documentation on link:https://docs.perl6.org/language/typesystem#enum[enum] for more information.
+
+有关更多信息，请参阅link:https://docs.perl6.org/language/typesystem#enum[枚举]文档。
+
+===== Using types
+
+In TypeScript, you can define the type of variables. Attempting to assign a value that doesn't match the type of the variable will make the transpiler error out. This is done like so:
+
+在TypeScript中，您可以定义变量的类型。尝试分配与变量类型不匹配的值将导致转换器错误。这样做是这样的：
+
+```js
+enum Name (Phoebe, Daniel, Joe);
+let name: string = 'Phoebe';
+name = Phoebe; # Causes tsc to error out 
+ 
+let hobbies: [string] = ['origami', 'playing instruments', 'programming'];
+ 
+let todo: Map<string, boolean> = new Map([
+    ['clean the bathroom', false],
+    ['walk the dog', true],
+    ['wash the dishes', true]
+]);
+ 
+let doJob: (job: string) => boolean = function (job: string): boolean {
+    todo.set(job, true);
+    return true;
+};
+```
+
+In Perl 6, variables can be typed by placing the type between the declarator (`my`, `our`, etc.) and the variable name. Assigning a value that doesn't match the variable's type will throw either a compile-time or runtime error, depending on how the value is evaluated:
+
+在Perl 6中，变量可以通过将说明符（之间的类型被键入`my`，`our`等）和变量名。分配与变量类型不匹配的值将引发编译时或运行时错误，具体取决于值的计算方式：
+
+```perl6
+enum Name <Phoebe Daniel Joe>;
+my Str $name = 'Phoebe';
+$name = Phoebe; # Throws a compile-time error 
+ 
+=== The type here defines the type of the elements of the array. 
+my Str @hobbies = ['origami', 'playing instruments', 'programming'];
+ 
+=== The type between the declarator and variable defines the type of the values 
+=== of the hash. 
+=== The type in the curly braces defines the type of the keys of the hash. 
+my Bool %todo{Str} = (
+    'clean the bathroom' => False,
+    'walk the dog'       => True,
+    'wash the dishes'    => True
+);
+
+=== The type here defines the return value of the routine. 
+my Bool &do-job = sub (Str $job --> Bool) {
+    %todo{$job} = True;
+};
+```
+
+===== 比较 JavaScript 和 Perl 6 的类型
+
+Here is a table of some JavaScript types and their equivalents in Perl 6:
+
+以下是Perl 6中一些JavaScript类型及其等价物的表格：
+
+|===
+| JavaScript | Perl 6          
+| Object     | Mu, Any, Hash   
+| Array      | List, Array, Seq
+| String     | Str             
+| Number     | Int, Num, Rat   
+| Boolean    | Bool            
+| Map        | Map, Hash       
+| Set        | Set, SetHash    
+|===
+
+`Object` is both a superclass of all types in JavaScript and a way to create a hash. In Perl 6, link:https://docs.perl6.org/type/Mu[Mu] is a superclass of all types, though usually you want to use link:https://docs.perl6.org/type/Any[Any] instead, which is a subclass of `Mu` but also a superclass of nearly every type, with link:https://docs.perl6.org/type/Junction[Junction] being an exception. When using `Object` as a hash, link:https://docs.perl6.org/type/Hash[Hash] is what you want to use.
+
+There are three types equivalent to `Array`. link:https://docs.perl6.org/type/Array[Array] is most similar to `Array`, since it acts as a mutable array. link:https://docs.perl6.org/type/List[List] is similar to `Array`, but is immutable. link:https://docs.perl6.org/type/Seq[Seq] is used to create lazy arrays.
+
+`String` and link:https://docs.perl6.org/type/Str[Str] are for the most part used identically.
+
+There are several different types in Perl 6 equivalent to `Number`, but the three you'll most commonly see are link:https://docs.perl6.org/type/Int[Int], link:https://docs.perl6.org/type/Num[Num], and link:https://docs.perl6.org/type/Rat[Rat]. `Int`represents an integer. `Num` represents a floating-point number, making it the most similar to `Number`. `Rat` represents a fraction of two numbers, and is used when `Num` cannot provide precise enough values.
+
+`Boolean` and link:https://docs.perl6.org/type/Bool[Bool] are for the most part used identically.
+
+`Map` has both a mutable and an immutable equivalent in Perl 6. link:https://docs.perl6.org/type/Map[Map] is the immutable one, and link:https://docs.perl6.org/type/Hash[Hash] is the mutable one. Don't get them mixed up! Like `Map` in JavaScript, `Map` and `Hash` can have any type of key or value, not just strings for keys.
+
+Like `Map`, `Set` also has both a mutable and an immutable equivalent in Perl 6. link:https://docs.perl6.org/type/Set[Set] is the immutable one, and link:https://docs.perl6.org/type/SetHash[SetHash] is the mutable one.
+
+`Object`既是JavaScript中所有类型的超类，也是创建哈希的方法。在Perl 6中，link:https://docs.perl6.org/type/Mu[穆]是所有类型的超类，尽管通常要使用link:https://docs.perl6.org/type/Any[任何]代替，这是的一个子类`Mu`，而且几乎所有类型的超类，与link:https://docs.perl6.org/type/Junction[接线]是一个例外。当`Object`用作哈希时，link:https://docs.perl6.org/type/Hash[哈希]就是你想要使用的。
+
+有三种类型相当于`Array`。link:https://docs.perl6.org/type/Array[数组]最相似`Array`，因为它充当可变数组。link:https://docs.perl6.org/type/List[列表]类似于`Array`，但是是不可变的。link:https://docs.perl6.org/type/Seq[Seq]用于创建惰性数组。
+
+`String`和link:https://docs.perl6.org/type/Str[Str]在大多数情况下使用相同。
+
+Perl 6中有几种不同的类型相当于`Number`，但你最常见的三种是link:https://docs.perl6.org/type/Int[Int]，link:https://docs.perl6.org/type/Num[Num]和link:https://docs.perl6.org/type/Rat[Rat]。`Int`表示整数。`Num`表示一个浮点数，使其最相似`Number`。`Rat`表示两个数字的一小部分，并且在`Num`无法提供足够精确的值时使用。
+
+`Boolean`和link:https://docs.perl6.org/type/Bool[Bool]在大多数情况下使用相同。
+
+`Map`既具有可变的，并且在Perl 6的不可变等效link:https://docs.perl6.org/type/Map[地图]是不可变的一个，并且link:https://docs.perl6.org/type/Hash[哈希]是可变的一个。不要混淆他们！就像`Map`在JavaScript中，`Map`并且`Hash`可以有任何类型的键或值，而不仅仅是钥匙串。
+
+像`Map`，`Set`也都一个可变的和Perl 6中一个不变的等效link:https://docs.perl6.org/type/Set[设置]是不可变的一个，并且link:https://docs.perl6.org/type/SetHash[SetHash]是可变的。
+
+==== 函数
+
+TBD
+
+=== 面向对象编程
+
+TBD
+
+=== 异步编程
+
+TBD
+
+=== 网络 API
+
+==== 网络
+
+In Perl 6, there are two APIs for dealing with networking: `IO::Socket::INET` (for synchronous networking), and `IO::Socket::Async` (for asynchronous networking).
+
+`IO::Socket::INET` currently only supports TCP connections. Its API resembles that of C's socket API. If you're familiar with that, then it won't take long to understand how to use it. For example, here's an echo server that closes the connection after receiving its first message:
+
+在Perl 6中，有两个用于处理网络的API :( `IO::Socket::INET`用于同步网络）和`IO::Socket::Async`（用于异步网络）。
+
+`IO::Socket::INET`目前只支持TCP连接。它的API类似于C的套接字API。如果您熟悉它，那么理解如何使用它不会花费很长时间。例如，这是一个echo服务器，它在收到第一条消息后关闭连接：
+
+```perl6
+my IO::Socket::INET $server .= new:
+    :localhost<localhost>,
+    :localport<8000>,
+    :listen;
+ 
+my IO::Socket::INET $client .= new: :host<localhost>, :port<8000>;
+$client.print: 'Hello, world!';
+ 
+my IO::Socket::INET $conn = $server.accept;
+my Str $msg               = $conn.recv;
+say $msg; # OUTPUT: Hello, world! 
+$conn.print($msg);
+ 
+say $client.recv; # OUTPUT: Hello, world! 
+$conn.close;
+$client.close;
+$server.close;
+```
+
+By default, `IO::Socket::INET` connections are IPv4 only. To use IPv6 instead, pass `:family(PF_INET6)` when constructing a server or a client.
+
+In contrast, `IO::Socket::Async` supports both IPv4 and IPv6 without the need to specify which family you wish to use. It also supports UDP sockets. Here's how you would write the same echo server as above asynchronously (note that `Supply.tap` is multithreaded; if this is undesirable, use `Supply.act` instead:
+
+默认情况下，`IO::Socket::INET`连接仅限IPv4。要使用IPv6，请`:family(PF_INET6)`在构建服务器或客户端时传递。
+
+相反，`IO::Socket::Async`支持IPv4和IPv6，无需指定要使用的族。它还支持UDP套接字。以下是如何异步编写与上面相同的echo服务器（请注意，这`Supply.tap`是多线程的;如果这是不合需要的，请`Supply.act`改用：
+
+```perl6
+my $supply = IO::Socket::Async.listen('localhost', 8000);
+my $server = $supply.tap(-> $conn {
+    $conn.Supply.tap(-> $data {
+        say $data; # OUTPUT: Hello, world! 
+        await $conn.print: $data;
+        $conn.close;
+    })
+});
+ 
+my $client = await IO::Socket::Async.connect('localhost', 8000);
+$client.Supply.tap(-> $data {
+    say $data; # OUTPUT: Hello, world! 
+    $client.close;
+    $server.close;
+});
+ 
+await $client.print: 'Hello, world!';
+```
+
+The equivalent code in Node.js looks like this:
+
+Node.js中的等效代码如下所示：
+
+```js
+const net = require('net');
+ 
+const server = net.createServer(conn => {
+    conn.setEncoding('utf8');
+    conn.on('data', data => {
+        console.log(data); # OUTPUT: Hello, world! 
+        conn.write(data);
+        conn.end();
+    });
+}).listen(8000, 'localhost');
+ 
+const client = net.createConnection(8000, 'localhost', () => {
+    client.setEncoding('utf8');
+    client.on('data', data => {
+        console.log(data); # OUTPUT: Hello, world! 
+        client.end();
+        server.close();
+    });
+    client.write("Hello, world!");
+});
+```
+
+==== HTTP/HTTPS
+
+Perl 6 doesn't natively support HTTP/HTTPS. However, CPAN packages such as link:https://cro.services/[Cro] help fill the gap.
+
+Perl 6本身不支持HTTP / HTTPS。然而，像link:https://cro.services/[Cro]这样的CPAN包填补了这个空白。
+
+==== DNS
+
+Perl 6 does not currently support the majority of the features that Node.js's DNS module implements. `IO::Socket::INET` and `IO::Socket::Async` can resolve hostnames, but features like resolving DNS records and reverse IP lookups are not implemented yet. There are some modules that are a work in progress, such as link:https://github.com/tbrowder/Net-DNS-BIND-Manage-Perl6/[Net::DNS::BIND::Manage], that aim to improve DNS support.
+
+Perl 6目前不支持Node.js的DNS模块实现的大多数功能。`IO::Socket::INET`并且`IO::Socket::Async`可以解析主机名，但尚未实现解析DNS记录和反向IP查找等功能。有些模块正在进行中，例如link:https://github.com/tbrowder/Net-DNS-BIND-Manage-Perl6/[Net :: DNS :: BIND :: Manage]，旨在改善DNS支持。
+
+==== Punycode
+
+Punycode support is available through the link:https://github.com/Kaiepi/p6-Net-LibIDN[Net::LibIDN], link:https://github.com/Kaiepi/p6-Net-LibIDN2[Net::LibIDN2], and link:https://github.com/FROGGS/p6-IDNA-Punycode[IDNA::Punycode] modules on CPAN.
+
+通过CPAN上的link:https://github.com/Kaiepi/p6-Net-LibIDN[Net :: LibIDN]，link:https://github.com/Kaiepi/p6-Net-LibIDN2[Net :: LibIDN2]和link:https://github.com/FROGGS/p6-IDNA-Punycode[IDNA :: Punycode]模块可以获得Punycode支持。
+
+=== 文件系统 API
+
+TBD
+
+=== 模块和包
+
+TBD
+

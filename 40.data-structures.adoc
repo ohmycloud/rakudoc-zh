@@ -1,0 +1,361 @@
+== 数据结构
+
+=== 标量结构
+
+某些类没有任何*内部*结构, 访问它们的一部分必须使用特定的方法。数字，字符串和其他一些整体类包含在该类中。他们使用 `$` sigil，虽然复杂的数据结构也可以使用它。
+
+```perl6
+my $just-a-number = 7;
+my $just-a-string = "8";
+```
+
+有一个 link:https://docs.perl6.org/type/Scalar[Scalar] 类，它在内部用于为使用 `$` sigil 声明的变量赋值。
+
+```perl6
+my $just-a-number = 333;
+say $just-a-number.VAR.^name; # OUTPUT: «Scalar␤» 
+```
+
+任何复杂数据结构都可以通过使用 link:https://docs.perl6.org/type/Any#index-entry-%2524_%28item_contextualizer%29[`$`] 在项上下文中*标量化*。
+
+```perl6
+(1, 2, 3, $(4, 5))[3].VAR.^name.say; # OUTPUT: «Scalar␤» 
+```
+
+但是，这意味着它将在它们的上下文中被视为标量。你仍然可以访问其内部结构。
+
+```perl6
+(1, 2, 3, $(4, 5))[3][0].say; # OUTPUT: «4␤» 
+```
+
+有一个有趣的副作用，或者可能是故意的特性，是标量化保留了复杂结构的同一性。
+
+```perl6
+for ^2 {
+     my @list = (1, 1);
+     say @list.WHICH;
+} # OUTPUT: «Array|93947995146096␤Array|93947995700032␤» 
+```
+
+每次 `(1, 1)` 被分配时，创建的变量在 `===` 上的意义上是不同的; 如它所示，打印了内部指针所表示的不同值。然而
+
+```perl6
+for ^2 {
+  my $list = (1, 1);
+  say $list.WHICH
+} # OUTPUT: «List|94674814008432␤List|94674814008432␤» 
+```
+
+在这种情况下，`$list` 使用的是 Scalar sigil，因此将是一个 `Scalar`。任何具有相同值的标量都将完全相同，如打印指针时所显示的那样。
+
+=== 复杂数据结构
+
+根据你如何访问其第一级元素, 复杂的数据结构分为两大类: link:https://docs.perl6.org/type/Positional[Positional], 或类列表结构 link:https://docs.perl6.org/type/Associative[Associative], 或类键值对儿结构。 通常, 复杂数据结构, 包括对象, 会是两者的组合, 使对象属性变为键值对儿。而所有的对象都是 link:https://docs.perl6.org/type/Mu[Mu] 的子类, 通常复杂对象是 link:https://docs.perl6.org/type/Any[Any] 子类的实例。 虽然理论上可以在不这样做的情况下混合使用 “Positional” 或 “Associative”，但是大多数适用于复杂数据结构的方法都是在 “Any” 中实现的。
+
+操纵这些复杂的数据结构是一项挑战，但 Perl 6 提供了一些可用于它们身上的函数：link:https://docs.perl6.org/routine/deepmap[`deepmap`] 和 link:https://docs.perl6.org/routine/duckmap[`duckmap`]。而前者会按顺序切换每个元素，无论块传递的是什么。
+
+```perl6
+say [[1, 2, [3, 4]],[[5, 6, [7, 8]]]].deepmap( *.elems );
+# OUTPUT: «[[1 1 [1 1]] [1 1 [1 1]]]␤» 
+```
+
+这返回 `1` 因为它进入更深层次并将 `elems` 应用于元素，`deepmap` 可以执行更复杂的操作:
+
+```perl6
+say [[1, 2, [3, 4]], [[5, 6, [7, 8]]]].duckmap:
+   -> $array where .elems == 2 { $array.elems };
+# OUTPUT: «[[1 2 2] [5 6 2]]␤» 
+```
+
+在这种情况下，它深入到结构中，但如果它不满足块  (`1, 2`) 中的条件则返回元素本身，如果它满足则返回数组的元素数(每个子数组末尾的两个 `2` )。
+
+由于 `deepmap` 和 `duckmap` 是 `Any` 方法，它们也适用于关联数组：
+
+```perl6
+say %( first => [1, 2], second => [3,4] ).deepmap( *.elems );
+# OUTPUT: «{first => [1 1], second => [1 1]}␤» 
+```
+
+仅在这种情况下，它们将应用于作为值的每个列表或数组，而仅保留键。
+
+`Positional` 和 `Associative` 可以相互转换。
+
+```perl6
+say %( first => [1, 2], second => [3,4] ).list[0];
+# OUTPUT: «second => [3 4]␤» 
+```
+
+但是，在这种情况下，对于 Rakudo >= 2018.05，它每次运行时都会返回不同的值。哈希将被转换为键值对的列表，但保证它是无序的。你也可以从相反的方向进行操作，只要该列表具有偶数个元素(奇数将导致错误)：
+
+```perl6
+say <a b c d>.Hash # OUTPUT: «{a => b, c => d}␤» 
+```
+
+但是
+
+```perl6
+say <a b c d>.Hash.kv # OUTPUT: «(c d a b)␤» 
+```
+
+每次运行时都会获得不同的值; link:https://docs.perl6.org/type/Pair#method_kv[`kv`] 把每个 `Pair` 转换成列表。
+
+复杂数据结构通常还是 link:https://docs.perl6.org/type/Iterable[Iterable] 的。 从中生成 link:https://docs.perl6.org/routine/iterator[iterator] 将允许程序逐个访问结构的第一级：
+
+```perl6
+.say for 'א'..'ס'; # OUTPUT: «א␤ב␤ג␤ד␤ה␤ו␤ז␤ח␤ט␤י␤ך␤כ␤ל␤ם␤מ␤ן␤נ␤ס␤» 
+```
+
+`'א'..'ס'` 是一个 link:https://docs.perl6.org/type/Range[Range], 一个复杂数据结构,  把 `for` 放在它前面会迭代直到列表元素耗尽。你可以通过重写 link:https://docs.perl6.org/routine/iterator[iterator] 方法(来自角色 `Iterable`)以在你的复杂数据结构上使用 `for`:
+
+```perl6
+class SortedArray is Array {
+  method iterator() {
+    self.sort.iterator
+  }
+};
+my @thing := SortedArray.new([3,2,1,4]);
+.say for @thing; # OUTPUT: «1␤2␤3␤4␤» 
+```
+
+`for` 直接调用 `@thing` 上的 `iterator` 方法, 使其按顺序返回数组元素。更多信息请参阅 link:https://docs.perl6.org/language/iterating[专门讨论迭代的页面].
+
+=== 函数式结构
+
+Perl 6 是一种函数式语言，因此，函数是一等*数据*结构。函数遵循 link:https://docs.perl6.org/type/Callable[Callable] 角色，这是基础角色四重奏中的第 4 个元素。  link:https://docs.perl6.org/type/Callable[Callable]  与 `&` sigil 一起使用，尽管在大多数情况下，为了简单起见，它被省略了; 在 `Callables` 的情况下，总是允许消除这种 sigil。
+
+```perl6
+my &a-func= { (^($^þ)).Seq };
+say a-func(3), a-func(7); # OUTPUT: «(0 1 2)(0 1 2 3 4 5 6)␤» 
+```
+
+link:https://docs.perl6.org/type/Block[Block] 是最简单的可调用结构，因为 `Callable` 无法实例化。在这种情况下，我们实现了一个记录事件的块并可以检索它们:
+
+```perl6
+my $logger = -> $event, $key = Nil  {
+  state %store;
+  if ( $event ) {
+    %store{ DateTime.new( now ) } = $event;
+  } else {
+    %store.keys.grep( /$key/ )
+  }
+}
+$logger( "Stuff" );
+$logger( "More stuff" );
+say $logger( Nil, "2018-05-28" ); # OUTPUT: «(Stuff More stuff)␤» 
+```
+
+`Block` 有一个 link:https://docs.perl6.org/type/Signature[Signature]，在这种情况下有两个参数，第一个是要记录的事件，第二个是要检索的事件的键。它们将以独立的方式使用，但其目的是展示link:https://docs.perl6.org/syntax/state[状态变量] 的使用，该状态变量从每次调用到下一次调用时都会被保留。此状态变量封装在块中，除非使用块提供的简单 API，否则无法从外部访问：使用第二个参数调用块。前两个调用记录两个事件，示例底部的第三个调用使用第二种类型的调用来检索存储的值。 `Block` 可以被克隆：
+
+```perl6
+my $clogger = $logger.clone;
+$clogger( "Clone stuff" );
+$clogger( "More clone stuff" );
+say $clogger( Nil, "2018-05-28" );
+# OUTPUT: «(Clone stuff More clone stuff)␤» 
+```
+
+克隆将重置状态变量; 代替克隆，我们可以创建改变 API 的 *façades*。例如，无需使用 `Nil` 作为第一个参数来检索特定日期的日志：
+
+```perl6
+my $gets-logs = $logger.assuming( Nil, * );
+$logger( %(changing => "Logs") );
+say $gets-logs( "2018-05-28" );
+# OUTPUT: «({changing => Logs} Stuff More stuff)␤» 
+```
+
+link:https://docs.perl6.org/type/Block#%28Code%29_method_assuming[`assuming`] 包裹着一个块调用，给我们需要的参数赋值（在本例中为`Nil`）， 将参数传递给我们使用 `*` 表示的其他参数。 实际上，这对应于自然语言语句 “我们正在调用`$logger` *假设*第一个参数是 `Nil`”。 我们可以稍微改变这两个块的外观，以澄清它们实际上是在同一个块上运行：
+
+```perl6
+my $Logger = $logger.clone;
+my $Logger::logs = $Logger.assuming( *, Nil );
+my $Logger::get = $Logger.assuming( Nil, * );
+$Logger::logs( <an array> );
+$Logger::logs( %(key => 42) );
+say $Logger::get( "2018-05-28" );
+```
+
+尽管 `::` 通常用于调用类方法，但它实际上是变量名称的有效部分。在这种情况下，我们通常使用它们来简单地指示 `$Logger::logs` 和 `$Logger::get` 实际上是在调用 `$Logger`，我们已经大写使用了类似于类的外观。本教程的重点是，使用函数作为一等公民，以及使用状态变量，允许使用某些有趣的设计模式，例如这个。
+
+作为这样的一等数据结构，可以在其他类型的数据可以使用的任何地方使用 callable。
+
+```perl6
+my @regex-check = ( /<alnum>/, /<alpha>/, /<punct>/ );
+say @regex-check.map: "33af" ~~ *;
+# OUTPUT: «(｢3｣␤ alnum => ｢3｣ ｢a｣␤ alpha => ｢a｣ Nil)␤» 
+```
+
+正则表达式实际上是一种 callable 类型：
+
+```perl6
+say /regex/.does( Callable ); # OUTPUT: «True␤» 
+```
+
+在上面的例子中，我们调用存储在数组中的正则表达式，并将它们应用于字符串字面值。
+
+使用link:https://docs.perl6.org/language/operators#infix_%25E2%2588%2598[函数组合运算符∘]组成 Callables：
+
+```perl6
+my $typer = -> $thing { $thing.^name ~ ' → ' ~ $thing };
+my $Logger::withtype = $Logger::logs ∘ $typer;
+$Logger::withtype( Pair.new( 'left', 'right' ) );
+$Logger::withtype( ¾ );
+say $Logger::get( "2018-05-28" );
+# OUTPUT: «(Pair → left right Rat → 0.75)␤» 
+```
+
+我们使用上面定义的函数组合 `$Logger::logs` 和 `$typer`，获得一个记录其类型前面的对象的函数，例如，这对于过滤非常有用。 `$Logger::withtype` 实际上是一个复杂的数据结构，由两个以串行方式应用的函数组成，但每一个组合的 callables 都可以保持状态，从而创建复杂的变换 callables，其设计模式是：类似于面向对象领域中的对象组合。在每种特定情况下，你都必须选择最适合你的问题的编程风格。
+
+=== 定义和约束数据结构
+
+Perl 6 有不同的方法来定义数据结构，但也有许多方法来约束它们，以便你为每个问题域创建最合适的数据结构。例如，link:https://docs.perl6.org/routine/but[`but`] 将角色或值混合到值或变量中：
+
+```perl6
+my %not-scalar := %(2 => 3) but Associative[Int, Int];
+say %not-scalar.^name; # OUTPUT: «Hash+{Associative[Int, Int]}␤» 
+say %not-scalar.of;    # OUTPUT: «Associative[Int, Int]␤» 
+%not-scalar{3} = 4;
+%not-scalar<thing> = 3;
+say %not-scalar;       # OUTPUT: «{2 => 3, 3 => 4, thing => 3}␤» 
+```
+
+在这种情况下，`but` 混合在 `Associative [Int，Int]` 角色中; 请注意我们正在使用绑定，以便变量的类型是所定义的，而不是 `%` sigil 强加的类型; 这个混合角色显示在用花括号包围的 `name` 中。 它的真实意义是什么？ 该角色包括两个方法，`of` 和 `keyof`; 通过混合角色，将调用新的 `of`（旧的 `of` 将返回 `Mu`，这是 Hashes 的默认值类型）。 然而，就是这样。 它并没有真正改变变量的类型，因为你可以看到，因为我们在接下来的几个语句中使用了任何类型的键和值。
+
+但是，我们可以使用这种类型的 mixin 为变量提供新功能：
+
+```perl6
+role Lastable {
+  method last() {
+    self.sort.reverse[0]
+  }
+}
+my %hash-plus := %( 3 => 33, 4 => 44) but Lastable;
+say %hash-plus.sort[0]; # OUTPUT: «3 => 33␤» 
+say %hash-plus.last;    # OUTPUT: «4 => 44␤» 
+```
+
+在 `Lastable` 中，我们使用通用的 `self` 变量来指代这个特定角色混合的任何对象; 在这种情况下，它将包含与其混合的哈希; 在其他情况下，它将包含其他内容（并可能以其他方式工作）。这个角色将为它混合的任何变量提供 `last` 方法，为 *常规*变量提供新的，可附加的功能。甚至可以link:https://docs.perl6.org/language/objects#Mixins_of_roles[使用 `does` 关键字将角色添加到现有变量]。
+
+link:https://docs.perl6.org/language/typesystem#subset[Subsets] 也可用于约束变量可能包含的值; 他们是 Perl 6 尝试link:https://en.wikipedia.org/wiki/Gradual_typing[渐进类型]; 它不是一个完整的尝试，因为子集在严格意义上不是真正的类型，但它们允许运行时类型检查。它为常规类型添加了类型检查功能，因此它有助于创建更丰富的类型系统，允许类似以下代码中显示的内容：
+
+```perl6
+subset OneOver where (1/$_).Int == 1/$_;
+my OneOver $one-fraction = ⅓;
+say $one-fraction; # OUTPUT: «0.333333␤» 
+```
+
+另一方面，`my OneOver $ = ⅔;` 会导致类型检查错误。子集可以使用 `Whatever`，即 `*` 来引用参数; 但是每次将它用于不同的参数时都会实例化，所以如果我们在定义中使用它两次，我们就会得到一个错误。在这种情况下，我们使用主题单变量 `$_` 来检查实例化。子签名可以在link:https://docs.perl6.org/language/typesystem#subset[签名] 中直接完成，无需声明。
+
+=== 无限结构和惰性
+
+可以假设数据结构中包含的所有数据实际上都是*那里*。情况不一定如此：在许多情况下，出于效率原因或仅仅因为不可能，数据结构中包含的元素只有在实际需要时才会跳存。这种按需对项的计算称为 link:https://docs.perl6.org/language/glossary#Reify[reification].。
+
+```perl6
+# A list containing infinite number of un-reified Fibonacci numbers: 
+my @fibonacci = 1, 1, * + * … ∞;
+ 
+# We reify 10 of them, looking up the first 10 of them with array index: 
+say @fibonacci[^10]; # OUTPUT: «(1 1 2 3 5 8 13 21 34 55)␤» 
+ 
+# We reify 5 more: 10 we already reified on previous line, and we need to 
+# reify 5 more to get the 15th element at index 14. Even though we need only 
+# the 15th element, the original Seq still has to reify all previous elements: 
+say @fibonacci[14]; # OUTPUT: «987␤» 
+```
+
+上面我们具体化了用link:https://docs.perl6.org/language/operators#index-entry-%25E2%2580%25A6_operators[序列运算符]创建了的 link:https://docs.perl6.org/type/Seq[Seq]，但其他数据结构也使用这个概念。例如，未具体化的 link:https://docs.perl6.org/type/Range[Range] 只是两个终点。在某些语言中，计算大范围的总和是一个漫长而耗费内存的过程，但 Perl 6 会立即计算出来:
+
+```perl6
+say sum 1 .. 9_999_999_999_999; # OUTPUT: «49999999999995000000000000␤» 
+```
+
+为什么？ 因为*不用*具体化范围总就可以计算总和; 也就是说，不用弄清楚它包含的所有元素。这就是此功能存在的原因。你甚至可以使用 link:https://docs.perl6.org/syntax/gather%20take[`gather` and `take`] 按需具体化：
+
+```perl6
+my $seq = gather {
+    say "About to make 1st element"; take 1;
+    say "About to make 2nd element"; take 2;
+}
+say "Let's reify an element!";
+say $seq[0];
+say "Let's reify more!";
+say $seq[1];
+say "Both are reified now!";
+say $seq[^2];
+ 
+# OUTPUT: 
+# Let's reify an element! 
+# About to make 1st element 
+# 1 
+# Let's reify more! 
+# About to make 2nd element 
+# 2 
+# Both are reified now! 
+# (1 2) 
+```
+
+在上面的输出之后，你可以看到 `gather` 里面的 `print` 语句只有当我们在查找元素时确定各个元素时才会执行。另请注意，这些元素只被修改了一次。当我们在示例的最后一行再次打印相同的元素时，就不再打印 `gather` 内的消息。这是因为该构造使用了来自 link:https://docs.perl6.org/type/Seq[Seq] 缓存的已经确定的元素。
+
+请注意，上面我们将 `gather` 赋值给 link:https://docs.perl6.org/type/Scalar[Scalar] 容器( `$` sigil)，而不是 link:https://docs.perl6.org/type/Positional[Positional] (`@` sigil)。原因是 `@`-sigiled 变量*主要是eager*。这意味着他们*大部分时间*立即*明确分配给他们的东西*。他们唯一没有这样做的时候知道这些项是 link:https://docs.perl6.org/routine/is-lazy[`is-lazy`]，就像我们用无穷大生成序列作为终点一样。如果我们将 `gather` 赋值给 `@`-variable，那里面的 `say` 语句就会被立即打印出来。
+
+完全具体化列表的另一种方法是在其上调用 link:https://docs.perl6.org/routine/elems[`.elems`]。这就是为什么检查列表是否包含任何项最好使用 `.Bool` 方法的原因(或者只使用 `if @array { … }`)，因为你不需要明确*所有*元素以找出它们中的任何一个。
+
+有些时候你*确实*需要在做某事之前完全具体化列表。例如，link:https://docs.perl6.org/type/IO::Handle#method_lines[`IO::Handle.lines`] 返回 link:https://docs.perl6.org/type/Seq[Seq]。以下代码包含错误; 记住具体化，试着发现它：
+
+```perl6
+my $fh = "/tmp/bar".IO.open;
+my $lines = $fh.lines;
+close $fh;
+say $lines[0];
+```
+
+我们打开 link:https://docs.perl6.org/type/IO::Handle[filehandle]，然后分配 link:https://docs.perl6.org/type/IO::Handle#method_lines[`.lines`]  给  link:https://docs.perl6.org/type/Scalar[Scalar] 变量，因此返回的 link:https://docs.perl6.org/type/Seq[Seq] 不会立刻被具体化。 然后我们 link:https://docs.perl6.org/routine/close[`close`] 文件句柄，并尝试从 `$lines` 打印一个元素。
+
+代码中的错误是在我们在最后一行具体化 `$lines` link:https://docs.perl6.org/type/Seq[Seq]  时，我们*已经关闭*文件句柄。 当 `Seq` 的 iterator 试图生成我们请求的项时，会导致尝试从关闭的句柄中读取的错误。 因此，要修复错误，我们可以在关闭句柄之前分配给 `@`-sigiled 变量或在 `$lines` 上调用 link:https://docs.perl6.org/routine/elems[`.elems`]:
+
+```perl6
+my $fh = "/tmp/bar".IO.open;
+my @lines = $fh.lines;
+close $fh;
+say @lines[0]; # no problem! 
+```
+
+我们也可以使用带有具体化副作用的任何函数，如上面提到的 `.elems`：
+
+```perl6
+my $fh = "/tmp/bar".IO.open;
+my $lines = $fh.lines;
+say "Read $lines.elems() lines"; # reifying before closing handle 
+close $fh;
+say $lines[0]; # no problem! 
+```
+
+使用 link:https://docs.perl6.org/routine/eager[eager] 也将具体化整个序列：
+
+```perl6
+my $fh = "/tmp/bar".IO.open;
+my $lines = eager $fh.lines; # Uses eager for reification. 
+close $fh;
+say $lines[0];
+```
+
+=== 内省
+
+允许 link:https://en.wikipedia.org/wiki/Type_introspection[内省](如Perl 6)的语言具有附加到类型系统的功能，允许开发人员访问容器和值元数据。该元数据可以在程序中使用，以根据它们的值执行不同的动作。从名称中可以明显看出，元数据是通过元类从值或容器中提取的。
+
+```perl6
+my $any-object = "random object";
+my $metadata = $any-object.HOW;
+say $metadata.^mro;                   # OUTPUT: «((ClassHOW) (Any) (Mu))␤» 
+say $metadata.can( $metadata, "uc" ); # OUTPUT: «(uc uc)␤» 
+```
+
+使用第一个 `say`，我们展示了元模型类的类层次结构，在本例中是 link:https://docs.perl6.org/type/Metamodel::ClassHOW[Metamodel::ClassHOW]。它直接继承自 `Any`，这意味着可以使用任何方法; 它还混合了几个角色，可以为您提供有关类结构和功能的信息。但是那个特定类的方法之一是 link:https://docs.perl6.org/type/Metamodel::ClassHOW#method_can[`can`]，我们可以用它来查找对象是否可以使用 `uc`(大写)方法，它显然可以。但是，在某些其他情况下，当角色直接被混合到变量中时，它可能不那么明显。例如，在上面定义的的 link:https://docs.perl6.org/language/structures#Defining_and_constraining_data_structures[`%hash-plus`] 情况下:
+
+```perl6
+say %hash-plus.^can("last"); # OUTPUT: «(last)␤» 
+```
+
+在这种情况下，我们使用 `HOW.method` 的*语法塘* `^method` 来检查你的数据结构是否响应该方法; 输出显示匹配方法的名称，证明我们可以使用它。
+
+另请参见link:https://perl6advent.wordpress.com/2015/12/19/day-19-introspection/[关于类内省的文章]，了解如何访问类属性和方法，并使用它来为该类生成测试数据;这篇link:https://perl6advent.wordpress.com/2010/12/22/day-22-the-meta-object-protocol/[Advent Calendar 文章详细描述了元对象协议] 。
+

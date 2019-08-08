@@ -1,0 +1,125 @@
+在 Perl 6 开发期间，通常可以在设计完成之前为用户提供新功能。最终，这些功能可能成为 Perl 6 规范的一部分。要使用这些功能，可以在程序源代码中使用  `experimental` 指令，例如，如下所示：
+
+```perl6
+use experimental :macros;
+```
+
+这些功能暂时是实验性的。
+
+## **pack**
+
+Pack 是一种允许二进制序列化一般数据结构的功能，并且继承自 Perl 的link:http://perldoc.perl.org/functions/pack.html[pack]。`pack` 命令通过以包装字符串给出的特定方式打包数据结构来创建Buf，其中包含 link:https://docs.perl6.org/type/Blob#method_unpack[`unpack`] 描述中显示的选项。你可以通过在程序开头插入这个指令来打开它：
+
+```perl6
+use experimental :pack;
+```
+
+例如，我们可以打包数字，将它们解释为十六进制（`H`），重复模式，直到没有更多的元素（`*`）：
+
+```perl6
+use experimental :pack;
+say pack("H*", "414243").contents;#  OUTPUT: «(65 66 67)␤» 
+```
+
+有一个相应的 `unpack` 例程正好相反。
+
+```perl6
+use experimental :pack;
+my $buf=Buf.new(65,66,67);
+say $buf.unpack("H*"); # OUTPUT: «414243␤» 
+```
+
+并非所有上述符号都可以保证实现，并且路线图不包含退出该阶段的固定日期。
+
+请参阅 `Blob` 页面中的 link:https://docs.perl6.org/type/Blob#sub_pack[`pack`] 和 link:https://docs.perl6.org/type/Blob#method_unpack[`unpack`] 文档。
+
+## **宏**
+
+link:https://en.wikipedia.org/wiki/Macro_(computer_science[宏]) 是代码生成例程，它们在程序执行之前在编译时生成代码。在 Perl 6 中，它的使用仍然是实验性的，它需要通过编译指示打开
+
+```perl6
+use experimental :macros;
+```
+
+宏处理在解析时发生。宏生成抽象语法树，将其移植到程序语法树中。 `quasi` 是执行此任务的例程。
+
+```perl6
+macro does-nothing() {
+    quasi {}
+};
+does-nothing; # OUTPUT: «» 
+```
+
+宏是一种例程，因此它们可以以完全相同的方式接受参数，并且也以几乎相同的方式起作用。
+
+```perl6
+macro is-mighty( $who ) {
+    quasi { "$who is mighty!"}
+};
+say is-mighty "Freija"; # OUTPUT: « "Freija" is mighty!␤» 
+```
+
+“几乎”说明了参数作为文字插入的事实，包括引号。请注意，我们也可以按照与例程相同的规则消除宏调用的括号。你可以使用unquoting构造  `{{{}}}`  来摆脱这种事情：
+
+```perl6
+macro is-mighty( $who ) {
+    quasi { {{{$who}}} ~ " is mighty!"}
+};
+say is-mighty "Freija";  # OUTPUT: «Freija is mighty!␤» 
+```
+
+由于宏扩展是在解析时发生的，因此在使用外部变量时必须小心：
+
+```perl6
+use experimental :macros;
+my $called;
+macro called() {
+    $called++;
+    quasi { "Called" }
+};
+say called() ~ " $called times";
+say called() ~ " $called times"; # OUTPUT: «Called 2 times␤Called 2 times␤» 
+```
+
+由于宏在分析时被扩展，因此 `$called` 将是运行时启动时的结果，已打印为 `2`。 但是，使用 0 初始化 `$called` 将使此打印调用 0 次，因为在扩展宏的解析阶段之后运行初始化。
+
+当需要进行复杂的计算初始化时，宏非常有用。 然而，他们仍然处于试验中，这是有充分理由的。 虽然上面显示的功能不太可能发生变化，但任何事情，甚至它们的存在，都可能在任何时候都有所改变，这取决于必需品，因此最好让它们远离生产代码。 与此同时，看看 Masak 和 link:https://github.com/masak/007[007] 的link:https://perl6advent.wordpress.com/2012/12/23/day-23-macros/[这篇文章]，这是一种新的宏观语言，可能会显示未来的形状。
+
+## **cached**
+
+以下指令:
+
+```perl6
+use experimental :cached;
+```
+
+打开 `is cached` trait，它存储例程调用的结果，如果使用相同的参数调用，则返回相同的值。
+
+它可以在涉及大量计算时使用，如本示例中使用的link:https://perl6advent.wordpress.com/2018/12/25/calling-numbers-names/#more-7528[友好数字]，取自 2018 年 Advent 日历：
+
+```perl6
+use experimental :cached;
+ 
+sub aliquot-parts( $number ) is cached {
+    (^$number).grep: $number %% *;
+}
+ 
+sub infix:<amic>( $m, $n ) {
+    $m == aliquot-parts($n).sum &&
+    $n == aliquot-parts($m).sum;
+}
+ 
+# Taken from https://en.wikipedia.org/wiki/Amicable_numbers 
+my @numbers = [2620, 2924, 5020, 5564, 6232, 6368, 66928, 66992];
+ 
+say "Aliquot parts of $_ are ", aliquot-parts $_ for @numbers;
+ 
+for @numbers X @numbers -> @pair {
+    say "@pair[0] and @pair[1] are ",
+        @pair[0] amic @pair[1]??" "!!"not ", "amicable";
+}
+```
+
+这段代码缓存了等分部分的计算，因此当调用 `amic` 运算符时，它只计算一次;事实上，打印这些等分部件的第一个循环将是唯一一个实际执行计算的循环。
+
+有关其他信息和示例，另请参见link:https://docs.perl6.org/routine/is%20cached[特征描述] 。

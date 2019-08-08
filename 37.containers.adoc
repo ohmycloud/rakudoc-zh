@@ -1,0 +1,389 @@
+== 容器
+
+本节介绍了处理变量和容器元素时所涉及的间接级别。解释了 Perl 6 中使用的容器的不同类型，以及适用于它们的操作，如赋值，绑定和展平。最后讨论了更多高级主题，如自引用数据，类型约束和自定义容器。
+
+=== 变量是什么?
+
+有些人喜欢说“一切都是对象”，但实际上在 Perl 6 中变量不是对用户暴露的对象。
+
+当编译器遇到类似 `my $x` 的变量声明时，它会将其注册到某个内部符号表中。此内部符号表用于检测未声明的变量，并将变量的代码生成与正确的作用域联系起来。
+
+在运行时，变量显示为*词法板中*的条目，或*简称*为*lexpad*。这是一个每个作用域的数据结构，它存储每个变量的指针。
+
+在 `my $x` 这种情况下，变量的 `$x` 的 lexpad 条目是指向 `Scalar` 类型对象的指针，通常称为*容器*。
+
+=== 标量容器
+
+虽然 link:https://docs.perl6.org/type/Scalar[`Scalar`] 类型的对象在 Perl 6 中无处不在，但您很少直接将它们视为对象，因为大多数操作*都是去容器化的*，这意味着它们会对 `Scalar` 容器的内容而不是容器本身起作用。
+
+在这样的代码中：
+
+```perl6
+my $x = 42;
+say $x;
+```
+
+赋值 `$x = 42` 在标量容器中存储指向 `Int` 对象 42 的指针，lexpad 条目 `$x` 指向该标量容器。
+
+赋值运算符要求左侧的容器将值存储在其右侧。究竟是什么意思取决于容器类型。因为 `Scalar` 它意味着“用新的值替换先前存储的值”。
+
+请注意，子例程签名允许传递容器：
+
+```perl6
+sub f($a is rw) {
+    $a = 23;
+}
+my $x = 42;
+f($x);
+say $x;         # OUTPUT: «23» 
+```
+
+在子例程内部，lexpad 条目 `$a` 指向 `$x` 指向子例程外部的同一容器。这就是为什么给 `$a` 赋值也修改了 `$x` 的内容。
+
+同样，例程可以返回容器，如果它被标记为 `is rw`：
+
+```perl6
+my $x = 23;
+sub f() is rw { $x };
+f() = 42;
+say $x;         # OUTPUT: «42» 
+```
+
+对于显式返回，必须使用 `return-rw` 而不是 `return`。
+
+返回容器是 `is rw` 属性访问器的工作方式。所以：
+
+```perl6
+class A {
+    has $.attr is rw;
+}
+```
+
+相当于
+
+```perl6
+class A {
+    has $!attr;
+    method attr() is rw { $!attr }
+}
+```
+
+标量容器对类型检查和大多数只读访问都是透明的。`.VAR` 使它们可见：
+
+```perl6
+my $x = 42;
+say $x.^name;       # OUTPUT: «Int» 
+say $x.VAR.^name;   # OUTPUT: «Scalar» 
+```
+
+并且参数上的 `is rw` 需要存在可写的 Scalar 容器：
+
+```perl6
+sub f($x is rw) { say $x };
+f 42;
+CATCH { default { say .^name, ': ', .Str } };
+# OUTPUT: «X::Parameter::RW: Parameter '$x' expected a writable container, but got Int value» 
+```
+
+=== Callable 容器
+
+可调用容器在 link:https://docs.perl6.org/type/Routine[Routine] 调用语法和存储在容器中的对象的 link:https://docs.perl6.org/type/Callable#method_CALL-ME[CALL-ME] 方法的实际调用之间提供了桥梁。声明容器时需要使用符号 `&`  ，执行时必须省略 `Callable`。默认类型约束是 link:https://docs.perl6.org/type/Callable[Callable]。
+
+```perl6
+my &callable = -> $ν { say "$ν is", $ν ~~ Int??" whole"!!" not whole" }
+callable( ⅓ );
+callable( 3 );
+```
+
+当提到存储在容器中的值时，必须提供 signal 符号。这反过来允许 `Routine` 被用作调用的link:https://docs.perl6.org/type/Signature#Constraining_signatures_of_Callables[参数]。
+
+```perl6
+sub f() {}
+my &g = sub {}
+sub caller(&c1, &c2){ c1, c2 }
+caller(&f, &g);
+```
+
+=== 绑定
+
+在赋值之后，Perl 6 还支持 `:=` *绑定*运算符。将值或容器绑定到变量时，会修改变量的 lexpad 条目（而不仅仅是它指向的容器）。如果你这样写：
+
+```perl6
+my $x := 42;
+```
+
+然后 `$x` 的 lexpad 条目直接指向 `Int` 42. 这意味着你不能再给它赋值了：
+
+```perl6
+my $x := 42;
+$x = 23;
+CATCH { default { say .^name, ': ', .Str } };
+# OUTPUT: «X::AdHoc: Cannot assign to an immutable value» 
+```
+
+您还可以将变量绑定到其他变量：
+
+```perl6
+my $a = 0;
+my $b = 0;
+$a := $b;
+$b = 42;
+say $a;         # OUTPUT: «42» 
+```
+
+这里，在初始绑定之后，`$a` 的 lexpad 条目和 `$b` 的lexpad 条目两者都指向同一个标量容器，因此给一个变量赋值也会改变另一个变量的内容。
+
+您之前已经看到过这种情况：它正是签名参数标记为 `is rw` 的情况。
+
+无符号变量和带有 `is raw` trait 的参数总是绑定的（无论使用 `=` 或 `:=` ）：
+
+```perl6
+my $a = 42;
+my \b = $a;
+b++;
+say $a;         # OUTPUT: «43» 
+ 
+sub f($c is raw) { $c++ }
+f($a);
+say $a;         # OUTPUT: «44» 
+```
+
+=== Scalar 容器和 listy things
+
+在 Perl 6 中有许多位置容器类型，其语义略有不同。最基本的是 link:https://docs.perl6.org/type/List[List]; 它由逗号运算符创建。
+
+```perl6
+say (1, 2, 3).^name;    # OUTPUT: «List» 
+```
+
+列表是不可变的，这意味着您无法更改列表中的元素数。但是，如果其中一个元素恰好是标量容器，您仍然可以给它赋值：
+
+```perl6
+my $x = 42;
+($x, 1, 2)[0] = 23;
+say $x;                 # OUTPUT: «23» 
+($x, 1, 2)[1] = 23;     # Cannot modify an immutable value 
+CATCH { default { say .^name, ': ', .Str } };
+# OUTPUT: «X::Assignment::RO: Cannot modify an immutable Int» 
+```
+
+所以列表不关心它的元素是值还是容器，它们只是存储和检索给它们的任何东西。
+
+列表也可以是惰性的; 在这种情况下，最终的元素是根据迭代器的要求生成的。
+
+`Array` 就像一个列表，除了它强制所有元素都是容器，这意味着你总是可以给元素赋值：
+
+```perl6
+my @a = 1, 2, 3;
+@a[0] = 42;
+say @a;         # OUTPUT: «[42 2 3]» 
+```
+
+`@a` 实际上存储了三个标量容器。`@a[0]` 返回其中一个，赋值运算符用新的整数替换该容器中存储的整数值 `42`。
+
+=== 赋值和绑定给数组变量
+
+对标量变量和数组变量的赋值都执行相同的操作：丢弃旧值，并输入一些新值。
+
+然而，很容易观察到它们有多么不同：
+
+```perl6
+my $x = 42; say $x.^name;   # OUTPUT: «Int» 
+my @a = 42; say @a.^name;   # OUTPUT: «Array» 
+```
+
+这是因为 `Scalar` 容器类型隐藏得很好，但 `Array` 没有这样的效果。对数组变量的赋值也是强制性的，因此可以将非数组值赋给数组变量。
+
+要将非 `Array` 放入数组变量，绑定起作用：
+
+```perl6
+my @a := (1, 2, 3);
+say @a.^name;               # OUTPUT: «List» 
+```
+
+=== 绑定到数组元素
+
+作为一个奇怪的旁注，Perl 6 支持绑定到数组元素：
+
+```perl6
+my @a = (1, 2, 3);
+@a[0] := my $x;
+$x = 42;
+say @a;                     # OUTPUT: «[42 2 3]» 
+```
+
+如果您已经阅读并理解了之前的解释，那么现在是时候知道这是如何工作的了。毕竟，绑定到变量需要该变量的 lexpad 条目，虽然数组有一个 lexpad 条目 ，但每个数组元素都没有 lexpad 条目，因为您无法在运行时展开 lexpad。
+
+答案是在语法级别识别绑定到数组元素，而不是为正常绑定操作发出代码，在数组上调用特殊方法（`BIND-KEY` 被调用）。此方法处理与数组元素的绑定。
+
+请注意，虽然支持，但通常应避免直接将非容器化事物绑定到数组元素中。这样做可能会在以后使用数组时产生反直觉的结果。
+
+```perl6
+my @a = (1, 2, 3);
+@a[0] := 42;         # This is not recommended, use assignment instead. 
+my $b := 42;
+@a[1] := $b;         # Nor is this. 
+@a[2] = $b;          # ...but this is fine. 
+@a[1, 2] := 1, 2;    # runtime error: X::Bind::Slice 
+CATCH { default { say .^name, ': ', .Str } };
+# OUTPUT: «X::Bind::Slice: Cannot bind to Array slice» 
+```
+
+混合列表和数组的操作通常可以防止发生这种意外情况。
+
+=== 展平, 项和容器
+
+Perl 6 中的 `%` 和 `@` Sigils 通常指示迭代构造的多个值，而 `$` sigil 仅指示一个值。
+
+```perl6
+my @a = 1, 2, 3;
+for @a { };         # 3 iterations 
+my $a = (1, 2, 3);
+for $a { };         # 1 iteration 
+```
+
+`@`-sigiled 变量不会在列表上下文中展平：
+
+```perl6
+my @a = 1, 2, 3;
+my @b = @a, 4, 5;
+say @b.elems;               # OUTPUT: «3» 
+```
+
+有些操作会使不在标量容器内的子列表被展平：slurpy parameters（`*@a`）和显式调用 `flat`：
+
+```perl6
+my @a = 1, 2, 3;
+say (flat @a, 4, 5).elems;  # OUTPUT: «5» 
+ 
+sub f(*@x) { @x.elems };
+say f @a, 4, 5;             # OUTPUT: «5» 
+```
+
+您还可以使用 `|` 创建 link:https://docs.perl6.org/type/Slip[Slip]，将列表引入另一个列表中。
+
+```perl6
+my @l := 1, 2, (3, 4, (5, 6)), [7, 8, (9, 10)];
+say (|@l, 11, 12);    # OUTPUT: «(1 2 (3 4 (5 6)) [7 8 (9 10)] 11 12)» 
+say (flat @l, 11, 12) # OUTPUT: «(1 2 3 4 5 6 7 8 (9 10) 11 12)» 
+```
+
+在第一种情况下，`@l` 的每个元素都作为结果列表的相应元素*滑动*。另一方面，`flat` *扁平化*所有元素，包括所包含数组的元素，除了 `(9 10)`。
+
+如上所述，标量容器可防止扁平化：
+
+```perl6
+sub f(*@x) { @x.elems };
+my @a = 1, 2, 3;
+say f $@a, 4, 5;            # OUTPUT: «3» 
+```
+
+`@` 字符也可以用作将参数强制为列表的前缀，从而删除标量容器：
+
+```perl6
+my $x = (1, 2, 3);
+.say for @$x;               # 3 iterations 
+```
+
+但是，*解容器*运算符 `<>` 更适合去除非列表项：
+
+```perl6
+my $x = ^Inf .grep: *.is-prime;
+say "$_ is prime" for @$x;  # WRONG! List keeps values, thus leaking memory 
+say "$_ is prime" for $x<>; # RIGHT. Simply decontainerize the Seq 
+ 
+my $y := ^Inf .grep: *.is-prime; # Even better; no Scalars involved at all 
+```
+
+方法通常不关心他们的调用者是否在标量中，所以：
+
+```perl6
+my $x = (1, 2, 3);
+$x.map(*.say);              # 3 iterations 
+```
+
+在三个元素的列表上 map，而不是在一个元素上 map。
+
+=== 自引用数据
+
+容器类型（包括 `Array` 和 `Hash`）允许您创建自引用结构。
+
+```perl6
+my @a;
+@a[0] = @a;
+put @a.perl;
+# OUTPUT: «((my @Array_75093712) = [@Array_75093712,])» 
+```
+
+虽然 Perl 6 不会阻止您创建和使用自引用数据，但这样做可能会导致您尝试转储数据。作为最后的手段，您可以使用 Promises 来link:https://docs.perl6.org/type/Promise#method_in[处理]超时。
+
+=== 类型约束
+
+任何容器都可以具有link:https://docs.perl6.org/language/typesystem#Type_objects[类型对象]或link:https://docs.perl6.org/language/typesystem#subset[subset]形式的类型约束。两者都可以放在声明符和变量名之间，也可以放在 trait link:https://docs.perl6.org/type/Variable#trait_is_dynamic[of]。之后。约束是变量的属性，而不是容器的属性。
+
+```perl6
+subset Three-letter of Str where .chars == 3;
+my Three-letter $acronym = "ÞFL";
+```
+
+在这种情况下，类型约束是（编译类型定义的）subset `Three-letter`。
+
+变量可能没有容器，但仍然提供重新绑定和类型检查重新绑定的能力。原因是在这种情况下绑定运算符link:https://docs.perl6.org/language/operators#infix_%3A%3D[`:=`] 执行类型检查：
+
+```perl6
+my Int \z = 42;
+z := 100; # OK 
+z := "x"; # Typecheck failure 
+```
+
+例如，当绑定到 link:https://docs.perl6.org/type/Hash[Hash] 键时，情况并非如此，因为绑定随后由方法调用处理（即使语法保持不变，使用 `:=` 运算符）。
+
+`Scalar` 容器的默认类型约束是 link:https://docs.perl6.org/type/Mu[Mu]。`.VAR.of` 方法提供了对容器类型约束的内省，对于 `@` 和 `%` sigiled 变量，它给出了值的约束：
+
+```perl6
+my Str $x;
+say $x.VAR.of;  # OUTPUT: «(Str)» 
+my Num @a;
+say @a.VAR.of;  # OUTPUT: «(Num)» 
+my Int %h;
+say %h.VAR.of;  # OUTPUT: «(Int)» 
+```
+
+==== Definedness 约束
+
+容器还可以强制执行变量是定义的。在声明中放一个笑脸：
+
+```perl6
+my Int:D $def = 3;
+say $def;   # OUTPUT: «3» 
+$def = Int; # Typecheck failure 
+```
+
+您还需要在声明中初始化变量，毕竟变量不能是未定义的。
+
+也可以在使用link:https://docs.perl6.org/language/variables#Default_defined_variables_pragma[默认定义变量 pragma] 的作用域中声明的所有变量中强制执行此约束。来自其他语言的人们总是会定义变量，他们希望看看。
+
+=== 自定义容器
+
+为了提供自定义容器，Perl 6 提供了 `Proxy` 这个类 。当从容器中存储或提取值时，需要调用两个方法。类型检查不是由容器本身完成的，并且 readonlyness 等其他限制可以被破坏。因此，返回的值必须与它绑定的变量的类型相同。我们可以使用类型捕获来处理 Perl 6 中的类型。
+
+```perl6
+sub lucky(::T $type) {
+    my T $c-value; # closure variable 
+    return Proxy.new(
+        FETCH => method () { $c-value },
+        STORE => method (T $new-value) {
+            X::OutOfRange.new(what => 'number', got => '13', range => '-∞..12, 14..∞').throw
+                if $new-value == 13;
+            $c-value = $new-value;
+        }
+    );
+}
+ 
+my Int $a := lucky(Int);
+say $a = 12;    # OUTPUT: «12» 
+say $a = 'FOO'; # X::TypeCheck::Binding 
+say $a = 13;    # X::OutOfRange 
+CATCH { default { say .^name, ': ', .Str } };
+```
+

@@ -1,0 +1,15 @@
+## 概览
+
+“Perl 5是我对 Perl 的重写。我希望 Perl 6 能够成为社区重写的 Perl, 并且 Perl 6 是社区的 Perl。” - 拉里沃尔
+
+## Perl 6 社区
+
+`freenode.net` 上的 `#perl6` 频道有很多人，他们很乐意提供支持和回答问题。可以在 link:https://perl6.org/community/[perl6.org 社区页面] 中找到更多资源。 link:https://perl6.org/[Camelia] 是她身上带有 P 6 的多色蝴蝶，她是这个多元化和热情的社区的象征。我们广泛使用 link:https://perl6.org/community/irc[#perl6] IRC 频道进行沟通，提问和简单地闲逛。查看此link:http://www.ircbeginner.com/ircinfo/abbreviations.html[IRC术语]资源，了解那里经常使用的缩写。 link:https://stackoverflow.com/questions/tagged/perl6[StackOverflow] 也是一个很好的资源，用于提出问题并帮助其他人解决他们的 Perl 6 问题和挑战。
+
+## Perl 6 周刊
+
+Elizabeth Mattijsen 通常在 “Perl 6 Weekly” 博客中发帖，这是有关 Perl 6 的帖子，推文，评论和其他有趣花絮的摘要。是知道 Perl 社区正在发生什么的最佳单个资源。
+
+## Perl 6 降临节日历
+
+Perl 6 社区每年 12 月都会发布一个 link:https://perl6advent.wordpress.com/[Advent Calendar]，每天都有 Perl 6 教程，直到圣诞节。通过不同的 Perl 6 频道和 link:https://github.com/perl6/mu[Perl6/mu] 存储库完成组织和日期分配。如果您想参与，它将在10月底开始组织，因此请查看上面的频道。

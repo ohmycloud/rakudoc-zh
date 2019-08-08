@@ -1,0 +1,367 @@
+== Phasers
+
+程序的生命周期（执行时间表）分为几个阶段。*phaser*是在特定执行阶段调用的代码块。
+
+=== Phasers
+
+phaser 块只是包含它的闭包的 trait，并在适当的时刻自动调用。这些自动调用的块称为 *phasers*，因为它们通常标记从计算的一个阶段到另一个阶段的转换。例如，在编译编译单元结束时调用 `CHECK` 块。也可以安装其他类型的 phasers; 它们会在适当的时候自动调用，其中一些 phasers 响应各种控制异常和退出值。例如，如果块的退出成功或失败，则可能会调用某些 phasers，在这种情况下*成功*退出, 则在这时返回定义的值或列表，而不带任何 `Failure` 或异常。
+
+以下是摘要：
+
+```perl6
+  BEGIN {...} #  * at compile time, as soon as possible, only ever runs once 
+  CHECK {...} #  * at compile time, as late as possible, only ever runs once 
+   INIT {...} #  * at runtime, as soon as possible, only ever runs once 
+    END {...} #  at runtime, as late as possible, only ever runs once 
+    DOC [BEGIN|CHECK|INIT] {...} # only in documentation mode 
+ 
+  ENTER {...} #  * at every block entry time, repeats on loop blocks. 
+  LEAVE {...} #  at every block exit time (even stack unwinds from exceptions) 
+   KEEP {...} #  at every successful block exit, part of LEAVE queue 
+   UNDO {...} #  at every unsuccessful block exit, part of LEAVE queue 
+ 
+  FIRST {...} #  at loop initialization time, before any ENTER 
+   NEXT {...} #  at loop continuation time, before any LEAVE 
+   LAST {...} #  at loop termination time, after any LEAVE 
+ 
+    PRE {...} #  assert precondition at every block entry, before ENTER 
+   POST {...} #  assert postcondition at every block exit, after LEAVE 
+ 
+  CATCH {...} #  catch exceptions, before LEAVE 
+CONTROL {...} #  catch control exceptions, before LEAVE 
+ 
+   LAST {...} #  supply tapped by whenever-block is done, runs very last 
+   QUIT {...} #  catch async exceptions within a whenever-block, runs very last 
+ 
+COMPOSE {...} #  when a role is composed into a class (Not yet implemented) 
+  CLOSE {...} #  appears in a supply block, called when the supply is closed 
+```
+
+标记为 `*` 号的 phaser 具有运行时值，并且如果早于周围表达式进行求值，则只需保存其结果，以便在以后计算表达式的其余部分时在表达式中使用：
+
+```perl6
+my $compiletime = BEGIN { now };
+our $random = ENTER { rand };
+```
+
+与其他语句前缀一样，这些产生值的构造可以放在块或语句的前面：
+
+```perl6
+my $compiletime = BEGIN now;
+our $random = ENTER rand;
+```
+
+这些 phaser 的大多数将接收块或函数引用。语句形式对于将词法作用域的声明暴露给周围的词法作用域而不在块中“捕获”它特别有用。
+
+它们声明了与前面示例相同作用域的相同变量，但在指定时间把语句作为整体运行：
+
+```perl6
+BEGIN my $compiletime = now;
+ENTER our $random = rand;
+```
+
+（但请注意，在运行时克隆任何周围闭包时，在编译时计算的变量值可能不会持久存在。）
+
+大多数非值生成 phasers 也可能如此使用：
+
+```perl6
+END say my $accumulator;
+```
+
+但请注意：
+
+```perl6
+END say my $accumulator = 0;
+```
+
+在 `END` time 时将变量设置为 0 ，因为这是实际执行 “my” 声明的时间。只有无参数的 phasers 可以使用语句形式。这意味着 `CATCH` 和 `CONTROL` 始终需要一个块，因为它们接收一个设置 `$_` 为当前主题的参数，以便内部行为能够表现为 switch 语句。（如果允许使用裸语句，那么 `$_` 临时绑定会在 `CATCH`或者`CONTROL` 结束时泄漏出来，带来不可预测的，甚至可能是可怕的后果。异常处理程序应该减少不确定性，而不是增加它。）
+
+其中一些 phasers 也具有可以在变量上设置的相应 trait; 他们使用 `will` 后面跟着小写的 phaser 名称。这些优点是将讨论中的变量作为主题传递给闭包：
+
+```perl6
+our $h will enter { .rememberit() } will undo { .forgetit() };
+```
+
+只有在块内可以多次出现的 phaser 才有资格获得这种每个变量(per-variable)形式; 这不包括 `CATCH` 和其他例如 `CLOSE` 或 `QUIT` phaser 。
+
+phaser 外部的块的主题作为 `OUTER::<$_>` 仍然可用。返回值是否可修改可能是所讨论的 phaser 的策略。特别地，不应在 `POST` phaser 内修改返回值，但 `LEAVE` phaser 可能更自由。
+
+在方法的词法作用域中定义的任何 phaser 都是闭合 `self` 以及正常词汇。（或者等效地，实现可以简单地将所有这样的 phaser 转换为其引导的调用者是当前对象的子方法。）
+
+当多个 phaser 被安排在同一时刻运行时，一般的打破平局的原则是初始化 phaser 按照声明的顺序执行，而最终 phaser 以相反的顺序执行，因为设置和拆除通常希望以相反的顺序相互发生。
+
+==== 执行顺序
+
+编译开始
+
+```perl6
+      BEGIN {...} #  at compile time, As soon as possible, only ever runs once 
+      CHECK {...} #  at compile time, As late as possible, only ever runs once 
+    COMPOSE {...} #  when a role is composed into a class (Not yet implemented) 
+```
+
+执行开始
+
+```perl6
+       INIT {...} #  at runtime, as soon as possible, only ever runs once 
+```
+
+在块执行开始之前
+
+```perl6
+        PRE {...} #  assert precondition at every block entry, before ENTER 
+```
+
+循环执行开始
+
+```perl6
+      FIRST {...} #  at loop initialization time, before any ENTER 
+```
+
+块执行开始
+
+```perl6
+      ENTER {...} #  at every block entry time, repeats on loop blocks. 
+```
+
+可能会发生异常
+
+```perl6
+      CATCH {...} #  catch exceptions, before LEAVE 
+    CONTROL {...} #  catch control exceptions, before LEAVE 
+```
+
+循环结束，继续或结束
+
+```perl6
+       NEXT {...} #  at loop continuation time, before any LEAVE 
+       LAST {...} #  at loop termination time, after any LEAVE 
+```
+
+块结束
+
+```perl6
+      LEAVE {...} #  at every block exit time (even stack unwinds from exceptions) 
+       KEEP {...} #  at every successful block exit, part of LEAVE queue 
+       UNDO {...} #  at every unsuccessful block exit, part of LEAVE queue 
+```
+
+块的后置条件
+
+```perl6
+       POST {...} #  assert postcondition at every block exit, after LEAVE 
+```
+
+异步 whenever-block 结束
+
+```perl6
+       LAST {...} #  if ended normally with done, runs once after block 
+       QUIT {...} #  catch async exceptions 
+```
+
+程序终止
+
+```perl6
+        END {...} #  at runtime, ALAP, only ever runs once 
+```
+
+=== 程序执行 phasers
+
+==== BEGIN
+
+编译时运行，一旦 phaser 中的代码编译完毕，就只运行一次。
+
+返回值可在以后的 phaser 中使用：
+
+```perl6
+say "About to print 3 things";
+for ^3 {
+    say ^10 .pick ~ '-' ~ BEGIN { say  "Generating BEGIN value"; ^10 .pick }
+}
+# OUTPUT: 
+# Generating BEGIN value 
+# About to print 3 things 
+# 3-3 
+# 4-3 
+# 6-3 
+```
+
+phaser 中的 `^10 .pick` 只产生一次，并在运行时期间由循环重用。注意怎么 `BEGIN` 块中的 link:https://docs.perl6.org/routine/say[say] 是在上述循环执行之前是怎么执行的。
+
+==== CHECK
+
+在编译时运行，尽可能晚，只运行一次。
+
+可以具有即使在后期 phases 提供的返回值。
+
+在运行时生成的代码仍然可以启动 `CHECK` 和 `INIT` phasers，但当然这些 phaser 无法做出需要及时返回的事情。你需要一个虫洞。
+
+==== INIT
+
+在 main 执行期间编译后运行，尽快运行一次。它可以具有即使在后期 phases 也提供的返回值。
+
+当 phaser 位于不同的模块中时， phaser `INIT` 和 `END` phaser 将被视为在使用模块中就像在 `use` 时声明一样。（如果模块被多次使用，则依赖于此顺序是错误的，因为仅在第一次注意到它们时才安装 phaser 。）
+
+在运行时生成的代码仍然可以启动 `CHECK` 和 `INIT` phaser，但当然这些 phaser 无法做出需要及时返回的事情。你需要一个虫洞。
+
+对 `INIT` 克隆闭包的所有副本只运行一次。
+
+==== END
+
+在 main 执行期间编译后运行，尽可能晚，只运行一次。
+
+当 phaser 位于不同的模块中时， `INIT` 和 `END` phaser 将被视为在正使用的模块中就像在 `use` 时声明一样。（如果模块被多次使用，则依赖于此顺序是错误的，因为仅在第一次注意到它们时才安装 phaser 。）
+
+=== Block phasers
+
+块的上下文中的执行具有其自己的 phases。
+
+块离开 phaser 等待直到调用堆栈实际展开才能运行。只有在某个异常处理程序决定以这种方式处理异常之后才会展开。也就是说，仅仅因为异常被抛出堆栈帧并不意味着我们已经正式离开了块，因为异常可能是可恢复的。在任何情况下，异常处理程序都指定在失败代码的动态作用域内运行，无论异常是否可恢复。堆栈已展开，仅在未恢复异常时才调用 phaser 。
+
+这些可以在块内多次出现。所以它们确实不是真正的 trait - 它们将自己添加到存储在实际 trait 中的列表中。如果你检查块的 `ENTER` trait，你会发现它实际上是一个 phaser 列表而不是一个 phaser 。
+
+所有这些 phaser 块都可以看到任何先前声明的词法变量，即使在调用闭包时尚未详细说明这些变量（在这种情况下，变量会计算为未定义的值。）
+
+==== ENTER
+
+在每个块进入时运行，在循环块上重复。
+
+可以具有即使在后期 phases 提供的返回值。
+
+从 `ENTER` phaser 抛出的异常将中止 `ENTER` 队列，但是从 `LEAVE` phaser 抛出的异常将不会。
+
+==== LEAVE
+
+在每个块退出时运行（甚至堆栈从异常中展开），除非程序突然退出（例如 link:https://docs.perl6.org/routine/exit[`exit`]）。
+
+`LEAVE` 在任何 `CATCH` 和 `CONTROL` phaser 之后必须计算给定块的 phaser 。这包括 `LEAVE` 变体，`KEEP` 和 `UNDO`。`POST` 在其他一切之后对 phaser 进行计算，以保证偶数 `LEAVE` phaser 不会违反后置条件。
+
+从 `ENTER` phaser 抛出的异常将中止 `ENTER` 队列，但是从 `LEAVE` phaser 抛出的异常将不会。
+
+如果 `POST` 失败或任何类型的 `LEAVE` 块在堆栈展开时抛出异常，则展开继续并收集要处理的异常。展开完成后，将从该点抛出所有新异常。
+
+```perl6
+sub answer() {
+    LEAVE say „I say after the return value.“;
+ 
+    42 # this is the return value 
+}
+```
+
+**注意:** 铭记 `LEAVE` phaser 直接在程序的块，即使用错误的参数尝试调用该例程, 他们也将得到执行：
+
+```perl6
+sub foo (Int) {
+    say "Hello!";
+    LEAVE say "oh noes!"
+}
+try foo rand; # OUTPUT: «oh noes!» 
+```
+
+虽然子程序的主体没有得到执行，因为 sub 的link:https://docs.perl6.org/type/Int[Int] 和 link:https://docs.perl6.org/routine/rand[`rand`] 期望返回一个 link:https://docs.perl6.org/type/Num[Num]，其块进入和离开时（指令绑定失败），因此 `LEAVE` phaser *正*运行。
+
+==== KEEP
+
+在每个成功的块出口处运行，作为 LEAVE 队列的一部分（共享相同的执行顺序）。
+
+==== UNDO
+
+在每个不成功的块出口处运行，作为 LEAVE 队列的一部分（共享相同的执行顺序）。
+
+==== PRE
+
+断言每个块条目的前提条件。在 ENTER phase 之前运行。
+
+`PRE` phaser 在任何 `ENTER` 或 `FIRST` 之前启动。
+
+失败的 `PRE` 和 `POST` phaser 抛出的异常不能被同一个块中的 `CATCH` 异常捕获，这意味着如果`PRE`phaser 失败，则 `POST` phaser 不会运行。
+
+==== POST
+
+在每个块条目处断言后置条件。在 LEAVE phase 后运行。
+
+对于如 `KEEP` 和 `POST` 的 phaser，在正常情况下退出作用域时运行，返回值（如果有的话）从该作用域可作为 phaser 中的当前主题。
+
+`POST` 块可以以两种方式之一来定义。要么 `POST` 定义为单独的 phaser ，在这种情况下 `PRE` 和 `POST` 不共享词法作用域。或者，任何 `PRE` phaser 都可以将其对应的 `POST` 定义为嵌入式 phaser 块，该 phaser 块封闭在 `PRE` 的词法作用域内。
+
+如果 `POST` 失败或任何类型的 `LEAVE` 块在堆栈展开时抛出异常，则展开继续并收集要处理的异常。展开完成后，将从该点抛出所有新异常。
+
+`PRE` 和 `POST` phaser 抛出的异常不能被同一个块中的  `CATCH` 异常捕获，这意味着如果 `PRE` phaser 失败，`POST` phaser 就不会运行。
+
+=== Loop phasers
+
+`FIRST`，`NEXT` 和 `LAST` 仅在循环的词法作用域内有意义，并且可能仅在这样的循环块的顶层发生。
+
+==== FIRST
+
+在 ENTER 之前运行循环初始化。
+
+==== NEXT
+
+循环继续（通过 `next` 或因为你到达循环的底部并循环回来）时运行，在LEAVE之前。
+
+仅当正常到达循环块的末尾或 `next`显式 执行时，才执行 `NEXT`。 与 `LEAVE` phaser 不同，`NEXT` 如果通过除由 `next` 引发的控制异常之外的任何异常退出循环块，则不执行 `NEXT` phaser。特别地，`last` 绕过了 `NEXT` phaser 的计算。
+
+==== LAST
+
+在循环结束时运行，在 `LEAVE` 之后(或者当它使用 `last` 或 `return` 退出时; 或者因为你到了循环的底部) 。
+
+=== Exception handling phasers
+
+==== CATCH
+
+在 LEAVE phase 之前，当前块引发异常时运行。
+
+==== CONTROL
+
+在 LEAVE phase 之前，当前块引发控制异常时运行。它通过 `return`，`fail`，`redo`，`next`，`last`，`emit`，`take`，`warn`，`proceed` 和 `succeed` 发生。
+
+```perl6
+say elems gather {
+    CONTROL {
+        when CX::Warn { say "WARNING!!! $_"; .resume }
+        when CX::Take { say "Don't take my stuff"; .resume }
+    }
+    warn 'people take stuff here';
+    take 'keys';
+}
+# OUTPUT: 
+# WARNING!!! people take stuff here 
+# Don't take my stuff 
+# 0 
+```
+
+=== Object phasers
+
+==== COMPOSE (Not yet implemented)
+
+将角色组合到一个类中时运行。
+
+=== Asynchronous phasers
+
+==== LAST
+
+当link:https://docs.perl6.org/type/Supply[Supply] 完成 `done` 调用或当一个 `supply` 块正常退出时运行。它在 `whenever` 块完成后完全运行。
+
+此 phaser 重用该名称 `LAST`，但与 `LAST` 循环 phaser 的工作方式不同。此 phaser 类似于用 `tap` supply 设置例程 `done`。
+
+==== QUIT
+
+当 link:https://docs.perl6.org/type/Supply[Supply] 以异常提前终止时运行。它在放置的  `whenever` 块完成后运行。
+
+此 phaser 类似于 `quit` 在 `tap` supply 时设置例程 `quit`。
+
+==== CLOSE
+
+出现在 supply 块中。supply 关闭时调用。
+
+=== DOC phasers
+
+==== DOC
+
+phaser `BEGIN`，`CHECK` 和 `INIT` 仅在文档模式时，前面带有 `DOC` 关键字。当使用 `--doc` 运行时编译器在文档中。
+
+```perl6
+DOC INIT { say 'init'  }  # prints 'init' at initialization time when in documentation mode. 
+```
+

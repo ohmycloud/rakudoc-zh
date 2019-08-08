@@ -1,0 +1,239 @@
+# 模块
+
+## 导出和选择性导出
+
+### is export
+
+packages(包), subroutines(子例程), variables(变量), constants(常量) 和 enums(枚举) , 通过在它们的名字后面添加 `is export` 特性来导出。
+
+```perl6
+unit module MyModule;
+our $var is export = 3;
+sub foo is export { ... };
+constant $FOO is export = "foobar";
+enum FooBar is export <one two three>;
+
+# Packages like classes can be exported too
+class MyClass is export {};
+
+# If a subpackage is in the namespace of the current package
+# it doesn't need to be explicitly exported
+class MyModule::MyClass {};
+```
+
+
+就像所有的 traits 一样, 如果应用到子例程(routine)上, "is export" 应该出现在参数列表的后面:
+
+```perl6
+sub foo (Str $string) is export {...}
+```
+
+你可以给 `is export` 传递命名参数以组织要导出的符号, 然后导入程序 (importer) 可以剔除和选择导入哪一个。有 3 个预先定义好的标签： `ALL`, `DEFAULT`, `MANDATORY`（强制的）。
+
+```perl6
+# lib/MyModule.pm
+unit module MyModule;
+sub bag        is export              { ... }
+sub pants      is export(:MANDATORY)  { ... }
+sub sunglasses is export(:day)        { ... }
+sub torch      is export(:night)      { ... }
+sub underpants is export(:ALL)        { ... }
+```
+
+```perl6
+# main.pl
+use lib 'lib';
+use MyModule;           #bag, pants
+use MyModule :DEFAULT;  #the same
+use MyModule :day;      #pants, sunglasses
+use MyModule :night;    #pants, torch
+use MyModule :ALL;      #bag, pants, sunglasses, torch, underpants
+```
+
+### UNIT::EXPORT::*
+
+表象之下, 其实 `is export` 是把符号添加到 `EXPORT` 命名空间中的 `UNIT` 作用域包中。例如, `is export(:FOO)` 会把目标添加到 `UNIT::EXPORT::FOO` 包中。这正是 Perl 6 决定导入什么所做的。
+
+```perl6
+unit module MyModule;
+
+sub foo is export         { ... }
+sub bar is export(:other) { ... }
+```
+
+等价于:
+
+```perl6
+unit module MyModule;
+
+my package EXPORT::DEFAULT {
+  our sub foo { ... }
+}
+
+my package EXPORT::other {
+  our sub bar { ... }
+}
+```
+
+多数时候, `is export` 足够用了, 但是当你想动态生成要导出的符号时, `EXPORT` 包就很有用了。例如：
+
+```perl6
+# lib/MyModule.pm
+unit module MuModule;
+
+my package EXPORT::DEFAULT {
+  for <zero one two three four>.kv -> $number, $name {
+      for <sqrt log> -> $func {
+          OUR::{'&' ~ $func ~ '-of-' ~ $name } := sub { $number."$func()" };
+      }
+  }
+}
+```
+
+```perl6
+# main.pl
+use MyModule;
+say sqrt-of-four; #-> 2
+say log-of-zero;  #-> -Inf
+```
+
+### EXPORT
+
+
+你可以用一个 `EXPORT` 子例程导出任意符号。 `EXPORT` 必须返回一个 `Map`, 在 map 里面键是符号名, 键值是想要的值。符号名应该包含(如果有的话)关联类型。
+
+```perl6
+class MyModule::Class { ... }
+
+sub EXPORT {
+  {
+      '$var'      => 'one',
+      '@array'    => <one two three>,
+      '%hash'     => { one => 'two', three => 'four'},
+      '&doit'     => sub { ... },
+      'ShortName' => MyModule::class
+  }
+}
+```
+
+```perl6
+# main.pl
+use lib 'lib';
+use MyModule;
+say $var;
+say @array;
+say %hash;
+doit();
+say ShortName.new;  #-> MyModule::Class.new
+```
+
+注意, `EXPORT` 不能声明在包内, 因为目前的 rakudo(2015.09) 好像把 EXPORT 当作 compunit 的一部分而非包的一部分。
+
+虽然 `UNIT::EXPORT` 包处理传递给 `use` 的命名参数, 而 `EXPORT` sub 处理位置参数。如果你把位置参数传递给 `use`, 那么这些参数会被传递给 `EXPORT`. 如果传递了位置参数, 那么 module 就不再需要导出默认符号了。你仍然可以伴随着你的位置参数, 通过显式地给 use 传递 `:DEFAULT` 参数来导入它们。
+
+```perl6
+# lib/MyModule
+
+class MyModule::Class {}
+
+sub EXPORT($short_name?) {
+    {
+      do $short_name => MyModule::Class if $short_name
+    }
+}
+
+sub always is export(:MANDATORY) { say "works" }
+
+#import with :ALL or :DEFAULT to get
+sub shy is export { say "you found me!" }
+```
+
+```perl6
+# main.pl
+use lib 'lib';
+use MyModule 'foo';
+say foo.new(); #MyModule::Class.new
+always();      #OK   - is imported
+shy();         #FAIL - won't be imported
+```
+
+## 发布模块
+
+如果你已经写了一个 Perl 6模块, 你想把它分享到社区, 我们会很高兴地把它放到 Perl 6 模块文件夹清单中。link:http://modules.perl6.org/[Perl 6 modules directory]
+
+现在, 你需要使用 git 对你的模块进行版本控制。
+
+这需要你有一个 Github 帐号, 以使你的模块能被从它的 Github 仓库中分享出去。
+
+要分享你的模块, 按照下面说的做：
+
+- 创建一个以你的模块命名的工程文件夹。 例如, 如果你的模块是 `Vortex::TotalPerspective` , 那么就创建一个叫做 `Vortex::TotalPerspective` 的工程文件夹。这个工程目录的名字也会被用作 Github 仓库的名字。
+
+- 让你的工程目录看起来像这样：
+
+```perl6
+Vortex-TotalPerspective/
+|-- lib
+|   `-- Vortex
+|       `-- TotalPerspective.pm
+|-- LICENSE
+|-- META.info
+|-- README.md
+`-- t
+    `-- basic.t
+```
+
+如果你的工程包含能帮助主模块完成工作的其它模块, 它们应该被放到你的 lib 目录中像这样组织：
+
+```perl6
+lib
+`-- Vortex
+    |-- TotalPerspective.pm
+    `-- TotalPerspective
+        |-- FairyCake.pm
+        `-- Gargravarr.pm
+```
+
+- `README.md` 文件是一个 markdown 格式的文件, 它稍后会被 Github 自动渲染成 HTML
+
+- 关于 LICENSE 文件, 如果你没有其它选择, 就是用和 Rakudo Perl 6 一样的 LICENSE 把。仅仅把它的原始 link:https://github.com/rakudo/rakudo/blob/nom/LICENSE[license] 复制/粘贴进你自己的 LICENSE 文件中。
+
+- 如果你还没有任何测试, 现在你可以忽略 `t` 目录 和 `basic.t` 文件。关于如何写测试, 你可以看看其它模块是怎么使用 `Test` 的。它和 Perl'5 的 `Test::More` 很类似。
+
+- 如果要文档化你的模块, 在你的模块中使用 link:http://design.perl6.org/S26.html[Perl 6 Pod] 标记。欢迎给模块写文档, 并且为了浏览的方便, 一旦 Perl 6 module directory(或其它网站) 开始把 Pod 文档渲染成 HTML, 写文档尤为重要。
+
+- 让你的 `META.info` 文件看起来像这样:
+
+```perl6
+ {
+        "name"        : "Vortex::TotalPerspective",
+        "version"     : "0.1.0",
+        "description" : "Wonderful simulation to get some perspective.",
+        "author"      : "Your Name",
+        "provides"    : {
+            "Vortex::TotalPerspective" : "lib/Vortex/TotalPerspective.pm"
+        },
+        "depends"     : [ ],
+        "source-url"  : "git://github.com/you/Vortex-TotalPerspective.git"
+    }
+```
+
+关于选择版本号的方案, 或许使用 "major.minor.patch" （查看  the spec on versioning 获取详细信息 ）。如果版本号现在对你或你的用户来说不重要, 你可以给版本那儿放上一颗星(*)。
+
+在 `provides` 一节, 包含进你的发布中提供的所有命名空间。
+
+- 把你的工程放在 git 版本控制之下, 如果你还未这样做。  
+- 一旦你对你的工程满意了, 在 Github 上为它创建一个仓库。必要的话,  查看 link:https://help.github.com/[Github's help docs]。 你的 Github 仓库的名字应该和你工程目录的名字一样。创建完 Githhub 仓库后, Github 会为你展示怎么配置你的本地仓库以获悉你的 Github 仓库。  
+- 把你的工程推送到 Github。  
+- 在 IRC 频道找个人帮你展示怎么把你的模块添加到link:https://github.com/perl6/ecosystem[ecosystem], 或者让他们是否能替你添加。  
+- pull 请求被接收之后, 等个把小时。如果你的模块没有出现在  http://modules.perl6.org/ , 请到 http://modules.perl6.org/log/update.log 翻看log 日志文件, 以查找是否有错误。  
+
+就是这样啦！ 感谢为 Perl 6 社区做贡献！
+
+如果你想尝试安装你的模块, 使用熊猫 panda 安装工具, 这已经包含在 Rakudo Perl 6 中了:
+
+```perl6
+zef install Vortex::TotalPerspective
+```
+
+这会下载你的模块到它自己的工作目录(`~/.panda`), 在那儿创建 build, 并把模块安装到 `~/.perl6`

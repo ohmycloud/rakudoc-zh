@@ -1,0 +1,166 @@
+== Perl 6 原生类型
+
+Perl 6 提供了一组原生类型，在内存中具有固定且已知的表示。此页面显示了存在哪些原生类型以及如何使用它们。有关它们的更多信息，请查看有关link:https://docs.perl6.org/language/numerics#Native_numerics[原生数字] 的页面。
+
+=== Types with native representation
+
+Perl 6 中的一些简单类型具有原生表示，表示它们将使用编译器，操作系统和原生提供的 C 语言表示。这些是可用的四种原生类型：
+
+|===
+| int  | Equivalent to Int (with limited range) 
+| uint | Equivalent to Int (with limited range) with the unsigned trait
+| num  | Equivalent to Num               
+| str  | Equivalent to Str
+|===
+
+但是，这些类型不一定具有 link:https://docs.perl6.org/language/nativecall[NativeCall] 接口所需的大小（例如，Perl 6 的 `int` 可以是 8 个字节，但 C 的 `int` 只有 4 个字节）; 必须使用以下类型而不是上面列出的 `int` 或 `num` 类型。
+
+通常，这些变量的行为与常规标量变量的行为方式相同，称为link:https://docs.perl6.org/language/numerics#Auto-boxing[*自动装箱*]; 然而，存在一些差异，因为您实际宣称的是如何表示它们，而不是它们的实际类型。第一个是它们的类型实际上是它们的等效类型，而不是它们的原生类型。
+
+```perl6
+my int $intillo = 3;
+say $intillo.^name; # OUTPUT: «Int␤» 
+```
+
+这显然意味着他们将智能匹配他们的等效（自动装箱）类型，而不是他们的原生类型：
+
+```perl6
+my str $strillo = "tres";
+say $strillo ~~ str; # OUTPUT: «False␤» 
+say $strillo ~~ Str; # OUTPUT: «True␤» 
+```
+
+并且与非原生对应物不同，他们将始终具有默认值：
+
+```perl6
+say (my Str $); # OUTPUT: «(Str)␤» 
+say (my str $); # OUTPUT: «␤» 
+say (my num $); # OUTPUT: «0␤» 
+```
+
+**注意**: 在 v6.c 中，`num` 的默认值是 NaN。
+
+这是因为 Natives 不知道他们的类型，因为他们只是值，没有任何元数据。在link:https://docs.perl6.org/language/glossary#Multi-Dispatch[多重分派] 中，您可以拥有原生候选者，但无法区分相同原生类型的不同大小。也就是说，你可以有一个 link:https://docs.perl6.org/type/Int[Int] 和 link:https://docs.perl6.org/type/int[int] 候选者，但是 link:https://docs.perl6.org/type/int[int], link:https://docs.perl6.org/type/atomicint[atomicint], link:https://docs.perl6.org/type/int64[int64] 等候选者之间会有歧义。
+
+它们也不能被绑定。尝试做 `my num $numillo := 3.5` 会发出异常 `Cannot bind to natively typed variable '$variable-name'; use assignment instead`。
+
+原生类型也可以是复合的。
+
+```perl6
+my int @intillos = ^10_000_000;
+say [+] @intillos; # OUTPUT: «49999995000000␤» 
+```
+
+在这种情况下，*native*ness 扩展到复合类型，它将是 `array`。
+
+```perl6
+my num @many-pi  = ^8 »*» π ; say @many-pi.^name;  # OUTPUT: «array[num]␤» 
+```
+
+原生`数组`是 link:https://docs.perl6.org/type/Iterable[Iterable]，但它们不是 List 的子类。但是，它们的行为类似于 link:https://docs.perl6.org/type/Array[Array]; 例如，它们可以成形
+
+```perl6
+my str @letter-pairs[10] = 'a'..'j' Z~ 'A'..'J';
+say @letter-pairs.perl;
+# OUTPUT: «array[str].new(:shape(10,), ["aA", "bB", "cC", "dD", "eE", "fF", "gG", "hH", "iI", "jJ"])␤» 
+```
+
+=== Types with native representation and size
+
+关于具有原生表示的类型的提及也适用于此;它们将自动装入 Perl 6 类型，并且不受限制。但是，下表中列出的这些类型具有可在link:https://docs.perl6.org/language/nativecall#Passing_and_returning_values[NativeCall]函数中使用的特性：
+
+|===
+| int8        | (int8_t in C, also used for char)            
+| int16       | (int16_t in C, also used for short)          
+| int32       | (int32_t in C, also used for int)            
+| int64       | (int64_t in C)                               
+| byte, uint8 | (uint8_t in C, also used for unsigned char)  
+| uint16      | (uint16_t in C, also used for unsigned short)
+| uint32      | (uint32_t in C, also used for unsigned int)  
+| uint64      | (uint64_t in C)                              
+| num32       | (float in C)                                 
+| num64       | (double in C)                                
+|===
+
+这些类型具有固定大小的表示，它独立于平台，因此可以安全地用于那些原生调用。如果我们愿意，没有什么能阻止我们在任何其他环境中使用它们。与上述类型相同，在为此类型的变量赋值时，必须考虑此大小：
+
+```perl6
+my byte $intillo = 257;
+say $intillo; # OUTPUT: «1␤» 
+```
+
+由于 `byte` 只能容纳 8 位，因此它将换行并分配模值为 256 的原始值的结果，这就是所示的内容。
+
+声明原生大小的类型与没有声明原生大小的类型之间的主要区别是在声明中使用了 nativesize。例如，`int8` 以这种方式声明：
+
+```perl6
+my native int8 is repr('P6int') is Int is nativesize( 8) { }
+```
+
+表示除了整数表示（`P6int`）之外，它还将使用仅 8 位的原生大小。但是，这个特性并不打算在您的程序中使用，因为它不是 Perl 6 规范的一部分。
+
+=== `void` 类型
+
+原生 `void` 类型对应于 C 的 `void` 类型。虽然是有效类型，但您可以在表达式中使用它
+
+```perl6
+use NativeCall;
+my void $nothing;
+say $nothing.perl; # OUTPUT: «NativeCall::Types::void␤» 
+```
+
+实际上，它是一个很难单独使用的 `Uninstantiable` 类型，实际上它在 link:(https://docs.perl6.org/language/nativecall#Passing_and_returning_values[`return`]) 类型中被明确禁止。但是，它通常在类型指针中找到，表示等效于 C 中的 `void *` 指针。
+
+```perl6
+sub malloc( int32 $size --> Pointer[void] ) is native { * };
+my Pointer[void] $for-malloc = malloc( 32 );
+say $for-malloc.perl;
+```
+
+如果您需要在使用该类型的原生函数中使用它们，您还可以将 link:https://docs.perl6.org/type/Blob[Blob] link:https://docs.perl6.org/routine/nativecast[nativecast]  到此类指针上。
+
+```perl6
+use NativeCall;
+my Pointer[void] $native = nativecast(Pointer[void], Blob.new(0x22, 0x33));
+```
+
+但是，除此之外，它提供的功能非常有限，因为指向 `void` 的指针无法解引用：
+
+```perl6
+use NativeCall;
+my Pointer[void] $native = nativecast(Pointer[void], Buf.new(0x22, 0x33));
+say $native.deref; # ERROR OUTPUT: «Internal error: unhandled target type␤» 
+```
+
+=== *Atomic* types
+
+在这种情况下，*atomic* 指的是线程下的安全操作。 Perl 6 提供了一个类型，link:https://docs.perl6.org/type/atomicint[`atomicint`] 和link:https://docs.perl6.org/type/atomicint#Routines[一些操作]，它们共同保证了这一点。有关详细信息，请查看 link:(https://docs.perl6.org/language/numerics#Atomic_operations[Numerics]) 页面上的原子操作部分。
+
+=== Rakudo specific native types
+
+本节中描述的类型是特定于 Rakudo 的，因此不保证它们在其他实现中或在将来的版本中保持不变。
+
+|===
+| long      | (long in C)                 
+| longlong  | (longlong in C)             
+| ulong     | (long and unsigned in C)    
+| ulonglong | (longlong and unsigned in C)
+| size_t    | (size_t and unsigned in C)  
+| ssize_t   | (size_t in C)               
+| bool      | (bool in C)                 
+|===
+
+您可以像在本机 C 中使用它们一样使用它们：
+
+```perl6
+use NativeCall;
+ 
+my $just-an-array = CArray[int32].new( 1, 2, 3, 4, 5 );
+ 
+loop ( my size_t $i = 0; $i < $just-an-array.elems; $i++ ) {
+    say $just-an-array[$i];
+}
+```
+
+这将打印数组的五个元素，因为它应该是你期望的。
+

@@ -1,0 +1,187 @@
+为了提供强大的正则表达式和 grammar，这里有一些代码布局和可读性的最佳实践，实际匹配的内容，以及避免常见的陷阱。
+
+## 代码布局
+
+如果没有 `:sigspace` 副词，在 Perl 6 正则表达式中空格并不重要。 使用它自己的优势，并插入空格，增加可读性。 此外，必要时插入注释。
+
+比较非常紧凑的写法
+
+```perl6
+my regex float { <[+-]>?\d*'.'\d+[e<[+-]>?\d+]? }
+```
+
+和这种可读性更好的写法：
+
+```perl6
+my regex float {
+     <[+-]>?        # optional sign 
+     \d*            # leading digits, optional 
+     '.'
+     \d+
+     [              # optional exponent 
+        e <[+-]>?  \d+
+     ]?
+}
+```
+
+根据经验， 在原子周围和组的内部使用空白; 将量词直接放在原子之后; 并垂直对齐开口和闭合关方括号和括号。
+
+在括号或方括号内使用替换列表时，请对齐竖线：
+
+```perl6
+my regex example {
+    <preamble>
+    [
+    || <choice_1>
+    || <choice_2>
+    || <choice_3>
+    ]+
+    <postamble>
+}
+```
+
+## 保持短小
+
+正则代码通常比常规代码更紧凑。 因为他们用这么少的字符就做得那么多，所以保持了正则表达式的简短。
+
+当你可以给正则表达式的一部分命名时，通常最好将它放入一个单独的，命名的正则表达式中。
+
+例如，您可以以前面获取浮点正则表达式为例：
+
+```perl6
+my regex float {
+     <[+-]>?        # optional sign 
+     \d*            # leading digits, optional 
+     '.'
+     \d+
+     [              # optional exponent 
+        e <[+-]>?  \d+
+     ]?
+}
+```
+
+并将其分解为部件：
+
+```perl6
+my token sign { <[+-]> }
+my token decimal { \d+ }
+my token exponent { 'e' <sign>? <decimal> }
+my regex float {
+    <sign>?
+    <decimal>?
+    '.'
+    <decimal>
+    <exponent>?
+}
+```
+
+这有助于，特别是当正则表达式变得更加复杂时。 例如，您可能希望在存在指数的情况下使小数点可选。
+
+```perl6
+my regex float {
+    <sign>?
+    [
+    || <decimal>?  '.' <decimal> <exponent>?
+    || <decimal> <exponent>
+    ]
+}
+```
+
+## 要匹配什么
+
+输入数据格式通常没有明确的规范，或者程序员不知道规范。 然后，按照你的期望自由是好的，但只要没有可能的含糊之处。
+
+例如，在 `ini` 文件中：
+
+```
+[section]
+key=value
+```
+
+section 标题内可以有什么内容？ 只允许一个词可能限制性太强。 有人可能会写`[two words]`，或使用破折号等。而不是问内部允许什么，可能值得问一下：什么是不允许的？
+
+显然，不允许闭合方括号，因为 `[a]b]` 是不明确的。 根据同一论点，应禁止开口方括号。 这让我们失望了
+
+```perl6
+token header { '[' <-[ \[\] ]>+ ']' }
+```
+
+如果你只处理一行就没问题。 但是，如果您正在处理整个文件，那么正则表达式会解析
+
+```
+[with a
+newline in between]
+```
+
+这可能不是一个好主意。妥协是
+
+```perl6
+token header { '[' <-[ \[\] \n ]>+ ']' }
+```
+
+然后，在后处理中，从 section 标题中删除前导和尾随空格和制表符。
+
+## 匹配空白
+
+`:sigspace` 副词（或使用 `rule` 声明符而不是 `token` 或 `regex`）非常便于隐式解析可能出现在许多地方的空格。
+
+回到解析 `ini` 文件的例子，我们有
+
+```perl6
+my regex kvpair { \s* <key=identifier> '=' <value=identifier> \n+ }
+```
+
+这可能不像我们想要的那样的文字，因为用户可能在等号周围放置空格。 那么，我们可以试试这个：
+
+```perl6
+my regex kvpair { \s* <key=identifier> \s* '=' \s* <value=identifier> \n+ }
+```
+
+但那看起来很笨重，所以我们尝试别的东西：
+
+```perl6
+my rule kvpair { <key=identifier> '=' <value=identifier> \n+ }
+```
+
+可是等等！ 值之后的隐式空格匹配会占用所有空格，包括换行符，因此 `\n+` 没有任何东西可以匹配（并且 `rule` 也禁用了回溯，因此没有运气）。
+
+因此，将隐式空格的定义重新定义为输入格式中不重要的空白非常重要。
+
+这通过重新定义 token `ws` 来工作; 但是，它只适用于 link:https://docs.perl6.org/language/grammars[grammars]：
+
+```perl6
+grammar IniFormat {
+    token ws { <!ww> \h* }
+    rule header { \s* '[' (\w+) ']' \n+ }
+    token identifier  { \w+ }
+    rule kvpair { \s* <key=identifier> '=' <value=identifier> \n+ }
+    token section {
+        <header>
+        <kvpair>*
+    }
+ 
+    token TOP {
+        <section>*
+    }
+}
+ 
+my $contents = q:to/EOI/; 
+    [passwords]
+        jack = password1
+        joy = muchmoresecure123
+    [quotas]
+        jack = 123
+        joy = 42
+EOI
+say so IniFormat.parse($contents);
+```
+
+除了将所有正则表达式都放入 grammar 并将其转换为 tokens（因为它们无论如何都不需要回溯），有趣的一点是
+
+```perl6
+token ws { <!ww> \h* }
+```
+
+在进行隐式空格分析的时候会调用该 token。 当它不在两个单词字符之间（ `<!ww>`，"在单词中"的否定断言）和零个或多个水平空格字符之间匹配。 对水平空格的限制很重要，因为换行符（垂直空格）会分隔记录，不应被隐式匹配。
+
+不过，潜伏着一些与空白相关的麻烦。 正则表达式 `\n+` 与 `\n \n` 之类的字符串不匹配，因为两个换行符之间有空白。 要允许此类输入字符串，请将 `\n+` 替换为 `\n\s*`。

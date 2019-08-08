@@ -1,0 +1,489 @@
+列表一直是计算机的核心部分，因为之前有计算机，在这段时间里，许多恶魔占据了他们的细节。 它们实际上是 Perl 6 设计中最难的部分之一，但是通过坚持和耐心，Perl 6 已经使用了一个优雅的系统来处理它们。
+
+
+## Literal Lists
+
+字面上的link:https://docs.perl6.org/type/List[列表]用逗号和分号不是用圆括号创建，因此：
+
+```perl6
+1, 2        # This is two-element list
+(1, 2)      # This is also a List, in parentheses
+(1; 2)      # same List
+(1)         # This is not a List, just a 1 in parentheses
+(1,)        # This is a one-element List
+```
+
+括号可用于标记`列表`的开头和结尾，因此：
+
+```perl6
+(1, 2), (1, 2) # This is a list of two lists.
+```
+
+多维字面上的`列表`是通过逗号和分号组合而成的。 它们可以在常规参数列表和下标中使用。
+
+```perl6
+say so (1,2; 3,4) eqv ((1,2), (3,4));
+# OUTPUT«True␤»
+say('foo';); # a list with one element and the empty list
+# OUTPUT«(foo)()␤»
+```
+
+单个元素可以使用下标从列表中拉出。 列表的第一个元素的索引号为零：
+
+```perl6
+say (1, 2)[0];   # says 1
+say (1, 2)[1];   # says 2
+say (1, 2)[2];   # says Nil
+say (1, 2)[-1];  # Error
+say (1, 2)[*-1]; # 2
+```
+
+## The @ sigil
+
+Perl 6 中名称为 @ 符号的变量应该包含某种类似列表的对象。 当然，其他变量也可能包含这些对象，但是 `@-sigiled` 变量总是这样，并且期望它们作用于该部分。
+
+默认情况下，当您将`列表`分配给 `@-sigiled` 变量时，您将创建一个`数组`。 这些在下面描述。 如果你想把一个真实的的 `List` 放到一个 @ -sigiled 变量中，你可以用 `:=` 绑定代替。
+
+```perl6
+my @a := 1, 2, 3;
+```
+
+将列表的列表赋值给 @-sigiled 变量不提供相同的快捷方式。 在这种情况下，外部 List 成为数组的第一个元素。
+
+```perl6
+my @a = (1,2; 3,4);
+say @a.flat;
+# OUTPUT«((1 2) (3 4))␤»
+@a := (1,2; 3,4);
+say @a.flat;
+# OUTPUT«((1 2 3 4)␤»
+```
+
+@_sigiled 变量像列表一样的方式之一是总是支持link:https://docs.perl6.org/language/subscripts[位置下标]。 任何绑定到 @-sigiled 值的东西都必须支持 link:https://docs.perl6.org/type/Positional[Positional] 角色，这保证了：
+
+```perl6
+my @a := 1;  # Type check failed in binding; expected Positional but got Int
+
+# 但是
+my @a := 1,; # (1)
+```
+
+## Reset a List Container
+
+要从 Positional 容器中删除所有元素，请将 link:https://docs.perl6.org/type/Slip#Empty[Empty]，空列表 `()` 或空列表的 `Slip` 赋值给容器。
+
+```perl6
+my @a = 1, 2, 3;
+@a = ();
+@a = Empty;
+@a = |();
+```
+
+## Iteration
+
+所有的列表都可以被迭代，这意味着从列表中按顺序拿出每个元素并在最后一个元素之后停止：
+
+```perl6
+for 1, 2, 3 { .say } # says 1, then says 2, then says 3
+```
+
+## Testing for Elements
+
+要测试元素将 `List` 或 `Array` 转换为 link:https://docs.perl6.org/type/Set[Set] 或使用 Set link:https://docs.perl6.org/language/setbagmix[运算符]。
+
+```perl6
+my @a = <foo bar buzz>;
+say @a.Set<bar buzz>; # (True True)
+say so 'bar' ∈ @a;   # True
+```
+
+### Sequences
+
+不是所有的列表生来都充满元素。 有些只创建他们被要求的尽可能多的元素。 这些称为序列，其类型为 `Seq`。 因为这样发生，循环返回 `Seqs`。
+
+```perl6
+(loop { 42.say })[2] # says 42 three times
+```
+
+所以，在 Perl 6 中有无限列表是很好的，只要你从不问他们所有的元素。 在某些情况下，你可能希望避免询问它们有多长 - 如果 Perl 6 知道一个序列是无限的，它将尝试返回 `Inf`，但它不能总是知道。
+
+虽然 `Seq` 类确实提供了一些位置下标，但它不提供 Positional 的完整接口，因此 @-sigiled 变量可能不会绑定到 `Seq`。
+
+```perl6
+my @s := (loop { 42.say }); # Error expected Positional but got Seq
+```
+
+这是因为 `Seq` 在使用它们之后不会保留值。 这是有用的行为，如果你有一个很长的序列，因为你可能想在使用它们之后丢弃值，以便你的程序不会填满内存。 例如，当处理一个百万行的文件时：
+
+```perl6
+for 'filename'.IO.lines -> $line {
+    do-something-with($line);
+}
+```
+
+你可以确信文件的整个内容不会留在内存中，除非你明确地存储某个地方的行。
+
+另一方面，在某些情况下，您可能希望保留旧值。 可以在`列表`中隐藏一个 `Seq`，它仍然是惰性的，但会记住旧的值。 这是通过调用 `.list` 方法完成的。 由于此`列表`完全支持 `Positional`，因此可以将其直接绑定到 @-sigiled 变量上。
+
+```perl6
+my @s := (loop { 42 }).list;
+@s[2]; # Says 42 three times
+@s[1]; # does not say anything
+@s[4]; # Says 42 two more times
+```
+
+您还可以使用 `.cache` 方法代替 `.list`，这取决于您希望处理引用的方式。 有关详细信息，请参阅 link:https://docs.perl6.org/type/Seq[Seq] 上的页面。
+
+### Slips
+
+有时候你想把一个列表的元素插入到另一个列表中。 这可以通过一个称为 link:https://docs.perl6.org/type/Slip[Slip] 的特殊类型的列表来完成。
+
+```perl6
+say (1, (2, 3), 4) eqv (1, 2, 3, 4);         # says False
+say (1, Slip.new(2, 3), 4) eqv (1, 2, 3, 4); # says True
+say (1, slip(2, 3), 4) eqv (1, 2, 3, 4);     # also says True
+```
+
+另一种方法是使用 `|` 前缀运算符。 注意，这有一个比逗号更严格的优先级，所以它只影响一个单一的值，但不像上面的选项，它会打碎link:https://docs.perl6.org/type/Scalar[标量]。而 `slip` 不会。
+
+```perl6
+say (1, |(2, 3), 4) eqv (1, 2, 3, 4);        # says True
+say (1, |$(2, 3), 4) eqv (1, 2, 3, 4);       # also says True
+say (1, slip($(2, 3)), 4) eqv (1, 2, 3, 4);  # says False
+```
+
+## Lazy Lists
+
+列表可以是惰性的，这意味着它们的值是根据需要计算的，并且存储供以后使用。 要创建惰性列表，请使用 link:https://docs.perl6.org/language/control#gather%2Ftake[gather/take] 或link:https://docs.perl6.org/language/operators#infix_...[序列运算符]。 您还可以编写一个实现 link:https://docs.perl6.org/type/Iterable[Iterable] 角色的类，并在调用 link:https://docs.perl6.org/routine/lazy[lazy] 时返回 `True`。 请注意，某些方法（如 `elems`）可能会导致整个列表计算失败，如果列表也是无限的。无限列表没办法知道它的元素个数。
+
+```perl6
+my @l = 1,2,4,8...Inf;
+say @l[0..16];
+# OUTPUT«(1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536)␤»
+```
+
+## Immutability
+
+到目前为止我们谈论的列表（`List`，`Seq` 和 `Slip`）都是不可变的。 这意味着您不能从中删除元素，或重新绑定现有元素：
+
+```perl6
+(1, 2, 3)[0]:delete; # Error Can not remove elements from a List
+(1, 2, 3)[0] := 0;   # Error Cannot use bind operator with this left-hand side
+(1, 2, 3)[0] = 0;    # Error Cannot modify an immutable Int
+```
+
+但是，如果任何元素包裹在link:https://docs.perl6.org/type/Scalar[标量]中，您仍然可以更改 `Scalar` 指向的值：
+
+```perl6
+my $a = 2;
+(1, $a, 3)[1] = 42;
+$a.say;            # says 42
+```
+
+...就是说，它只是列表结构本身 - 有多少个元素和每个元素的标识 - 是不可变的。 不变性不是通过元素的身份传染。
+
+## List Contexts
+
+到目前为止，我们主要是在中立语境下处理列表。 实际上列表在语法层面上上下文非常敏感。
+
+### List Assignment Context
+
+当一个列表出现在赋值给 @-sigiled 变量的右边时，它被“热切地”计算。 这意味着 `Seq` 将被迭代，直到它不能产生更多的元素。 这是你不想放置无限列表的地方之一，免得你的程序挂起，最终耗尽内存：
+
+```perl6
+my $i = 3;
+my @a = (loop { $i.say; last unless --$i }); # Says 3 2 1
+say "take off!";
+```
+
+### Flattening "Context"
+
+当您的列表包含子列表，但您只想要一个平面列表时，可以展平该列表以生成一系列值，就像所有的括号被删除了一样。 无论括号中有多少层次嵌套，这都可以工作。
+
+请注意，列表周围的标量将使其免于扁平化：
+
+```perl6
+for (1, (2, $(3, 4)), 5).flat { .say } # says 1, then 2, then (3 4), then 5
+```
+
+...但是一个 @-sigiled 变量将溢出它的元素。
+
+```perl6
+my @l := 2, (3, 4);
+for (1, @l, 5).flat { .say };      # says 1, then 2, then 3, then 4, then 5
+my @a = 2, (3, 4);                 # Arrays are special, see below
+for (1, @a, 5).flat { .say };      # says 1, then 2, then (3 4), then 5
+```
+
+### Argument List (Capture) Context
+
+当列表作为函数或方法调用的参数出现时，会使用特殊的语法规则：该列表立即转换为 `Capture`。 `Capture` 本身有一个 List（`.list`）和一个 Hash（`.hash`）。 任何键没有引号的 `Pair`，或者没有括号的 `Pair` 字面量，永远不会变成 `.list`。 相反，它们被认为是命名参数，并且压缩为 `.hash`。 有关此处理的详细信息，请参阅 link:https://docs.perl6.org/type/Capture[Capture] 上的页面。
+
+考虑从`列表`中创建新`数组`的以下方法。 这些方法将 `List` 放在参数列表上下文中，因此，`Array` 只包含 1 和 2，但不包含 `Pair :c(3)`，它被忽略。
+
+```perl6
+Array.new(1, 2, :c(3));
+Array.new: 1, 2, :c(3);
+new Array: 1, 2, :c(3);
+```
+
+相反，这些方法不会将  `List` 放置在参数列表上下文中，所以所有元素，甚至 `Pair :c(3)`，都放置在`数组`中。
+
+```perl6
+Array.new((1, 2, :c(3)));
+(1, 2, :c(3)).Array;
+my @a = 1, 2, :c(3); Array.new(@a);
+my @a = 1, 2, :c(3); Array.new: @a;
+my @a = 1, 2, :c(3); new Array: @a;
+```
+
+在参数列表上下文中，应用于 `Positional` 上的 `|` 前缀运算符总是将列表元素slip为Capture的位置参数，而应用到 `Associative` 上的 `|` 前缀运算符会把 pairs 作为具名参数 slip 进来：
+
+`perl6
+my @a := 2, "c" => 3;
+Array.new(1, |@a, 4);    # Array contains 1, 2, :c(3), 4
+my %a = "c" => 3;
+Array.new(1, |%a, 4);    # Array contains 1, 4
+```
+
+### Slice Indexing Context
+
+从link:https://docs.perl6.org/language/subscripts#Slices[切片下标] 中的 `List` 角度来看，只有一个显着的地方在于它是不可见的：因为一个切片的副词附在 `]` 后面，切片的内部**不是**参数列表，并且没有对 pair 形式的特殊处理 。
+
+大多数 `Positional` 类型将对切片索引的每个元素强制执行整数强制，因此那儿出现的 pairs 将生成错误，无论如何：
+
+```perl6
+(1, 2, 3)[1, 2, :c(3)] # Method 'Int' not found for invocant of class 'Pair'
+```
+
+...但是这完全取决于类型 - 如果它定义了pairs的顺序，它可以考虑 `:c(3)` 是有效的索引。
+
+切片内的索引通常不会自动展平，但是子列表通常不会强制为 `Int`。 相反，列表结构保持不变，从而导致在结果中重复结构的嵌套 slice 操作：
+
+```perl6
+say ("a", "b", "c")[(1, 2), (0, 1)] eqv (("b", "c"), ("a", "b")) # says True
+```
+
+### Range as Slice
+
+link:https://docs.perl6.org/type/Range[Range] 是用于下边界和上边界的容器。 生成具有 `Range` 的切片将包括这些边界之间的任何索引，包括边界。 对于无限上限，我们同意数学家 `Inf` 等于 `Inf-1`。
+
+```perl6
+my @a = 1..5;
+say @a[0..2];     # (1 2 3)
+say @a[0..^2];    # (1 2)
+say @a[0..*];     # (1 2 3 4 5)
+say @a[0..^*];    # (1 2 3 4 5)
+say @a[0..Inf-1]; # (1 2 3 4 5)
+```
+
+### Array Constructor Context
+
+在数组字面量中，初始化值的列表不在捕获上下文中，只是一个正常的列表。 然而，正如在赋值中一样，急切地对它求值。
+
+```perl6
+[ 1, 2, :c(3) ] eqv Array.new((1, 2, :c(3))) # says True
+[while $++ < 2 { 42.say; 43 }].map: *.say;   # says 42 twice then 43 twice
+(while $++ < 2 { 42.say; 43 }).map: *.say;   # says "42" then "43"
+                                             # then "42" then "43"
+```
+
+它把我们带到数组这儿来。
+
+## Arrays
+
+数组与列表在三个主要方面不同：它们的元素可以被类型化，它们自动列出它们的元素，并且它们是可变的。 否则，它们是列表，并且在列表所在的位置被接受。
+
+```perl6
+say Array ~~ List     # says True
+```
+
+第四种更微妙的方式是，当使用数组时，有时可能更难以维持惰性或使用无限序列。
+
+### Typing
+
+数组可以被类型化，使得它们的槽在被赋值时执行类型检查。 只允许分配 `Int` 值的数组是 `Array[Int]` 类型，可以使用 `Array[Int].new` 创建一个数组。 如果你打算仅仅为了这个目的使用 @-sigiled 变量，你可以在声明它时通过指定元素的类型来改变它的类型：
+
+```perl6
+my Int @a = 1, 2, 3;              # An Array that contains only Ints
+my @b := Array[Int].new(1, 2, 3); # Same thing, but the variable is not typed
+say @b eqv @a;                    # says True.
+my @c = 1, 2, 3;                  # An Array that can contain anything
+say @b eqv @c;                    # says False because types do not match
+say @c eqv (1, 2, 3);             # says False because one is a List
+say @b eq @c;                     # says True, because eq only checks values
+say @b eq (1, 2, 3);              # says True, because eq only checks values
+
+@a[0] = 42;                       # fine
+@a[0] = "foo";                    # error: Type check failed in assignment
+```
+
+在上面的例子中，我们将一个类型化的 Array 对象绑定到一个没有指定类型的 @-sigil 变量上。 另一种方法不工作 - 你不能绑定一个类型错误的数组到一个类型化的 @-sigiled 变量上：
+
+```perl6
+my @a := Array[Int].new(1, 2, 3);     # fine
+@a := Array[Str].new("a", "b");       # fine, can be re-bound
+my Int @b := Array[Int].new(1, 2, 3); # fine
+@b := Array.new(1, 2, 3);             # error: Type check failed in binding
+```
+
+当使用类型化数组时，重要的是要记住它们是名义类型的。 这意味着数组的声明类型是重要的。 给定以下子声明：
+
+```perl6
+sub mean(Int @a) {
+    @a.sum / @a.elems
+}
+```
+
+传递 `Array[Int]` 的调用将成功：
+
+```perl6
+my Int @b = 1, 3, 5;
+say mean(@b);                       # @b is Array[Int]
+say mean(Array[Int].new(1, 3, 5));  # Anonymous Array[Int]
+say mean(my Int @ = 1, 3, 5);       # Another anonymous Array[Int]
+```
+
+但是，由于传递一个无类型的数组，下面的调用将全部失败，即使该数组在传递时恰好包含 Int 值：
+
+```perl6
+my @c = 1, 3, 5;
+say mean(@c);                       # Fails, passing untyped Array
+say mean([1, 3, 5]);                # Same
+say mean(Array.new(1, 3, 5));       # Same again
+```
+
+请注意，在任何给定的编译器中，可能有一些奇怪的，底层的方法来绕过数组上的类型检查，因此在处理不受信任的输入时，执行额外的类型检查是一个很好的做法，
+
+```perl6
+for @a -> Int $i { $_++.say };
+```
+
+然而，只要你坚持在一个信任的代码区域内的正常赋值操作，这不会是一个问题，并且typecheck错误将在分配到数组时发生，如果他们不能在编译时捕获。 在Perl 6中提供的用于操作列表的核心功能不应该产生一个类型化的数组。
+
+不存在的元素（当索引时）或已分配Nil的元素将采用默认值。 可以使用 `is default` 特征在逐个变量的基础上调整此默认值。 请注意，无类型的@ -sigiled变量的元素类型为 `Mu`，但其默认值为未定义的 `Any`：
+
+```perl6
+my @a;
+@a.of.perl.say;                 # says "Mu"
+@a.default.perl.say;            # says "Any"
+@a[0].say;                      # says "(Any)"
+my Numeric @n is default(Real);
+@n.of.perl.say;                 # says "Numeric"
+@n.default.perl.say;            # says "Real"
+@n[0].say;                      # says "(Real)"
+```
+
+### Fixed Size Arrays
+
+要限制`阵列`的尺寸，请提供由 `,` 或 `;` 在数组容器的名称后面的括号中。 这样一个`数组`的值将默认为 `Any`。 形状可以在运行时通过 `shape` 方法访问。
+
+```perl6
+my @a[2,2];
+dd @a;
+# OUTPUT«Array.new(:shape(2, 2), [Any, Any], [Any, Any])␤»
+say @a.shape;
+# OUTPUT«(2 2)␤»
+```
+
+赋值到固定大小的数组将把一个列表的列表提升为数组的数组。
+
+```perl6
+my @a[2;2] = (1,2; 3,4);
+@a[1;1] = 42;
+dd @a;
+# OUTPUT«Array.new(:shape(2, 2), [1, 2], [3, 42])␤»
+```
+
+### Itemization
+
+对于大多数用途，数组由多个槽组成，每个槽包含正确类型的`标量`。 每个这样的`标量`，反过来，包含该类型的值。 当数组被初始化，赋值或构造时，Perl 6 将自动进行类型检查值并创建标量来包含它们。
+
+这实际上是 Perl 6 列表处理中最棘手的部分之一，以获得牢固的理解。
+
+首先，请注意，因为假设数组中的项目化，它本质上意味着 `$(...)` 被放置在您分配给数组的所有内容，如果你不把它们放在那里。 另一方面，`Array.perl` 不会将$显式地显示标量，与 `List.perl` 不同：
+
+```perl6
+((1, 2), $(3, 4)).perl.say; # says "((1, 2), $(3, 4))"
+[(1, 2), $(3, 4)].perl.say; # says "[(1, 2), (3, 4)]"
+                            # ...but actually means: "[$(1, 2), $(3, 4)]"
+```
+
+它决定所有这些额外的美元符号和括号更多的眼睛疼痛比对用户的好处。 基本上，当你看到一个方括号，记住隐形美元符号。
+
+第二，记住这些看不见的美元符号也防止扁平化，所以你不能真正地扁平化一个数组内的元素与正常调用 `flat` 或 `.flat`。
+
+```perl6
+((1, 2), $(3, 4)).flat.perl.say; # (1, 2, $(3, 4)).Seq
+[(1, 2), $(3, 4)].flat.perl.say; # ($(1, 2), $(3, 4)).Seq
+```
+
+由于方括号本身不会防止展平，因此您仍然可以使用平面将数组中的元素溢出到周围的列表中。
+
+```perl6
+(0, [(1, 2), $(3, 4)], 5).flat.perl.say; # (0, $(1, 2), $(3, 4), 5).Seq
+```
+
+...元素本身，但是，留在一块。
+
+这可以阻止用户提供的数据，如果你有深嵌套的数组他们想要平面数据。 目前，他们必须手动地深度地映射结构以撤消嵌套：
+
+```perl6
+say gather [0, [(1, 2), [3, 4]], $(5, 6)].deepmap: *.take; # (1 2 3 4 5 6)
+```
+
+...未来版本的 Perl 6 可能会找到一种使这更容易的方法。 但是，当 non-itemized 列表足够时，不从函数返回数组或  itemized 列表，这是一个应该考虑作为好意给他们的用户：
+
+- 当您总是想要与周围列表合并时使用 Slips
+- 使用  non-itemized 列表，当你想让用户容易展平时
+- 使用 itemized 列表来保护用户可能不想展平的东西
+- 使用数组作为  non-itemized  列表的  non-itemized  列表，如果合适
+- 如果用户想要改变结果而不首先复制结果，请使用数组。
+
+事实上，数组的所有元素（在`Scalar`容器中）是一个绅士的协议，而不是一个普遍强制的规则，并且在类型数组中的类型检查不太好。 请参阅下面有关绑定到阵列插槽的部分。
+
+### Literal Arrays
+
+字面数组是用方括号内的 List 构造的。 列表被热切地迭代（如果可能，在编译时），并且列表中的值每个都进行类型检查和itemized。 在展平时, 方括号本身会将元素放入周围的列表中，但是元素本身不会因为 itemization 化而溢出。
+
+### Mutability
+
+与列表不同，数组是可变的。 元素可以删除，添加或更改。
+
+```perl6
+my @a = "a", "b", "c";
+@a.say;                  # [a b c]
+@a.pop.say;              # says "c"
+@a.say;                  # says "[a b]"
+@a.push("d");
+@a.say;                  # says "[a b d]"
+@a[1, 3] = "c", "c";
+@a.say;                  # says "[a c d c]"
+```
+
+### Assigning
+
+列表到数组的分配是急切的。 该列表将被完全求值，并且数组不应该是无限的否则程序可能挂起。 类似地，对阵列的分片的分配是急切的，但是仅仅达到所请求数量的元素，其可以是有限的：
+
+```perl6
+my @a;
+@a[0, 1, 2] = (loop { 42 });
+@a.say;                     # says "[42 42 42]"
+```
+
+在赋值期间，每个值都将进行类型检查，以确保它是 `Array` 允许的类型。 任何`标量`将从每个值中剥离，一个新的`标量`将被包裹。
+
+### Binding
+
+单个数组槽可以以相同的方式绑定 $-sigiled 变量：
+
+```perl6
+my $b = "foo";
+my @a = 1, 2, 3;
+@a[2] := $b;
+@a.say;          # says '[1 2 "foo"]'
+$b = "bar";
+@a.say;          # says '[1 2 "bar"]'
+```
+
+...但强烈不建议将 Array 槽直接绑定到值。 如果你这样做，预期内置函数的惊喜。 只有当需要知道值和Scalar-Wrapped值之间的差异的可变容器时，或者对于不能使用本地类型数组的非常大的Arrays，才需要执行此操作。 这样的生物永远不应该被传递回不知情的用户。

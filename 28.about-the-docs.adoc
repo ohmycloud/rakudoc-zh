@@ -1,0 +1,112 @@
+== 关于文档
+
+本文档集代表了正在努力记录 Perl 6 编程语言的目标是：全面; 使用方便; 易于导航; 对新手和经验丰富的 Perl 6 程序员都很有用。
+
+该文档的 HTML 版本位于线上的 link:https://docs.perl6.org/[https://docs.perl6.org]。
+
+该文档的官方来源位于 link:https://github.com/perl6/doc[GitHub上的perl6/doc]。
+
+本特定文档快速概述了link:https://github.com/perl6/doc/blob/master/CONTRIBUTING.md[在GitHub上的贡献]中更详细描述的过程。本文档还简要介绍了编写 Perl 6 Pod 文件，这些文件可以渲染为 HTML 和其他格式。
+
+=== 结构
+
+所有文档都是用 Perl 6 Pod 编写的，并保存在 `doc/` 目录 `doc/Language/` 和 `doc/Type/` 子目录中。这些文件作为定义集合或“文档”处理，然后进行后处理并链接在一起。
+
+=== 从 Pod 生成 HTML
+
+要从 Pod 文件生成 HTML，你需要：
+
+- 最新版本的 Rakudo Perl 6 编译器
+- Perl 6 模块Pod::To::HTML，Pod::To::BigPage 和 URI::Escape（可以通过link:https://github.com/ugexe/zef[zef]安装）。
+- **可选**：link:https://www.graphviz.org/[GraphViz]，用于创建 Perl 6 类型之间关系的图形
+- **可选**：link:https://github.com/atom/highlights[Atom Highlights] 和 link:https://atom.io/packages/language-perl6[language-perl6]，用于语法高亮显示
+
+要在文件`html/`文件夹中生成文档，请运行：
+
+```
+perl6 htmlify.p6
+```
+
+要从 Web 服务器托管文档，请安装 Perl 5 和 Mojolicious::Lite，然后运行：
+
+```
+perl app.pl daemon
+```
+
+=== 贡献
+
+文档是用 Perl 6 Pod 编写的。
+
+有关 Perl 6 Pod 的快速介绍，请参阅link:https://docs.perl6.org/language/pod[Perl 6 Pod]。
+
+有关 Perl 6 Pod 规范的完整详细信息，请参见link:https://design.perl6.org/S26.html[概要26,文档]。
+
+==== 添加定义
+
+Documentables 可以使用 `=headN` Pod 指令来定义，其中 `N` 大于零（例如，`=head1`，`=head2`，...）。
+
+该指令之后的所有段落和块，直到同一级别的下一个指令，将被视为可记录的一部分。所以，在：
+
+```pod6
+=head2 My Definition
+
+Some paragraphs, followed by some code:
+
+    my Code $examples = "amazing";
+
+Mind === blown.
+
+=head3 Minor details about My Definition
+
+It's fantastic.
+
+=head2 And now, for something completely different
+
+…
+```
+
+可记录的 ` My Definition` 延伸到了 `=head2 And now…`。
+
+可记录文件可能包含其他文件。例如，类可记录文件通常包含类实现的方法。
+
+定义必须采用下列形式之一才能被识别为名为 document 文件的起点。首先是文档源代码：
+
+```pod6
+=item X<C<How to use the þ infix> | infix,þ> (This a special case, which 
+is always considered a definition)
+ 
+=item C<The þ Infix> 
+ 
+=item B<The C<þ> Infix> 
+ 
+=item C<Infix þ> 
+ 
+=item B<Infix C<þ>> 
+ 
+=item C<trait is cached> (A special case for the L<trait|/language/functions#Traits> documentables) 
+ 
+```
+
+然后是渲染页面上的结果：
+
+- `How to use the þ infix` （这是一种特殊情况，始终被视为定义）
+- `The þ Infix`
+- **The þ Infix**
+- `Infix þ`
+- **Infix þ**
+- `trait is cached`（link:https://docs.perl6.org/language/functions#Traits[trait]文档的特例）
+
+现在可以使用 HTML 文档中的搜索字段搜索这些项。
+
+您可以使用粗体（**B<>**）或斜体（**I<>**）添加强调，可以使用或不使用代码格式（**C<>**）。由于当前的解析器限制，必须采取特殊步骤将**X<>**与其他格式代码一起使用; 例如：
+
+```pod6
+=item X<B<foo>|foo> a fancy subroutine 
+```
+
+像这样渲染
+
+- **foo** a fancy subroutine
+
+请注意，管道（“|”）之后的文本没有格式。另请注意，**C<>**保留空格并将文本视为逐字处理。
+

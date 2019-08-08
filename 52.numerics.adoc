@@ -1,0 +1,559 @@
+== 数值
+
+=== Int
+
+`Int` 类型提供任意大小的整数。它们可以像计算机内存允许的那样大，虽然有些实现在被要求生成真正惊人大小的整数时会选择抛出数字溢出错误：
+
+```perl6
+say 10**600**600
+# OUTPUT: «Numeric overflow» 
+```
+
+与某些语言不同，当两个操作数都是 link:https://docs.perl6.org/type/Int[Int] 类型时，使用link:https://docs.perl6.org/routine/$SOLIDUS[`/`运算符]执行除法将生成小数，而不执行任何舍入。
+
+```perl6
+say 4/5; # OUTPUT: «0.8» 
+```
+
+这种除法产生的类型是 link:https://docs.perl6.org/type/Rat[Rat] 或 link:https://docs.perl6.org/type/Num[Num] 类型。换算后，如果分数的分母是小于64位，则产生 link:https://docs.perl6.org/type/Rat[Rat], 否则产生 link:https://docs.perl6.org/type/Num[Num] 类型。
+
+如果你想落得 link:https://docs.perl6.org/type/Int[Int] 的结果，那么 link:https://docs.perl6.org/routine/div[div] 和 link:https://docs.perl6.org/routine/narrow[narrow] 例程可能会有帮助，只要有可能。link:https://docs.perl6.org/routine/div[div]运算符执行整除，丢弃余数，而link:https://docs.perl6.org/routine/narrow[narrow] 会把数拟合到它适合的最窄类型：
+
+```perl6
+say 5 div 2; # OUTPUT: «2» 
+ 
+# Result `2` is narrow enough to be an Int: 
+say (4/2).narrow; # OUTPUT: «2» 
+say (4/2).narrow.^name; # OUTPUT: «Int» 
+ 
+# But 2.5 has fractional part, so it ends up being a Rat type: 
+say (5/2).narrow.^name; # OUTPUT: «Rat» 
+say (5/2).narrow;       # OUTPUT: «2.5» 
+ 
+# Denominator is too big for a Rat, so a Num is produced: 
+say 1 / 10⁹⁹; # OUTPUT: «1e-99» 
+```
+
+Perl 6 具有 link:https://docs.perl6.org/type/FatRat[FatRat] 类型，可提供任意精度的分数。为什么在上一个例子中生成了有限精度的 link:https://docs.perl6.org/type/Num[Num] 而不是 link:https://docs.perl6.org/type/FatRat[FatRat] 类型？原因是：性能。大多数操作都很好，精度损失很少，因此不需要使用更昂贵的 link:https://docs.perl6.org/type/FatRat[FatRat] 类型。如果您希望获得额外的精度，则需要自己实例化一个。
+
+=== `Num`
+
+link:https://docs.perl6.org/type/Num[Num] 类型提供 link:https://en.wikipedia.org/wiki/Double-precision_floating-point_format[双精度浮点]十进制数，在其他语言中有时被称为“doubles”。
+
+link:https://docs.perl6.org/type/Num[Num] 字面量的写法是使用字母 `e` 与指数分割开。请记住，即使指数为零，字母`e` **也是必需的**，否则您将得到一个link:https://docs.perl6.org/type/Rat[Rat] 有理数字面量：
+
+```perl6
+say 42e0.^name; # OUTPUT: «Num» 
+say 42.0.^name; # OUTPUT: «Rat» 
+```
+
+区分大小写的单词 link:https://docs.perl6.org/type/Num#Inf[Inf] 和 link:https://docs.perl6.org/type/Num#NaN[NaN] 分别表示特殊值 infinity 和 not-a-number。可以使用 U+221E INFINITY（`∞`）字符代替 link:https://docs.perl6.org/type/Num#Inf[Inf]：
+
+Perl 6  尽可能遵循link:https://en.wikipedia.org/wiki/IEEE_754[IEEE 754-2008浮点运算标准，]计划在以后的语言版本中实现更多的一致性。该语言保证为任何给定的 link:https://docs.perl6.org/type/Num[Num] 字面量选择最接近的可表示数字，并且确实支持负零和link:https://en.wikipedia.org/wiki/Denormal_number[非正规]（也称为“次正规”）。
+
+请记住，像 link:https://docs.perl6.org/routine/say[say] 或 link:https://docs.perl6.org/routine/put[put] 这样的输出例程不会非常难以区分输出link:https://docs.perl6.org/type/Numeric[数字]类型的方式，并且可能选择将link:https://docs.perl6.org/type/Num[Num]显示为link:https://docs.perl6.org/type/Int[Int]或link:https://docs.perl6.org/type/Rat[Rat]数字。要获得更明确的输出字符串，请使用link:https://docs.perl6.org/routine/perl[perl]方法：
+
+```perl6
+say  1e0;      # OUTPUT: «1» 
+say .5e0;      # OUTPUT: «0.5» 
+say  1e0.perl; # OUTPUT: «1e0» 
+say .5e0.perl; # OUTPUT: «0.5e0» 
+```
+
+=== `Complex`
+
+link:https://en.wikipedia.org/wiki/Complex_plane[复平面]的link:https://docs.perl6.org/type/Complex[复数]型数值。link:https://docs.perl6.org/type/Complex[复数]对象包括两个 link:https://docs.perl6.org/type/Num[Num] 对象以表示复数的link:https://docs.perl6.org/routine/re[实部]和link:https://docs.perl6.org/routine/im[虚部]。
+
+要创建link:https://docs.perl6.org/type/Complex[复数]，可以在任何其他非复数上使用link:https://docs.perl6.org/routine/i[后缀`i`运算符]，可选择使用加法设置实部。要使用`i`运算符作用在 `NaN` 或 `Inf` 字面量上，请使用反斜杠将其与它们分开。
+
+```perl6
+say 42i;      # OUTPUT: «0+42i» 
+say 73+42i;   # OUTPUT: «73+42i» 
+say 73+Inf\i; # OUTPUT: «73+Inf\i» 
+```
+
+请记住，上面的语法只是一个附加表达式和优先级规则适用。它也不能用于禁止表达式的地方，例如常规参数中的字面量。
+
+```perl6
+# Precedence of `*` is higher than that of `+` 
+say 2 * 73+10i; # OUTPUT: «146+10i» 
+```
+
+为了避免这些问题，您可以选择使用link:https://docs.perl6.org/type/Complex[复数]字面量语法，其中包括使用尖括号包围实部和虚部，*而不包含任何空格*：
+
+```perl6
+say 2 * <73+10i>; # OUTPUT: «146+20i» 
+ 
+multi how-is-it (<2+4i>) { say "that's my favorite number!" }
+multi how-is-it (|)      { say "meh"                        }
+how-is-it 2+4i;  # OUTPUT: «that's my favorite number!» 
+how-is-it 3+2i;  # OUTPUT: «meh» 
+```
+
+=== `Rational`
+
+执行 link:https://docs.perl6.org/type/Rational[Rational] 角色的类型提供高精度和任意精度的十进制数。由于精度越高，性能损失越大，link:https://docs.perl6.org/type/Rational[Rational] 类型有两种形式：link:https://docs.perl6.org/type/Rat[Rat] 和 link:https://docs.perl6.org/type/FatRat[FatRat]。link:https://docs.perl6.org/type/Rat[Rat] 是最常用的变体, 其在大多数情况下降级成 link:https://docs.perl6.org/type/Num[Num]，当它不再能容纳所有的要求精度时。link:https://docs.perl6.org/type/FatRat[FatRat] 是保持增长提供所有所需的精度任意精度的变体。
+
+==== `Rat`
+
+最常见的 link:https://docs.perl6.org/type/Rational[Rational] 类型。它支持有 64 位分母的有理数（在将分数换算到最小分母之后）。`Rat` 可以直接创建具有较大分母的对象，但是，当具有这样的分母的 `Rat` 是数学运算的结果时，它们会降级为 link:https://docs.perl6.org/type/Num[Num] 对象。
+
+在许多其他语言中 link:https://docs.perl6.org/type/Rat[Rat] 字面量使用和 link:https://docs.perl6.org/type/Num[Num] 字面量类似的语法，使用点来表示数字是十进制：
+
+```perl6
+say .1 + .2 == .3; # OUTPUT: «True» 
+```
+
+如果你在许多常用语言中执行与上述类似的语句, 由于浮点数学的精度，您将得到 `False` 作为答案。要在 Perl 6 中获得相同的结果，你必须使用 link:https://docs.perl6.org/type/Num[Num] 字面量：
+
+```perl6
+say .1e0 + .2e0 == .3e0; # OUTPUT: «False» 
+```
+
+You can also use link:https://docs.perl6.org/routine/$SOLIDUS[`/` division operator] with link:https://docs.perl6.org/type/Int[Int] or link:https://docs.perl6.org/type/Rat[Rat] objects to produce a link:https://docs.perl6.org/type/Rat[Rat]:
+
+您还可以使用具有 link:https://docs.perl6.org/type/Int[Int] 或 link:https://docs.perl6.org/type/Rat[Rat] 对象的link:https://docs.perl6.org/routine/$SOLIDUS[`/`除法运算符]来生成 link:https://docs.perl6.org/type/Rat[Rat]：
+
+```perl6
+say 3/4;     # OUTPUT: «0.75» 
+say 3/4.2;   # OUTPUT: «0.714286» 
+say 1.1/4.2; # OUTPUT: «0.261905» 
+```
+
+Keep in mind the above syntax is just a division expression and precedence rules apply. It also cannot be used in places that forbid expressions, such as literals in routine parameters.
+
+请记住，上面的语法只是一个应用了优先级规则的除法表达式。它也不能用于禁止表达式的地方，例如例程参数中的字面量。
+
+```perl6
+# Precedence of power operators is higher than division 
+say 3/2²; # OUTPUT: «0.75» 
+```
+
+为了避免这些问题，您可以选择使用 link:https://docs.perl6.org/type/Rational[Rational] 字面量语法，它用尖括号括起分子和分母，*不带任何空格*：
+
+```perl6
+say <3/2>²; # OUTPUT: «2.25» 
+ 
+multi how-is-it (<3/2>) { say "that's my favorite number!" }
+multi how-is-it (|)     { say "meh"                        }
+how-is-it 3/2;  # OUTPUT: «that's my favorite number!» 
+how-is-it 1/3;  # OUTPUT: «meh» 
+```
+
+最后，任何具有 `No` 属性的表示小数的 Unicode 字符都可以用作link:https://docs.perl6.org/type/Rat[Rat] 字面量：
+
+```perl6
+say ½ + ⅓ + ⅝ + ⅙; # OUTPUT: «1.625» 
+```
+
+===== 分解为 `Num`
+
+If a *mathematical operation* that produces a link:https://docs.perl6.org/type/Rat[Rat] answer would produce a link:https://docs.perl6.org/type/Rat[Rat] with denominator larger than 64 bits, that operation would instead return a link:https://docs.perl6.org/type/Num[Num] object. When *constructing* a link:https://docs.perl6.org/type/Rat[Rat] (i.e. when it is not a result of some mathematical expression), however, a larger denominator can be used:
+
+如果产生 link:https://docs.perl6.org/type/Rat[Rat] 答案的*数学运算*会产生分母大于64位的 link:https://docs.perl6.org/type/Rat[Rat]，则该操作将返回 link:https://docs.perl6.org/type/Num[Num] 对象。当*构建*一个link:https://docs.perl6.org/type/Rat[Rat]（即，当它不是一些数学表达式的结果）时，但是，更大的分母可以使用：
+
+```perl6
+my $a = 1 / (2⁶⁴ - 1);
+say $a;                   # OUTPUT: «0.000000000000000000054» 
+say $a.^name;             # OUTPUT: «Rat» 
+say $a.nude;              # OUTPUT: «(1 18446744073709551615)» 
+ 
+my $b = 1 / 2⁶⁴;
+say $b;                   # OUTPUT: «5.421010862427522e-20» 
+say $b.^name;             # OUTPUT: «Num» 
+ 
+my $c = Rat.new(1, 2⁶⁴);
+say $c;                   # OUTPUT: «0.000000000000000000054» 
+say $c.^name;             # OUTPUT: «Rat» 
+say $c.nude;              # OUTPUT: «(1 18446744073709551616)» 
+say $c.Num;               # OUTPUT: «5.421010862427522e-20» 
+```
+
+==== `FatRat`
+
+最后一个 link:https://docs.perl6.org/type/Rational[Rational] 类型 - link:https://docs.perl6.org/type/FatRat[FatRat] - 保留你所要求的所有精度，将分子和分母存储为两个 link:https://docs.perl6.org/type/Int[Int] 对象。link:https://docs.perl6.org/type/FatRat[FatRat] 比 link:https://docs.perl6.org/type/Rat[Rat] 更具传染性，有这么多的 link:https://docs.perl6.org/type/FatRat[FatRat] 数学运算会产生另一个 link:https://docs.perl6.org/type/FatRat[FatRat]，保留所有可用的精度。当 link:https://docs.perl6.org/type/Rat[Rat] 退化为 link:https://docs.perl6.org/type/Num[Num] 时，使用 link:https://docs.perl6.org/type/FatRat[FatRat ] 的数学运算会持续不断：
+
+```perl6
+say ((42 + Rat.new(1,2))/999999999999999999).^name;         # OUTPUT: «Rat» 
+say ((42 + Rat.new(1,2))/9999999999999999999).^name;        # OUTPUT: «Num» 
+say ((42 + FatRat.new(1,2))/999999999999999999).^name;      # OUTPUT: «FatRat» 
+say ((42 + FatRat.new(1,2))/99999999999999999999999).^name; # OUTPUT: «FatRat» 
+```
+
+没有特殊的运算符或语法可用于构造 link:https://docs.perl6.org/type/FatRat[FatRat] 对象。只需使用 link:https://docs.perl6.org/type/FatRat#%28Rational%29_method_new[`FatRat.new`] 方法，将分子作为第一个位置参数，将分母作为第二个位置参数。
+
+如果您的程序需要大量的 link:https://docs.perl6.org/type/FatRat[FatRat] 创建，您可以创建自己的自定义运算符：
+
+```perl6
+sub infix:<🙼> { FatRat.new: $^a, $^b }
+say (1🙼3).perl; # OUTPUT: «FatRat.new(1, 3)» 
+```
+
+==== 打印 rationals
+
+请记住，像 link:https://docs.perl6.org/routine/say[say] 或 link:https://docs.perl6.org/routine/put[put] 这样的输出例程不会力图区分link:https://docs.perl6.org/type/Numeric[数字]类型如何输出，并且可能选择将 link:https://docs.perl6.org/type/Num[Num] 显示为 link:https://docs.perl6.org/type/Int[Int] 或 link:https://docs.perl6.org/type/Rat[Rat] 数字。要获得更明确的输出字符串，请使用 link:https://docs.perl6.org/routine/perl[perl] 方法：
+
+```perl6
+say 1.0;        # OUTPUT: «1» 
+say ⅓;          # OUTPUT: «0.333333» 
+say 1.0.perl;   # OUTPUT: «1.0» 
+say ⅓.perl;     # OUTPUT: «<1/3>» 
+```
+
+有关更多信息，您可以选择在 link:https://docs.perl6.org/routine/nude[nude] 中查看 link:https://docs.perl6.org/type/Rational[Rational] 对象，显示其分子和分母：
+
+```perl6
+say ⅓;          # OUTPUT: «0.333333» 
+say 4/2;        # OUTPUT: «2» 
+say ⅓.perl;     # OUTPUT: «<1/3>» 
+say <4/2>.nude; # OUTPUT: «(2 1)» 
+```
+
+=== 除零
+
+在许多语言中，除以零立马会抛出一个异常。在 Perl 6 中，会发生什么取决于你要除的东西以及你如何使用结果。
+
+Perl 6 遵循 link:https://en.wikipedia.org/wiki/IEEE_754[IEEE 754-2008浮点运算标准]，但由于历史原因，6.c 和 6.d 语言版本不完全符合。link:https://docs.perl6.org/type/Num[Num]被零除产生 link:https://docs.perl6.org/type/Failure[Failure]，而link:https://docs.perl6.org/type/Complex[复数]被零除产生 `NaN` 部件, 无论分子是什么。
+
+从 6.e 语言开始，link:https://docs.perl6.org/type/Num[Num] 和 link:https://docs.perl6.org/type/Complex[Complex] 除以零将产生link:https://docs.perl6.org/type/Num#Inf[-Inf]，`+Inf` 或 link:https://docs.perl6.org/type/Num#NaN[NaN], 这取决于分子分别是负数，正数还是零（对于link:https://docs.perl6.org/type/Complex[复数]，实部和虚部是 link:https://docs.perl6.org/type/Num[Num] 并且被分别考虑）。
+
+link:https://docs.perl6.org/type/Int[Int] 数字的除法产生一个 link:https://docs.perl6.org/type/Rat[Rat] 对象（或 link:https://docs.perl6.org/type/Num[Num]，如果在换算之后分母大于64位，当你除以零时就不是这种情况）。这意味着这种除法永远不会产生link:https://docs.perl6.org/type/Exception[异常]或link:https://docs.perl6.org/type/Failure[失败]。结果是零分母有理数，这可能是爆炸性的。
+
+==== Zero-denominator rationals
+
+link:https://docs.perl6.org/type/FatRat[零分母] 有理数是一个扮演 link:https://docs.perl6.org/type/Rational[Rational] 角色的数字，它在核心数字中将是 link:https://docs.perl6.org/type/Rat[Rat] 和 link:https://docs.perl6.org/type/FatRat[FatRat] 对象，其分母为零。这样根据原始分子是否为负，分别为零或正数, 有理数的分子被归一化到`-1`，`0`或`1`。
+
+可以在不需要实际除法的情况下执行的操作是非爆炸性的。例如，您可以单独检查 link:https://docs.perl6.org/routine/nude[nude] 中的link:https://docs.perl6.org/routine/numerator[分子]和link:https://docs.perl6.org/routine/denominator[分母]，或执行数学运算，而不会出现任何异常或失败。
+
+转换零分母有理数到 link:https://docs.perl6.org/type/Num[Num] 遵循 link:https://en.wikipedia.org/wiki/IEEE_754[IEEE] 公约，结果是`-Inf`，`Inf`，或 `NaN`，这取决于分子是否分别是负，正，或零。从另一个方面来看也是如此：转换`±Inf`/ `NaN`到其中一个 link:https://docs.perl6.org/type/Rational[Rational] 类型将产生具有适当分子的零分母有理数：
+
+```perl6
+say  <1/0>.Num;   # OUTPUT: «Inf» 
+say <-1/0>.Num;   # OUTPUT: «-Inf» 
+say  <0/0>.Num;   # OUTPUT: «NaN» 
+say Inf.Rat.nude; # OUTPUT: «(1 0)» 
+```
+
+要求非 link:https://en.wikipedia.org/wiki/IEEE_754[IEEE] 除法的分子和分母的所有其他操作将导致抛出异常 `X::Numeric::DivideByZero`。最常见的此类操作可能是尝试打印或字符串化零分母有理数：
+
+```perl6
+say 0/0;
+# OUTPUT: 
+# Attempt to divide by zero using div 
+#  in block <unit> at -e line 1 
+```
+
+=== 同质异形
+
+link:https://docs.perl6.org/language/glossary#index-entry-Allomorph[Allomorphs] 是两种类型的子类，可以表现为它们中的任何一种。例如，同质异形 link:https://docs.perl6.org/type/IntStr[IntStr] 是 link:https://docs.perl6.org/type/Int[Int] 和 link:https://docs.perl6.org/type/Str[Str] 类型的子类，并且将被需要 link:https://docs.perl6.org/type/Int[Int] 或 link:https://docs.perl6.org/type/Str[Str] 对象的任何类型约束所接受。
+
+同质异形可以使用link:https://docs.perl6.org/language/quoting#Word_quoting%3A_%3C_%3E[尖括号]创建，可以单独使用或作为散列键查找的一部分使用; 直接使用方法`.new`，也由一些结构提供，如 link:https://docs.perl6.org/language/functions#sub_MAIN[`sub MAIN`] 的参数。
+
+```perl6
+say <42>.^name;                 # OUTPUT: «IntStr» 
+say <42e0>.^name;               # OUTPUT: «NumStr» 
+say < 42+42i>.^name;            # OUTPUT: «ComplexStr» 
+say < 1/2>.^name;               # OUTPUT: «RatStr» 
+say <0.5>.^name;                # OUTPUT: «RatStr» 
+ 
+@*ARGS = "42";
+sub MAIN($x) { say $x.^name }   # OUTPUT: «IntStr» 
+ 
+say IntStr.new(42, "42").^name; # OUTPUT: «IntStr» 
+```
+
+上面的几个结构在打开角括号之后有一个空格。那个空格不是故意的。通常使用运算符编写的数字，例如`1/2`（link:https://docs.perl6.org/type/Rat[Rat]，除法运算符）和`1+2i`（link:https://docs.perl6.org/type/Complex[复数]，加法）可以写成不涉及使用运算符的字面值：在尖括号和尖括号里面的字符之间*没有*任何空格。通过在尖括号中添加空格，我们告诉编译器我们不仅需要 link:https://docs.perl6.org/type/Rat[Rat] 或 link:https://docs.perl6.org/type/Complex[Complex] 字面量，而且我们还希望它是一个allomorph：在这种情况下是 link:https://docs.perl6.org/type/RatStr[RatStr] 或 link:https://docs.perl6.org/type/ComplexStr[ComplexStr]。
+
+如果数字字面量不使用任何运算符，则将其写入尖括号内，即使不包含任何空格，也会产生同形异形体。（逻辑：如果你不想要同质异形，你就不会使用尖括号。对于使用运算符的数字也是如此，因为某些结构，例如签名字面量，不允许你使用运算符，所以你不能只为这些数字字面量省略尖括号）。
+
+==== 可用的同质异形
+
+核心语言提供以下同质异形：
+
+|===
+| Type       | Allomorph of    | Example
+| IntStr     | Int and Str     | <42>   
+| NumStr     | Num and Str     | <42e0> 
+| ComplexStr | Complex and Str | < 1+2i>
+| RatStr     | Rat and Str     | <1.5>  
+|===
+
+注意：没有`FatRatStr`类型。
+
+==== Coercion of allomorphs
+
+请记住，同质异形只是它们所代表的两种（或三种）类型的子类。正如变量或参数类型约束为`Foo`可以接受任何 `Foo` 子类一样，所以变量或参数类型约束为 link:https://docs.perl6.org/type/Int[Int] 的将接受 link:https://docs.perl6.org/type/IntStr[IntStr] 同质异形：
+
+```perl6
+sub foo(Int $x) { say $x.^name }
+foo <42>;                          # OUTPUT: «IntStr» 
+my Num $y = <42e0>;
+say $y.^name;                      # OUTPUT: «NumStr» 
+```
+
+当然，这也适用于参数link:https://docs.perl6.org/type/Signature#Coercion_type[coercers]：
+
+```perl6
+sub foo(Int(Cool) $x) { say $x.^name }
+foo <42>;  # OUTPUT: «IntStr» 
+```
+
+给定的同质异形*已经*是 link:https://docs.perl6.org/type/Int[Int] 类型的对象，因此在这种情况下它不会转换为“普通的”  link:https://docs.perl6.org/type/Int[Int]。
+
+当然，如果没有办法将它们“折叠”到其中一个组件，那么同质异形体的力量将会严重减弱。因此，如果你使用所要强制到的类型的名字显式调用方法，那么您将获得该组件。这同样适用于任何代理方法，例如调用方法link:https://docs.perl6.org/routine/Numeric[`.Numeric`]而不是link:https://docs.perl6.org/routine/Int[`.Int`]或使用link:https://docs.perl6.org/routine/~[`prefix:<~> `]运算符而不是link:https://docs.perl6.org/routine/Str[`.Str`]方法调用。
+
+```perl6
+my $al := IntStr.new: 42, "forty two";
+say $al.Str;  # OUTPUT: «forty two» 
+say +$al;     # OUTPUT: «42» 
+ 
+say <1/99999999999999999999>.Rat.^name;    # OUTPUT: «Rat» 
+say <1/99999999999999999999>.FatRat.^name; # OUTPUT: «FatRat» 
+```
+
+强制整个同质异形体列表的一种方便方法是将 link:https://docs.perl6.org/language/operators#Hyper_operators[hyper] 运算符应用于适当的前缀：
+
+```perl6
+say map *.^name,   <42 50e0 100>;  # OUTPUT: «(IntStr NumStr IntStr)» 
+say map *.^name, +«<42 50e0 100>;  # OUTPUT: «(Int Num Int)» 
+say map *.^name, ~«<42 50e0 100>;  # OUTPUT: «(Str Str Str)» 
+```
+
+==== Object identity
+
+当我们考虑对象一致性时，上面关于强制同形异形的讨论变得更加重要。一些构造利用它来确定两个对象是否“相同”。而对于人类而言，同质异形`42`和常规的`42`可能看起来“相同”，对于那些构造，它们是完全不同的对象：
+
+```perl6
+# "42" shows up twice in the result: 42 and <42> are different objects: 
+say unique 1, 1, 1, 42, <42>; # OUTPUT: «(1 42 42)» 
+# Use a different operator to `unique` with: 
+say unique :with(&[==]), 1, 1, 1, 42, <42>; # OUTPUT: «(1 42)» 
+# Or coerce the input instead (faster than using a different `unique` operator): 
+say unique :as(*.Int), 1, 1, 1, 42, <42>; # OUTPUT: «(1 42)» 
+say unique +«(1, 1, 1, 42, <42>);         # OUTPUT: «(1 42)» 
+ 
+# Parameterized Hash with `Any` keys does not stringify them; our key is of type `Int`: 
+my %h{Any} = 42 => "foo";
+# But we use the allomorphic key of type `IntStr`, which is not in the Hash: 
+say %h<42>:exists;           # OUTPUT: «False» 
+# Must use curly braces to avoid the allomorph: 
+say %h{42}:exists;           # OUTPUT: «True» 
+ 
+# We are using a set operator to look up an `Int` object in a list of `IntStr` objects: 
+say 42 ∈ <42 100 200>; # OUTPUT: «False» 
+# Convert it to an allomorph: 
+say <42> ∈ <42 100 200>; # OUTPUT: «True» 
+# Or convert the items in the list to plain `Int` objects: 
+say 42 ∈ +«<42 100 200>; # OUTPUT: «True» 
+```
+
+注意这些对象一致性的差异，并根据需要强制你的同形异形体。
+
+=== 原生数字
+
+顾名思义，原生数字可以访问原生数字 - 即由硬件直接提供的数字。这反过来又提供两个功能：溢出/下溢和更好的性能。
+
+**注意：**在撰写本文时（2018.05），某些实现（例如 Rakudo）提供了有关原生类型的一些细节，例如  `int64` 是否可用且在32位计算机上具有64位大小，以及如何检测何时你的程序正在这样的硬件上运行。
+
+==== 可用的原生数字
+
+|===
+| Native type | Base numeric     | Size                                                         
+| atomicint   | integer          | sized to offer CPU-provided atomic operations. (typically 64 bits on 64-bit platforms and 32 bits on 32-bit ones)
+| int         | integer          | 64-bits                                                      
+| int16       | integer          | 16-bits                                                      
+| int32       | integer          | 32-bits                                                      
+| int64       | integer          | 64-bits                                                      
+| int8        | integer          | 8-bits                                                       
+| num         | floating point   | 64-bits                                                      
+| num32       | floating point   | 32-bits                                                      
+| num64       | floating point   | 64-bits                                                      
+| uint        | unsigned integer | 64-bits                                                      
+| uint16      | unsigned integer | 16-bits                                                      
+| uint32      | unsigned integer | 32-bits                                                      
+| uint64      | unsigned integer | 64-bits                                                      
+| uint8       | unsigned integer | 8-bits                                                       
+|===
+
+==== 创建原生数字
+
+要创建原生类型的变量或参数，只需使用其中一个可用数字的名称作为类型约束：
+
+```perl6
+my int32 $x = 42;
+sub foo(num $y) {}
+class { has int8 $.z }
+```
+
+有时，您可能希望在不创建任何可用变量的情况下将某些值强制转换为原生类型。没有`.int`或类似的强制方法（方法调用是后期的，所以它们不适合这个目的）。相反，只需使用匿名变量：
+
+```perl6
+some-native-taking-sub (my int $ = $y), (my int32 $ = $z)
+```
+
+==== 溢出/下溢
+
+尝试**分配**不适合特定原生类型的值会产生异常。这包括尝试为原生参数提供过大的参数：
+
+```perl6
+my int $x = 2¹⁰⁰;
+# OUTPUT: 
+# Cannot unbox 101 bit wide bigint into native integer 
+#  in block <unit> at -e line 1 
+ 
+sub f(int $x) { $x }; say f 2⁶⁴
+# OUTPUT: 
+# Cannot unbox 65 bit wide bigint into native integer 
+#   in sub f at -e line 1 
+#   in block <unit> at -e line 1 
+```
+
+但是，以这样一种太大/太小的方式修改已存在的值会产生溢出/下溢行为：
+
+```perl6
+my int $x = 2⁶³-1;
+say $x;             # OUTPUT: «9223372036854775807» 
+say ++$x;           # OUTPUT: «-9223372036854775808» 
+ 
+my uint8 $x;
+say $x;             # OUTPUT: «0» 
+say $x -= 100;      # OUTPUT: «156» 
+```
+
+创建使用原生类型的对象不涉及程序员的直接分配; 这就是为什么这些构造提供溢出/下溢行为而不是抛出异常。
+
+```perl6
+say Buf.new(1000, 2000, 3000).List; # OUTPUT: «(232 208 184)» 
+say my uint8 @a = 1000, 2000, 3000; # OUTPUT: «232 208 184» 
+```
+
+==== Auto-boxing
+
+虽然它们可以被称为“*原生类型* ”，但原生数字实际上并不是具有任何可用方法的类。但是，您*可以*调用这些数字的非原生版本上可用的任何方法。这是怎么回事？
+
+```perl6
+my int8 $x = -42;
+say $x.abs; # OUTPUT: «42» 
+```
+
+此行为称为“自动装箱”。编译器使用所有方法自动将原生类型“装箱”为功能齐全的高级类型。换句话说，`int8`上面的内容自动转换为link:https://docs.perl6.org/type/Int[Int，]然后它是link:https://docs.perl6.org/type/Int[Int]类，然后提供被调用的link:https://docs.perl6.org/routine/abs[abs]方法。
+
+当您使用原生类型获得性能提升时，此详细信息非常重要。如果您正在使用的代码导致执行大量自动装箱，那么使用原生类型的性能可能会比使用非原生类型时*更差*：
+
+```perl6
+my $a = -42;
+my int $a-native = -42;
+{ for ^1000_000 { $a.abs        }; say now - ENTER now } # OUTPUT: «0.38180862» 
+{ for ^1000_000 { $a-native.abs }; say now - ENTER now } # OUTPUT: «0.938720» 
+```
+
+如您所见，原生变体的速度慢了两倍多。原因是方法调用需要将原生类型装箱，而非原生变体不需要这样的东西，因此性能损失。
+
+在这种特殊情况下，我们可以简单地切换到link:https://docs.perl6.org/routine/abs[abs]的子程序形式，它可以使用原生类型而无需装箱。在其他情况下，您可能需要寻找其他解决方案以避免过多的自动装箱，包括切换到部分代码的非原生类型。
+
+```perl6
+my $a = -42;
+my int $a-native = -42;
+{ for ^1000_000 { abs $a        }; say now - ENTER now } # OUTPUT: «0.38229177» 
+{ for ^1000_000 { abs $a-native }; say now - ENTER now } # OUTPUT: «0.3088305» 
+```
+
+==== 默认值
+
+由于原生类型后面没有类，因此通常没有使用尚未初始化的变量获得的类型对象。因此，原生类型自动初始化为零。在6.c语言，原生的浮点类型（`num`，`num32`，和`num64`）被初始化为值 `NaN`; 在 6.d 语言中默认为 `0e0`。
+
+==== 原生分派
+
+例如，当大小可预测时，可以使原生候选者与非原生候选者一起提供具有原生候选者的更快算法，但是否则回退到较慢的非原生候选者。以下是涉及原生候选人的多重分派的规则。
+
+首先，原生类型的大小在分派中不起作用，并且`int8`被认为与`int16`或`int` 例如，当大小可预测时，可以使本地候选者与非本地候选者一起提供具有本地候选者的更快算法，但是否则回退到较慢的非本地候选者。以下是涉及本地候选人的多次派遣的规则。
+
+首先，原生类型的大小在调度中不起作用，并且`int8`被认为与`int16`或`int` 相同：
+
+```perl6
+multi foo(int   $x) { say "int" }
+multi foo(int32 $x) { say "int32" }
+foo my int $x = 42;
+# OUTPUT: 
+# Ambiguous call to 'foo(Int)'; these signatures all match: 
+# :(int $x) 
+# :(int32 $x) 
+```
+
+其次，如果例程是一个 `only`-ie，它不是一个link:https://docs.perl6.org/language/functions#Multi-dispatch[`multi`]非原生类型，而是在调用期间给出一个原生类型，反之亦然，那么参数将被自动装箱或自动取消装箱以使可以被调用。如果给定的参数太大而无法放入native参数，则会抛出异常：
+
+```perl6
+-> int {}( 42 );            # OK; auto-unboxing 
+-> int {}( 2¹⁰⁰ );          # Too large; exception 
+-> Int {}( 2¹⁰⁰ );          # OK; non-native parameter 
+-> Int {}( my int $ = 42 ); # OK; auto-boxing 
+```
+
+当涉及到link:https://docs.perl6.org/language/functions#Multi-dispatch[`multi`]例程时，如果没有可用的原生候选者，则原生参数将始终自动装箱：
+
+```perl6
+multi foo (Int $x) { $x }
+say foo my int $ = 42; # OUTPUT: «42» 
+```
+
+另一种方式是不能提供相同的 luxury。如果只有原生候选者可用，则非原生参数将*不会*被自动取消装箱，而是指示不会抛出匹配的候选者的异常（这种不对称的原因是原生类型总是可以装箱，但是非原生的可能太大而无法融入原生）：
+
+```perl6
+multi f(int $x) { $x }
+my $x = 2;
+say f $x;
+# OUTPUT: 
+# Cannot resolve caller f(Int); none of these signatures match: 
+#     (int $x) 
+#   in block <unit> at -e line 1 
+```
+
+但是，如果正在进行调用，其中一个参数是原生类型而另一个是link:https://docs.perl6.org/language/syntax#Number_literals[数字字面量]，则放弃此规则：
+
+```perl6
+multi f(int, int) {}
+f 42, my int $x; # Successful call 
+```
+
+这样，您就不必不断将诸如 `$n +> 2` 写为 `$n +> (my int $ = 2)` 了。编译器知道字面量小到足以适合原生类型并将其转换为原生类型。
+
+==== 原子操作
+
+该语言提供了一些保证以原子方式执行的link:https://docs.perl6.org/type/atomicint[操作]，即安全地由多个线程执行而无需锁定而没有数据争用的风险。
+
+对于此类操作，需要link:https://docs.perl6.org/type/atomicint[atomicint]原生类型。此类型与普通原生link:https://docs.perl6.org/type/int[int]类似，不同之处在于它的大小使得可以对其执行CPU提供的原子操作。在32位CPU上，它通常是32位大小，而在64位CPU上，它通常是64位大小。
+
+```perl6
+# !!WRONG!! Might be non-atomic on some systems 
+my int $x;
+await ^100 .map: { start $x⚛++ };
+say $x; # OUTPUT: «98» 
+ 
+# RIGHT! The use of `atomicint` type guarantees operation is atomic 
+my atomicint $x;
+await ^100 .map: { start $x⚛++ };
+say $x; # OUTPUT: «100» 
+```
+
+相似性`int`也存在于多重分派中： `atomicint`，普通的 `int`和固定大小的`int`变量都是相同的，并且不能通过多重分派来区分。
+
+=== Numeric infectiousness
+
+当一些数学运算中涉及两个不同类型的数字时，数字“传递性”决定了结果类型。如果结果是该类型而不是其他操作数的类型，则认为类型比其他类型更具传递性。例如，link:https://docs.perl6.org/type/Num[Num]类型比link:https://docs.perl6.org/type/Int[Int]更具传递性，因此我们可以期望`42e0 + 42`产生link:https://docs.perl6.org/type/Num[Num]作为结果。
+
+传递性如下，首先列出最具传递性的类型
+
+- Complex
+- Num
+- FatRat
+- Rat
+- Int
+
+```perl6
+say (2 + 2e0).^name; # Int + Num => OUTPUT: «Num» 
+say (½ + ½).^name; # Rat + Rat => OUTPUT: «Rat» 
+say (FatRat.new(1,2) + ½).^name; # FatRat + Rat => OUTPUT: «FatRat» 
+```
+
+同质异形体具有与其数字成分相同的传递性。原生类型获得自动装箱，并具有与其盒装变体相同的传递性。
+

@@ -1,0 +1,178 @@
+Perl 6 中的大部分句法结构能归类为项和操作符. 这儿你能找到各种不同类型的项的概览.
+
+## Literals
+
+### Int
+
+```perl6
+42
+12_300_00
+:16<DEAD_BEEF>    #十六进制
+```
+
+Int 字面量由数字组成, 并且能在数字之间包含下划线. 使用 `:radix<number>` 冒号对儿形式能指定 10 进制外的其它进制.
+
+### Rat   有理数
+
+```perl6
+12.34
+1_200.345_678
+```
+
+Rat(有理数)字面量由一个点号分割的两部分整数组成. 注意尾部的点号是不允许的, 所以你必须写成 `1.0` 而非 `1.` ( 这个规则很重要, 因为有一个以点号开头的中缀操作符, 例如 `..` 范围操作符 ).
+
+### Num  浮点数
+
+```perl6
+12.3e-32
+3e8
+```
+
+Num(浮点数)字面量由 Rat 或 Int 字面量后面再跟着一个字母 e 和 一个指数(可能为负)组成. `3e8` 使用 值 `3* 10**8` 构建了一个 Num.
+
+### Str
+
+```perl6
+'a string''I\'m escaped!'
+"I don't need to be"
+"\"But I still can be,\" he said."
+q|Other delimiters can be used too!|
+```
+
+字符串字面量常常使用 `'` 或 `"` 创建, 然儿, 字符串在 Perl 6 中其实是一种强大的子语言.
+
+### Regex
+
+```perl6
+/ match some text /
+rx/slurp \s rest (.*) $/
+```
+
+这两种会产生字面正则
+
+### Pair
+
+```perl6
+ a => 1
+'a' => 'b'
+:identifier
+:!identifier
+:identifier<value>
+:identifier<value1 value2>
+:identifier($value)
+:identifier['val1', 'val2']
+:identifier{key1 => 'val1', key2 => 'value2'}
+:$item
+:@array
+:%hash
+:&callable
+```
+
+Pair 对象的创建要么使用 `infix:«=>»` (它会自动括起左边, 如果左边是标识符的话), 要么使用各种冒号对儿形式.  那些总是以一个冒号开头的创建形式, 冒号后面要么跟着一个标识符, 要么跟着一个已经存在的变量(不带符号的变量名作为 pair 的键, 变量的值作为 pair 的键值).
+
+在标识符形式的冒号对儿中, 可选的值可以是任意环缀. 如果没有环缀, 那它的值就是 `Bool::True`. `!:identifier` 形式的值是 `Bool::False`.
+
+如果冒号对儿在参数列表中, 所有的冒号对儿都会作为命名参数,   但是 `'quoted string' => $value` 除外.
+
+### Parcel
+
+什么是 Parcel? -> Immutable sequence of values - 不可变值的序列.
+
+```perl6
+calss Parcel is Cool does Positional { }
+```
+
+Parcel 代表 `Parenthesis cell`, 例如, 被圆括号环绕的表达式. 除了空的 parcel 之外, 实际上是使用逗号来创建一个 Parcel.
+
+```perl6
+(1 + 2)  # not a Parcel
+()       # empty Parcel
+(1,)     # Parcel with one element
+(1,3)    # Parcel with two element
+1, 2, 3  # parenthesis are optional
+<a b c>  # word-quoting
+«a b c»  # also word-quoting
+qw/a b c/
+```
+
+Parcel 字面量有: 空的圆括号 (),  逗号分割的列表, 还有几种引号结构.
+
+```perl6
+> say (1,2,3).WHAT
+(Parcel)
+> say <a b c>.WHAT
+(Parcel)
+> say «a b c».WHAT
+(Parcel)
+> say (qw/a b c/).WHAT
+(Parcel)
+```
+
+Parcels 是不可变的, 但是能包含可变容器:
+
+```perl6
+my $x;
+my $p = (0, $x, 2); # can assign to $p[1], but not
+                    # to any other element of $p
+```
+
+像 `<...>` 这种 `Word-quoting` 结构也会创建 parcels:
+
+```perl6
+<a b c> # 3-element Parcel
+```
+
+在 flattening 列表上下文中, parcels 被展平并且会消失:
+
+```perl6
+my @flat = <a b>, <c, d>;
+say @flat.elems;
+```
+
+### term *
+
+`*` 会创建一个类型为 Whatever 的对象. 详情查看 link:http://doc.perl6.org/type/Whatever[Whatever].
+
+## Identifier terms
+
+Perl 6中有内建的标识符项, 列出如下. 此外, 使用该语法能添加新的标识符项.
+
+```perl6
+sub term:<fourty-two> { 42 };
+say fourty-two
+```
+
+或者作为常量:
+
+```perl6
+constant forty-two = 42;
+say fourty-two
+```
+
+### self
+
+在方法中, self 指向方法的调用者( 例如, 方法被调用的对象). 如果把它用在没有意义的上下文中, 会抛出一个 ` X::Syntax::NoSelf` 类型的编译时错误.
+
+### now
+
+返回一个代表当前时间的实例对象.
+
+### rand
+
+返回一个范围为 `0..^1`的伪随机浮点数.
+
+### pi
+
+返回数值 pi, 例如, 圆的周长和半径之间的比率.
+
+### e
+
+返回欧拉数值.
+
+### i
+
+返回复数的虚部.
+
+## Variables
+
+变量在变量语言文档中讨论.

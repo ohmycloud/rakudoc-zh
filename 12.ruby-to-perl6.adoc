@@ -1,0 +1,913 @@
+== Ruby 到 Perl 6
+
+=== 基本语法
+
+==== 语句结束分号
+
+Ruby 使用换行(有几个例外)来探测大部分语句的结束, 只要表达式已经完成。通过把运算符挂在行的末尾以保证解析会继续而打断一个长的表达式的做法很常见:
+
+
+```ruby
+foo +     # 在 Ruby  中结尾的运算符意味着解析会继续
+  bar +
+  baz
+```
+
+在 Perl 6 中你必须显式地使用 `;` 来结束语句, 这允许更好的反馈和更灵活的断行。有两个例外不需要显式的 `;`,  块儿中的最后一条语句, 在块自身的闭合花括号**之后**(如果那一行上没有任何其它东西):
+
+```perl6
+if 5 < $x < 10 {
+    say "Yep!";
+    $x = 17     # 在闭合花括号 } 之前不需要分号 ;
+}               # 因为换行, 在闭合花括号 } 之后不需要分号 ;
+say "Done!";    # 如果后面什么也没有, 那么这儿的分号也不需要
+```
+
+==== 空白
+
+Ruby 中允许使用大量令人吃惊的灵活的空白, 即使在开启了严格模式和警告的情况下:
+
+```ruby
+# 不符合习惯但是在 Ruby 中是合法的
+puts"Hello "+
+(people [ i]
+    . name
+    ) . upcase+"!"if$greeted[i]<1
+```
+
+Perl  6 也遵从程序员的自由和创造力，但是平衡的语法灵活性与其设计目标是一致的---确定性的，可扩展的语法，支持单程解析和有用的错误消息，组合功能，如利落地自定义运算符，不会导致程序员意外弄错他们的意图。 此外，不再强调 "代码高尔夫"; Perl 6 在概念上更为简洁, 而不是在少敲了几次键上。
+
+因此，在语法中有很多地方，在 Ruby 中空格是可选的但是在 Perl 6 中却是强制的或禁止的。许多这些限制不太可能涉及很多现实的 Perl 代码（例如，在数组变量和它的方括号之间不允许有空格 ），但不幸的是有一些与某些 Ruby 黑客的习惯编码风格冲突：
+
+- 在参数列表的开括号「`(`」之前不允许有空格
+
+```perl6
+foo (3, 4, 1); # 在 Ruby 或 Perl 6 中都不正确 ( 在 Perl 6 中这会
+               # 尝试为 foo 传递一个 List 类型的单个参数)
+foo(3, 4, 1);  # Ruby 和 Perl 6 中都可以
+foo 3, 4, 1;   # Ruby 和 Perl 6 中都可以 - 圆括号是可供选择的-less style
+```
+
+- 关键字后面立刻需要跟着空格
+
+```perl6
+if(a < 0); ...; end         # OK in Ruby
+if ($a < 0) { ... }         # Perl 6
+if $a < 0   { ... }         # Perl 6, 更地道
+
+while(x > 5); ...; end      # OK in Ruby
+while ($x > 5) { ... }      # Perl 6
+while $x > 5   { ... }      # Perl 6, 更地道
+```
+
+- 后缀/后环缀 操作符(包括数组/散列下标)前面不允许有空格。
+
+```perl6
+seen [ :fish ] = 1    # Ruby, 不地道, 但是允许这样写
+%seen< fish > = 1;    # Perl 6, 'seen' 后面不允许出现空格
+```
+
+- 中缀操作符之前需要空格, 如果它和已经存在的后缀/后环缀 操作符冲突的话。
+
+```perl6
+n<1     # Ruby (in Perl 6 this would conflict with postcircumfix < >)
+$n < 1; # Perl 6
+```
+
+==== 方法调用, .send
+
+方法调用使用点语法, 就像 Ruby 那样:
+
+```perl6
+person.name    # Ruby
+$person.name   # Perl 6
+```
+
+要调用一个直到运行时才直到名字的方法:
+
+```perl6
+object.send(methodname, args);  # Ruby
+$object."$methodname"(@args);   # Perl 6
+```
+
+如果你遗漏了双引号, 那么 Perl 6 会期望 `$methodname` 包含一个 `Method` 对象, 而不是单单是那个方法名的字符串表示。
+
+==== 变量、符号、作用域 和通用类型
+
+在 Ruby 中，变量主要使用 sigils 指示作用域。 `$` 用于全局作用域，`@@` 用于类作用域，`@` 用作实例作用域，无符号用于局部变量（包括参数）。 `&` 符号也用于表示方法引用。符号的前缀为 `:`，但它们不是可变的，所以不是真正的符号。
+
+在 Perl 6 中，符号主要用于指代包含的值实现的角色，表明值的类型（或至少接口）。 符号是不变的，不管变量是如何使用的 - 你可以把它们看作变量名的一部分。
+
+变量的作用域改为由声明本身（my，has，our，etc）表示。
+
+===== 变量作用域
+
+对于局部变量，Ruby 在赋值时使用隐式变量声明，并限于当前块。 在 Ruby 中，if 或 while 内置结构的内容不是块或作用域。
+
+Perl 6 使用显式作用域指示符，并且不会隐式地创建变量。 每一个地方你看到的 `{...}` 都是一个作用域，它包括一个条件或循环的主体。 常用的作用域声明：
+
+```perl6
+foo = 7        # Ruby, variable scope is defined by first assignment and
+               # extends to the end of the current block
+
+my  $foo = 7   # Perl 6, lexical scoped to the current block
+our $foo = 7   # Perl 6, package scoped
+has $!foo = 7  # Perl 6, instance scoped (attribute)
+```
+
+===== `$` 标量
+
+`$` 符号始终与"标量"变量（例如 `$name`）一起使用。这些是单值(single-value) 容器。
+
+这是最通用的变量类型，对其内容没有限制。 注意，你仍然可以寻址/使用它的内容，如 `$x[1]`，`$x{"foo"}` 和 `$f("foo")`。
+
+===== `@` 数组
+
+`@` 总是与"数组"变量一起使用（例如 `@months`，`@months[2]`，`@months[2,4]` 用于数组切片）。 使用 `@` 符号的变量只能包含执行 Positional 角色的东西，Positional 角色指的是位置索引和切片功能。
+
+- 索引
+
+```perl6
+puts months[2]; # Ruby
+say @months[2]; # Perl 6
+```
+
+- 值切片
+
+```perl6
+puts months[8..11].join(',') # Ruby
+say @months[8..11].join(',') # Perl 6
+```
+
+===== `%` 散列
+
+`%` 符号始终与"散列"变量一起使用（例如`%calories`, `%calories<apple>`, `%calories<pear plum>`）。 使用 `%` 符号的变量只能包含执行关联(`Associative`)角色的内容。
+
+Ruby 使用方括号来访问数组和哈希值。 Perl 6 使用花括号来代替散列。 尖括号版本也是可用的，它总是自动引起其内容（不带引号的字符串）：
+
+副词可以用来控制切片的类型。
+
+- 索引
+
+```perl6
+puts calories["apple"]  # Ruby
+say %calories{"apple"}; # Perl 6
+
+puts calories["apple"]  # Ruby
+puts calories[:apple]   # Ruby, symbols for keys are common
+say %calories<apple>;   # Perl 6 - angle brackets instead of single-quotes
+say %calories«$key»;    # Perl 6 - double angles interpolate as double-quotes
+```
+
+- 值切片
+
+```perl6
+puts calories.values_at('pear', 'plum').join(',') # Ruby
+puts calories.values_at(%w(pear plum)).join(',')  # Ruby, pretty?
+
+say %calories{'pear', 'plum'}.join(',');          # Perl 6
+say %calories<pear plum>.join(',');               # Perl 6 (prettier)
+my $keys = 'pear plum';
+say %calories«$keys».join(','); # Perl 6, interpolated split
+```
+
+- 键/值切片
+
+```perl6
+say calories.slice('pear', 'plum').join(','); # Ruby, with ActiveRecord
+say %calories{'pear', 'plum'}:kv.join(',');   # Perl 6 - 使用 :kv 副词
+say %calories<pear plum>:kv.join(',');        # Perl 6 (更好看的版本)
+```
+
+===== `&` Sub
+
+`&` 符号与 Ruby 的 `&` 非常类似，用于引用一个具名的子例程/操作符的函数对象，而不调用它，即把名字用作"名词"而不是"动词"。 使用 `&` 符号的变量只能包含 `Callable` 角色的内容。
+
+```perl6
+add = -> n, m { n + m } # Ruby lambda for an addition function
+add.(2, 3)              # => 5, Ruby invocation of a lambda
+add.call(2, 3)          # => 5, Ruby invocation of a lambda
+
+my &add = -> $n, $m { $n + $m } # Perl 6 addition function
+&add(2, 3)                      # => 5, you can keep the sigil
+add(2, 3)                       # => 5, and it works without it
+
+foo_method = &foo;     # Ruby
+my &foo_method = &foo; # Perl 6
+
+some_func(&say) # Ruby pass a function reference
+some_func(&say) # Perl 6 passes function references the same way
+```
+
+通常在 Ruby 中，我们传递一个块作为最后一个参数，这是特别用于 DSL 中。 这可以是通过 `yield` 调用的隐式参数，也可以是带有前缀 `&` 的显式块。 在 Perl 6 中，Callable 参数总是被变量名称（而不是yield）列出和调用，并且有多种调用函数的方法。
+
+```perl6
+# Ruby, declare a method and call the implicit block argument
+def f
+  yield 2
+end
+
+# Ruby, invoke f, pass it a block with 1 argument
+f do |n|
+  puts "Hi #{n}"
+end
+
+# Perl 6, declare a method with an explicit block argument
+sub f(&g:($)) {
+  g(2)
+}
+
+# Perl 6, invoke f, pass it a block with 1 argument
+# There are several other ways to do this
+f(-> $n { say "Hi {$n}" }) # Explicit argument
+f -> $n { say "Hi {$n}" }  # Explicit argument, no parenthesis
+f { say "Hi {$^n}" }       # Implicit argument
+
+# Additionally, if 'f' is a method on instance 'obj' you can use C<:>
+# instead of parenthesis
+obj.f(-> $n { say "Hi {$n}" })  # Explicit argument
+obj.f: -> $n { say "Hi {$n}" }  # Explicit argument, no parenthesis
+obj.f: { say "Hi {$^n}" }       # Implicit argument, no parenthesis
+```
+
+===== `*` 吞噬参数/ 参数扩展
+
+在 Ruby 中，你可以声明一个参数，使用 `*` 前缀将所传递参数的剩余部分传递到数组中。 它在 Perl 6 中的工作方式相同：
+
+```perl6
+def foo(*args); puts "I got #{args.length} args!"; end # Ruby
+sub foo(*@args) { say "I got #{@args.elems} args!" }   # Perl 6
+```
+
+您可能想将数组扩展为一组参数。 在 Perl 6 中，这也使用 `*` 前缀：
+
+```perl6
+args = %w(a b c)         # Ruby
+foo(*args)
+
+my @args = <a b c>       # Perl 6
+foo(*@args)
+```
+
+Perl 6 有许多更高级的传递参数和接收参数的方法，参见link:https://docs.perl6.org/language/functions#Signatures[签名]和link:https://docs.perl6.org/type/Capture[捕获]。
+
+===== Twigils
+
+Perl 6 另外还使用 "twigs"，它是关于变量的进一步指示符，并且在符号和变量名的其余部分之间。 例子：
+
+```perl6
+$foo     # Scalar with no twigil
+$!foo    # 私有实例变量
+$.foo    # Instance variable accessor
+$*foo    # Dynamically scoped variable
+$^foo    # A positional (placeholder) parameter to a block
+$:foo    # 具名参数
+$=foo    # POD (文档) 变量
+$?FILE   # Current source filename. ? twigil 表明这是一个编译时值
+$~foo    # Sublanguage seen by parser, uncommon
+```
+
+虽然每个例子都使用 `$` 符号，但大多数可以使用 `@`（Positional）或 `%`（Associative）。
+
+===== `:` 符号
+
+Perl 6 通常在 Ruby 使用符号的地方使用字符串。 关于这点的一个主要例子是散列键。
+
+```perl6
+address[:joe][:street] # Typical Ruby nested hash with symbol keys
+%address<joe><street>  # Typical Perl 6 nested hash with string keys
+```
+
+Perl 6 有冒号对语法，有时看起来像Ruby符号。
+
+```perl6
+:age            # Ruby symbol
+
+# All of these are equivalent for Perl 6
+:age            # Perl 6 pair with implicit True value
+:age(True)      # Perl 6 pair with explicit True value
+age => True     # Perl 6 pair using arrow notation
+"age" => True   # Perl 6 pair using arrow notation and explicit quotes
+```
+
+很多时候你可能会使用一个没有显式值的冒号对，并假装它是一个 Ruby 符号，但它不是惯用的 Perl 6。
+
+=== 操作符
+
+许多操作符在 Ruby 和 Perl 6 中有类似的用法：
+
+- , 列表分割符
+- `+` 数值加法
+- `-` 数值减法
+- `*` 数值乘法
+- / 数值除法
+- % 数值求模
+- ** 数值指数
+- ! && || 布尔, 高优先级
+- not and or 布尔, 低优先级
+
+您可以使用 `$x++` 而不是 `x += 1` 作为递增变量的快捷方式。这可以用作预增量 `++$x`（增量，返回新值）或后增量 `$x++`（增量，返回旧值）。
+
+您可以使用 `$x--` 而不是 `x -= 1` 作为递减变量的快捷方式。这可以用作预减量 `--$x`（递减，返回新值）或递减后 `$x--`（递减，返回旧值）。
+
+==== == != < > <= >= 比较
+
+Perl 6 中, 数字和字符串之间比较是分开的，以避免常见错误。
+
+- == != < > <= >= 比较
+
+- eq ne lt gt le ge 字符串比较
+
+例如，使用 `==` 尝试将值转换为数字，并且 `eq` 尝试将值转换为字符串。
+
+==== `<=>` 三向比较
+
+在 Ruby 中，`<=>` 运算符返回 -1,0 或1。 在 Perl 6 中，它们返回 `Order :: Less`，`Order :: Same` 或 `Order :: More`。
+
+`<=>` 用于强制数字上下文比较。
+
+`leg`（"Less，Equal 或者 Greater?"）用于强制字符串上下文比较。
+
+`cmp` 要么是 `<=>` 比较, 要么是 `leg` 比较，这取决于它的参数的现有类型。
+
+==== `~~` 智能匹配运算符
+
+这是一个非常常见的匹配运算符，它不存在于 Ruby 中。这里有些例子：
+
+```perl6
+say "match!" if $foo ~~ /bar/;      # Regex match
+say "match!" if $foo ~~ "bar";      # String match
+say "match!" if $foo ~~ :(Int, Str) # Signature match (destructure)
+```
+
+参见 link:https://design.perl6.org/S03.html#Smart_matching[S03/智能匹配]
+
+====  & | ^ 数字位操作
+
+==== & | ^ 布尔运算
+
+在 Perl 6 中，这些单字符操作被移除了，并被两个字符操作代替，它们将它们的参数强制到所需的上下文中。
+
+```perl6
+# Infix ops (two arguments; one on each side of the op)
++&  +|  +^  And Or Xor: Numeric
+~&  ~|  ~^  And Or Xor: String
+?&  ?|  ?^  And Or Xor: Boolean
+
+# Prefix ops (one argument, after the op)
++^  Not: Numeric
+~^  Not: String
+?^  Not: Boolean (same as the ! op)
+```
+
+==== `&.` 条件链式操作符
+
+Ruby 使用  `&.` 运算符链接方法，而不会在一个返回 nil 的调用中产生错误。在 Perl 6 中因为同样的目的使用 `.?`。
+
+==== << >> 数值左/右移位操作符，铲(shovel)操作符
+
+替换为 `+<` 和 `+>`。
+
+```perl6
+puts 42 << 3  # Ruby
+say  42 +< 3; # Perl 6
+```
+
+注意，Ruby 经常使用 `<<` 运算符作为"铲操作符"，这类似于`.push`。这种用法在 Perl 6 中不常见。
+
+==== `=>`和 `:` 键-值分隔符
+
+在 Ruby 中，`=>` 用于 Hash 字面声明和参数传递的键/值对的上下文中。 当左边是符号时用 `:` 作速记符。
+
+在 Perl 6 中，`=>` 是对(Pair)运算符，这在原理上是非常不同的，但在许多情况下工作相同。
+
+如果你在哈希字面值中使用 `=>`，那么用法非常类似：
+
+```perl6
+hash = { "AAA" => 1, "BBB" => 2 }  # Ruby, though symbol keys are more common
+my %hash = ( AAA => 1, BBB => 2 ); # Perl 6, uses ()'s though {} usually work
+```
+
+==== `?:` 三目运算符
+
+在 Perl 6 中，这被拼写为两个问号，而不是一个问号，和两个感叹号而不是一个冒号。这种与常见三目运算符的偏离消除了多种歧义的情况，并使得假的情况更突出。
+
+```perl6
+result     = (  score > 60 )  ? 'Pass'  : 'Fail'; # Ruby
+my $result = ( $score > 60 ) ?? 'Pass' !! 'Fail'; # Perl 6
+```
+
+==== `+` 字符串连接
+
+替换为波浪线符号（`~`）。助记符：想想用针和线缝合两个字符串。
+
+```perl6
+$food = 'grape' + 'fruit'  # Ruby
+$food = 'grape' ~ 'fruit'; # Perl 6
+```
+
+==== 字符串插值
+
+在 Ruby 中，"#{foo}s" 界定嵌入在双引号字符串中的块。在 Perl 6 中删除 `#` 前缀："{$foo}s"。和 Ruby 一样，你可以将任意代码放在嵌入式块中，它将在字符串上下文中渲染。
+
+简单变量可以插入到双引号字符串中，而不使用块语法：
+
+```perl6
+# Ruby
+name = "Bob"
+puts "Hello! My name is #{name}!"
+
+# Perl 6
+my $name = "Bob"
+say "Hello! My name is $name!"
+```
+
+Ruby 中的嵌入式块的结果使用 `.to_s` 来获取字符串上下文。 Perl 6 使用 `.Str` 或 `.gist` 得到相同的效果。
+
+=== 复合语句
+
+==== 条件
+
+===== if elsif else unless§
+
+这在 Ruby 和 Perl 6 之间非常相似，但是 Perl 6 使用 `{}` 来清楚地描述块。
+
+```perl6
+# Ruby
+if x > 5
+    puts "Bigger!"
+elsif x == 5
+    puts "The same!"
+else
+    puts "Smaller!"
+end
+
+# Perl 6
+if x > 5 {
+    say "Bigger!"
+} elsif x == 5 {
+    puts "The same!"
+} else {
+    puts "Smaller!"
+}
+```
+
+将条件表达式绑定到变量上有一点不同：
+
+```perl6
+if x = dostuff(); ...; end   # Ruby
+if dostuff() -> $x {...}     # Perl 6, block-assignment uses arrow
+```
+
+`unless` 条件仅允许 Perl 6 中的单个块; 它不允许 `elsif` 或 `else` 子句。
+
+===== `cese-when`
+
+Perl 6 的 `given-when` 结构像一个 `if-elsif-else` 语句链或者类似于 Ruby 中的 `case-when`。一个很大的区别是，Ruby 使用 `==` 比较每个条件，但 Perl 6 使用更一般的智能匹配 `~~` 运算符。
+
+它具有以下一般结构：
+
+```perl6
+given EXPR {
+    when EXPR { ... }
+    when EXPR { ... }
+    default { ... }
+}
+```
+
+在其最简单的形式中，构造如下：
+
+```perl6
+given $value {
+    when "a match" {
+        do-something();
+    }
+    when "another match" {
+        do-something-else();
+    }
+    default {
+        do-default-thing();
+    }
+}
+```
+
+这在 `when` 语句中匹配标量值的情况下是简单的。更一般地，匹配实际上是对输入值的智能匹配，使得可以使用更复杂的诸如正则表达式的实体的而非标量值来查找。
+
+==== 循环
+
+===== while until
+
+大部分不变;圆括号周围的条件是可选的，但如果使用了，不能立即跟随关键字，否则它将被视为一个函数调用。将条件表达式绑定到变量上也有一些不同：
+
+```perl6
+while x = dostuff(); ...; end    # Ruby
+while dostuff() -> $x {...}      # Perl 6
+```
+
+===== for .each
+
+for 循环在 Ruby 中是罕见的，我们通常在可枚举上使用 `.each`。对 Perl 6 的最直接的翻译是对 `.each` 和 `.map` 都使用 `.map`，但是我们通常直接使用 `for` 循环。
+
+```perl6
+# Ruby for loop
+for n in 0..5
+    puts "n: #{n}"
+end
+
+# Ruby, more common usage of .each
+(0..5).each do |n|
+    puts "n: #{n}"
+end
+
+# Perl 6
+for 0..5 -> $n {
+    say "n: $n";
+}
+
+# Perl 6, mis-using .map
+(0..5).map: -> $n {
+    say "n: $n";
+}
+```
+
+在 Ruby 中，.each 的迭代变量是列表元素的副本，修改它对原始列表没有影响。请注意，它是 REFERENCE 的副本，因此您仍然可以更改其引用的值。
+
+在 Perl 6 中，该别名是只读的（为了安全起见），因此它的行为与 Ruby 完全一样，除非把 `->` 改为 `<->`。
+
+```perl6
+cars.each { |car| ... }    # Ruby; read-only reference
+for @cars  -> $car   {...} # Perl 6; read-only
+for @cars <-> $car   {...} # Perl 6; read-write
+```
+
+==== 流程中断语句
+
+与 Ruby 相同：
+
+- next
+- redo
+- break
+
+
+这在 Perl 6 中是 `last`。
+
+=== 正则表达式（Regex / Regexp）
+
+Perl 6 中的正则表达式与 Ruby 中的正则表达式明显不同，它更强大。例如，默认情况下，Perl 6 将忽略空格，所有字符必须转移。正则表达式可以很容易地以组合和声明的方式建立高效的 grammars。
+
+有很多强大的 Perl 6 regex 的特性，特别是使用相同的语法定义整个 gramamrs。请参阅link:https://docs.perl6.org/language/regexes[正则表达式]和 link:https://docs.perl6.org/language/grammars[Grammars]。
+
+==== .match 方法和 =~ 运算符
+
+在 Ruby 中，可以使用 `=~` regexp 匹配运算符或 `.match` 方法对变量执行正则表达式匹配。在 Perl 6 中，使用 ~~ 智能匹配运算符，或 `.match` 方法。
+
+```perl6
+next if line   =~ /static/   # Ruby
+next if $line  ~~ /static/;  # Perl 6
+
+next if line  !~  /dynamic/ ; # Ruby
+next if $line !~~ /dynamic/ ; # Perl 6
+
+next if line.match(/static/)    # Ruby
+next if $line.match(/static/);  # Perl 6
+```
+
+或者，可以使用 `.match`和 `.subst` 方法。注意 `.subst` 是不可变的。参见 link:https://design.perl6.org/S05.html#Substitution[S05/替换]。
+
+==== `.sub` 和 `.sub!`
+
+在 Perl 6 中，通常使用 `s///` 运算符来执行正则表达式替换。
+
+```perl6
+fixed = line.sub(/foo/, 'bar')        # Ruby, non-mutating
+my $fixed = $line.subst(/foo/, 'bar') # Perl 6, non-mutating
+
+line.sub!(/foo/, 'bar')   # Ruby, mutating
+$line ~~ s/foo/bar/;      # Perl 6, mutating
+```
+
+==== 正则表达式选项
+
+将任何选项从正则表达式的结尾移动到开头。这可能需要您在 `/abc/` 等纯匹配中添加可选的 `m`。
+
+```perl6
+next if $line =~    /static/i # Ruby
+next if $line ~~ m:i/static/; # Perl 6
+```
+
+==== 空格被忽略，大多数东西必须被引起来
+
+为了帮助可读性和可重用性，在 Perl 6 的正则表达式中，空格并不重要。
+
+```perl6
+/this is a test/ # Ruby, boring string
+/this.*/         # Ruby, possibly interesting string
+
+/ this " " is " " a " " test / # Perl 6, each space is quoted
+/ "this is a test" / # Perl 6, quoting the whole string
+/ this .* /          # Perl 6, possibly interesting string
+```
+
+==== 特殊匹配器通常属于 `<>` 语法
+
+Perl 6 的正则表达式有很多支持特殊匹配语法的情况。它们不会全部列在这里，但通常不是被 `()` 包围，断言将被 `<>` 包围。
+
+对于字符类，这意味着：
+
+- `[abc]` 变为 `<[abc]>`
+- `[^abc]` 变为 `<-[abc]>`
+- `[a-zA-Z]` 变为 `<[a..zA..Z]>`
+- `[[:upper:]]` 变为 `<:upper>`
+- `[abc[:upper:]]` 变为 `<[abc]+:Upper>`
+
+对于环视断言：
+
+- `(?=[abc])` 变为 `<?[abc]>`
+- `(?=ar?bitrary* pattern)` 变为 `<before ar?bitrary* pattern>`
+- `(?!=[abc])` 变为 `<![abc]>`
+- `(?!=ar?bitrary* pattern)` 变为 `<!before ar?bitrary* pattern>`
+- `(?<=ar?bitrary* pattern)` 变为 `<after ar?bitrary* pattern>`
+- `(?<!ar?bitrary* pattern)` 变为 `<!after ar?bitrary* pattern>`
+- `(Unrelated to <> syntax, the "lookaround" /foo\Kbar/` 变为 `/foo <( bar )> /`
+- `(?(?{condition))yes-pattern|no-pattern)` 变为 `[ <?{condition}> yes-pattern | no-pattern ]`
+
+==== 最长令牌匹配（LTM）替代交替
+
+在 Perl 6 regexes 中，`|` 执行最长令牌匹配（LTM），它决定哪个备选分支根据一组规则赢得模棱两可的匹配，而不是根据在正则表达式中首先写出哪个备选分支。
+
+要避免新的逻辑，请在你的 Ruby 正则表达式中把任何 `|` 更改为 `||`。
+
+=== 文件相关操作
+
+==== 将文本文件的行读入数组
+
+Ruby 和 Perl 6 都很容易将文件中的所有行读取到单个变量中，在这两种情况下，每一行都删除了换行符。
+
+```perl6
+lines = File.readlines("file")   # Ruby
+my @lines = "file".IO.lines;     # Perl 6, create an IO object from a string
+```
+
+==== 迭代文本文件的行
+
+不建议将整个文件读入内存。 Perl 6 中的 `.lines` 方法返回一个延迟序列，但是赋值给数组会强制读取文件。最好迭代结果：
+
+```perl6
+# Ruby
+File.foreach("file") do |line|
+    puts line
+end
+
+# Perl 6
+for "file".IO.lines -> $line {
+    say $line
+}
+```
+
+=== 面向对象
+
+==== 基本类，方法，属性
+
+在 Ruby 和 Perl 6 之间类的定义是相似的。 Ruby 使用 `def` 定义方法，而 Perl 6 使用 `method` 定义方法。
+
+```perl6
+# Ruby
+class Foo
+    def greet(name)
+        puts "Hi #{name}!"
+    end
+end
+
+# Perl 6
+class Foo {
+    method greet($name) {
+        say "Hi $name!"
+    }
+}
+```
+
+在 Ruby 中，你可以使用一个属性而不预先声明它，你可以告诉它这是一个属性，因为 `@` 符号。您还可以使用 `attr_accessor` 及其变体轻松创建访问器。在 Perl 6 中，你使用 `has` 声明符和各种符号。你可以使用 `!` twigil 作为私有属性或 `.` 创建一个访问器。
+
+```perl6
+# Ruby
+class Person
+    attr_accessor :age    # Declare .age as an accessor method for @age
+    def initialize
+        @name = 'default' # Assign default value to private instance var
+    end
+end
+
+# Perl 6
+class Person {
+    has $.age;              # Declare $!age and accessor methods
+    has $!name = 'default'; # Assign default value to private instance var
+}
+```
+
+使用 `.new` 方法创建类的新实例。在 Ruby 中，您必须在 `initialize` 内根据需要手动给实例变量赋值。在 Perl 6 中，您将获得一个接受访问器属性的键/值对的默认构造函数，并可以在 `BUILD` 方法中进一步设置。像 Ruby 一样，你可以重写 `new` 自身以获取更高级的功能，但这是罕见的。
+
+```perl6
+# Ruby
+class Person
+    attr_accessor :name, :age
+    def initialize(attrs)
+        @name = attrs[:name] || 'Jill'
+        @age  = attrs[:age] || 42
+        @birth_year = Time.now.year - @age
+    end
+end
+p = Person.new( name: 'Jack', age: 23 )
+
+# Perl 6
+class Person
+    has $.name = 'Jill';
+    has $.age  = 42;
+    has $!birth_year;
+    method BUILD {
+        $!birth_year = now.Date.year - $.age;
+    }
+}
+p = Person.new( name => 'Jack', age => 23 )
+```
+
+==== 私有方法
+
+Perl 6 中的私有方法声明的时候在他们的名字前置一个 `!` 符号，并且调用的时候使用 `!` 代替 `.`。
+
+```perl6
+# Ruby
+class Foo
+    def visible
+        puts "I can be seen!"
+        hidden
+    end
+
+    private
+    def hidden
+        puts "I cannot easily be called!"
+    end
+end
+
+# Perl 6
+class Foo {
+    method visible {
+        say "I can be seen!"
+        self!hidden
+    }
+
+    method !hidden {
+        say "I cannot easily be called!"
+    }
+}
+```
+
+
+一个重要的注意事项是，在 Ruby 中孩子对象可以看到父对象中的私有方法（所以他们更像是其他语言中的"受保护"的方法）。在 Perl 6 中，孩子对象不能调用父对象中的私有方法。
+
+==== 元
+
+这里有一些元编程的例子。注意，Perl 6 将元方法与常规方法分离开了。
+
+```perl6
+person = Person.new       # Ruby, create a new person
+my $person = Person.new   # Perl 6, create a new person
+
+person.class              # Ruby, returns Person (class)
+$person.WHAT              # Perl 6, returns Person (class)
+
+person.methods            # Ruby
+$person.^methods          # Perl 6, using .^ syntax to access meta-methods
+
+person.instance_variables # Ruby
+$person.^attributes       # Perl 6
+```
+
+
+像 Ruby 一样，在 Perl 6 中，一切都是对象，但并不是所有的操作都等同于 `.send`。许多运算符是使用类型化多重分派（具有类型的函数签名）来决定使用哪个实现的全局函数。
+
+```perl6
+5.send(:+, 3)    # => 8, Ruby
+&link:5, 3[+]       # => 8, Perl 6, reference to infix addition operator
+
+&[+].^candidates # Perl 6, lists all signatures for the + operator
+```
+
+有关更多详细信息，请参阅link:https://docs.perl6.org/language/mop[元对象协议]。
+
+=== 环境变量
+
+==== Perl 模块库路径
+
+在 Ruby 中，为模块指定额外搜索路径的环境变量之一是 `RUBYLIB`。
+
+```ruby
+$ RUBYLIB="/some/module/lib" ruby program.rb
+```
+
+在 Perl 6 中，这是相似的，你只需要更改名称。正如你可能猜到的，你只需要使用 `PERL6LIB`：
+
+```perl6
+$ PERL6LIB="/some/module/lib" perl6 program.p6
+```
+
+与 Ruby 一样，如果不指定 `PERL6LIB`，则需要通过 `use lib` 指令在程序中指定库路径：
+
+```perl6
+# Ruby and Perl 6
+use lib '/some/module/lib';
+```
+
+=== Misc.
+
+==== 从模块导入特定函数
+
+在 Ruby 中没有内置的方法来选择性地从模块中导入/导出方法。
+
+在 Perl 6 中，通过在相关的 subs 上使用 "is export" 角色来指定要导出的函数，然后导出所有具有此角色的 subs。因此，下面的 `Bar` 模块导出 subs `foo` 和 `bar`，但不导出 `baz`：
+
+```perl6
+unit module Bar; # remainder of the file is in module Bar { ... }
+
+sub foo($a) is export { say "foo $a" }
+sub bar($b) is export { say "bar $b" }
+sub baz($z) { say "baz $z" }
+```
+
+要使用此模块，只需 `use Bar`，函数 `foo` 和 `bar` 将可用
+
+```perl6
+use Bar;
+foo(1);    #=> "foo 1"
+bar(2);    #=> "bar 2"
+```
+
+如果您尝试使用 `baz`， 那么在编译时会引发 "Undeclared routine" 的错误。
+
+一些模块允许选择性地导入函数，它们看起来像：
+
+```perl6
+use Bar <foo>; # Import only foo
+foo(1);        #=> "foo 1"
+bar(2);        # Error!
+```
+
+=== OptionParser，解析命令行标志
+
+Perl 6 中的命令行参数开关解析由 `MAIN` 子例程的参数列表完成。
+
+```perl6
+# Ruby
+require 'optparse'
+options = {}
+OptionParser.new do |opts|
+    opts.banner = 'Usage: example.rb --length=abc'
+    opts.on("--length", "Set the file") do |length|
+        raise "Length must be > 0" unless length.to_i > 0
+        options[:length] = length
+    end
+    opts.on("--filename", "Set the file") do |filename|
+        options[:file] = filename
+    end
+    opts.on("--verbose", "Increase verbosity") do |verbose|
+        options[:verbose] = true
+    end
+end.parse!
+
+puts options[:length]
+puts options[:filename]
+puts 'Verbosity ', (options[:verbose] ? 'on' : 'off')
+
+ruby example.rb --filename=foo --length=42 --verbose
+    42
+    foo
+    Verbosity on
+
+ruby example.rb --length=abc
+    Length must be > 0
+
+# Perl 6
+sub MAIN ( Int :$length where * > 0, :filename = 'file.dat', Bool :$verbose ) {
+    say $length;
+    say $data;
+    say 'Verbosity ', ($verbose ?? 'on' !! 'off');
+}
+
+perl6 example.p6 --file=foo --length=42 --verbose
+    42
+    foo
+    Verbosity on
+perl6 example.p6 --length=abc
+    Usage:
+      c.p6 [--length=<Int>] [--file=<Any>] [--verbose]
+```
+
+注意，Perl 6 在命令行解析错误时会自动生成一个完整的使用消息。
+
+=== RubyGems，外部库
+
+请参阅 https://modules.perl6.org/，其中提供了越来越多的 Perl 6 库以及管理它们的工具。
+
+如果您使用的模块尚未转换为 Perl 6，并且本文档中未列出任何备选方案，那么它在 Perl 6 下的使用可能尚未解决。
+
+你可以尝试使用 `Inline::Ruby` 从 Perl 6 程序中调用现有的 Ruby 代码。这使用 ruby 解释器的嵌入式实例来运行从 Perl 6 脚本调用的 Ruby 代码。注意，这是一个 EXPERIMENTAL 库。类似地你可以使用 `Inline::Perl5`，`Inline::Python` 和其他调用其他语言的库。
+

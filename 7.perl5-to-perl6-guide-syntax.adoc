@@ -1,0 +1,132 @@
+
+== Perl 6 语法
+
+=== 描述
+
+关于 Perl 5 和 Perl 6 之间差异的全面（希望）描述。
+
+=== 注意
+
+我*不会*详细解释 Perl 6 语法。本文档旨在指导你从 Perl 5 中的工作原理过渡到 Perl 6 中的等效工具。有关 Perl 6 语法的完整文档，请参阅 Perl 6 文档。
+
+=== 自由形式
+
+Perl 6 仍然*主要是*自由形式。但是，有一些情况下，空白的存在或缺失现在很重要。例如，在 Perl 5 中，你可以省略关键字后面的空格（例如 `while($x < 5)` 或 `my($x, $y)`）。在 Perl 6 中，这个空白是必需的，因此 `while ($x < 5)` 或 `my ($x, $y)`。但是，在 Perl 6 中，你可以完全省略括号：`while $x < 5 `。这适用于 `if`，`for` 等等。
+
+奇怪的是，在 Perl 5 中，你可以在数组或散列与其下标之间以及后缀运算符之间留出空格。所以 `$seen {$_} ++` 是有效的。Perl 6 再不这样了。Perl 6 中现在必须是 `%seen{$_}++`。
+
+如果能让你感觉更好，你可以使用反斜杠来 “unspace” 空格，这样你就可以使用空格，否则它将被禁止。
+
+有关详细信息，请参阅link:https://docs.perl6.org/language/5to6-nutshell#Whitespace[空白]。
+
+==== 声明
+
+正如link:https://docs.perl6.org/language/5to6-perlfunc[函数] 指南中所述，Perl 6 中没有 `undef` 。声明但未初始化的标量变量将计算其类型。换句话说，`my $x;say $x;` 会给你"(Any)"。`my Int $y;say $y;` 会给你"(Int)"。
+
+==== 注释
+
+`#` 在 Perl 5 中开始一个运行到行尾的注释。
+
+嵌入式注释以井号字符和反引号开头，后跟开口括号字符，并持续到匹配的闭合括号字符。像这样：
+
+```perl6
+if #`( why would I ever write an inline comment here? ) True {
+    say "something stupid";
+}
+```
+
+与 Perl 5 一样，你可以使用 pod 指令在注释 `=begin comment` 之前和 `=end comment` 之后创建多行注释。
+
+==== 真和假
+
+Perl 5 与 Perl 6 之间的一个真正区别在于，与 Perl 5 不同，Perl 6 将字符串`"0"` 视为真。数字 `0` 仍为 `false`，你可以使用前缀 `+` 将字符串 `"0"` 强制转换为数字以使其为 `false`。Perl 6 还具有实际的布尔类型，因此，在许多情况下，你可以使用 `True` 和 `False`，而无需担心哪些值计为 true 和 false。
+
+==== 语句修饰符
+
+大多数情况下，语句修饰符仍然有效，但有一些例外。
+
+首先，`for` 循环是 Perl 5 中已知的 `foreach` 循环，C 风格的 `for`循环不用于 Perl 6。要获得该行为，你需要 `loop`。`loop` 不能用作语句修饰符。
+
+在 Perl 6 中，你无法使用 `do {...} while $x` 形式。你将需要用 `repeat` 替换 `do` 形式。`do {...} until $x` 类似。
+
+==== 复合语句
+
+Perl 5 的最大变化是 `given` 在 Perl 6 中默认不是实验性质的或禁用的了。有关 `given` 的详细信息，请参阅link:https://docs.perl6.org/language/control#given[此页面]。
+
+==== 循环控制
+
+`next`，`last` 和 `redo` 在 Perl 5 到 Perl 6 中没有变化。
+
+但是 `continue`，在 Perl 6 中不存在。你将在循环体中使用 `NEXT` 块。
+
+```perl6
+=== Perl 5 
+my $str = '';
+for (1..5) {
+    next if $_ % 2 == 1;
+    $str .= $_;
+}
+continue {
+    $str .= ':'
+}
+ 
+=== Perl 6 
+my $str = '';
+for 1..5 {
+    next if $_ % 2 == 1;
+    $str ~= $_;
+    NEXT {
+        $str ~= ':'
+    }
+}
+```
+
+==== For 循环
+
+如上所述，C 风格的 `for` 循环在 Perl 6 中不称为 `for` 循环。它们只是 `loop` 循环。要编写无限循环，你不需要使用C语言风格的 `loop (;;) {...}`，只是完全省略规范：`loop {...}`
+
+==== Foreach 循环
+
+在 Perl 5 中，`for` 除了用于 C 风格的 `for` 循环之外，它还是`foreach` 的同义词。在 Perl 6 中，`for` 仅用于 `foreach` 样式的循环。
+
+==== Switch 语句
+
+Perl 6 具有真实的 switch 语句，通过提供 `given` 与由处理的单个情况的 `when` 和 `default`。基本语法是：
+
+```perl6
+given EXPR {
+    when EXPR { ... }
+    when EXPR { ... }
+    default { ... }
+}
+```
+
+完整的细节可以在link:https://docs.perl6.org/language/control#given[这里]找到。
+
+==== Goto
+
+`goto` 目前尚未实施（尚未）。标签**已**实现，可用作 `next`，`last` 和 `redo` 的目标：
+
+```perl6
+FOO:                         # Labels end with colons, like in Perl 5 
+for ^10 {
+    say "outer for before";
+    for ^10 {
+        say "inner for";
+        last FOO;
+    }
+    say "outer for after";   # Will not show because of the "last" 
+}
+=== outer for before 
+=== inner for 
+```
+
+有关 `goto` 的计划，请参阅 <https://design.perl6.org/S04.html#The_goto_statement>。
+
+==== 省略语句
+
+`...`（以及 `!!!` 和 `???`）用于创建存根(stub)声明。这比 Perl 5 中使用的 `...` 要复杂得多，所以你可能想要查看 <https://design.perl6.org/S06.html#Stub_declarations> 以了解详细信息。尽管如此，尽管它在 Perl 6 中的作用得到了扩展，但它似乎还没有*明显的*理由说明它为什么不能完成它在 Perl 5 中所扮演的角色。
+
+==== PODs: 嵌入式文档
+
+Pod 已经在 Perl 5 和 Perl 6 之间发生了变化。可能最大的区别在于你需要将你的 pod 放在 `=begin pod` 和 `=end pod` 指令之间。这里和那里也有一些调整。例如，正如我在编写这些文档时发现的那样，垂直条（`|`）在 `X<>` 代码中很重要，并且不清楚如何将字面 `|` 插入他们。你最好的选择可能是使用 Perl 6 解释器检查你的 pod。你可以使 `--doc` 开关执行此操作。例如 `perl6 --doc Whatever.pod`。这将输出任何问题到标准错误。（根据你安装 perl6 的方式/位置，你可能需要指定 `Pod::To::Text` 的位置。）有关 Perl 6 样式 pod 的详细信息，请访问 <https://design.perl6.org/S26.html>。

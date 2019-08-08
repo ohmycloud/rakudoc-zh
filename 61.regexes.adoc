@@ -1,0 +1,1362 @@
+
+正则表达式, 简称 regexes, 是描述文本模式的字符序列。模式匹配就是将这些模式和实际的文本进行匹配的过程。
+
+## 词法约定
+
+Perl 6 正则表达式有特殊的写法:
+
+```perl6
+m/abc/;         # a regex that is immediately matched against $_ 
+rx/abc/;        # a Regex object 
+/abc/;          # a Regex object 
+```
+
+对于前两个例子,  分隔符还能用除了斜线之外的其它字符:
+
+```perl6
+m{abc};
+rx{abc};
+```
+
+注意, 冒号和圆括号都不能用作分隔符; 禁止使用冒号作为正则表达式分割符是因为它和副词冲突, 例如 `rx:i/abc/`(忽略大小写的正则表达式), 而圆括号表明函数调用。
+
+空白符在正则表达式中通常被忽略(带有 `:s` 或 `:sigspace` 副词的正则表达式除外)。
+
+通常, 对于 Perl 6 来说, 正则表达式中的注释以 `#` 号开头, 直至行尾。
+
+## 字面值
+
+正则表达式最简单的情况是匹配字符串字面值。
+
+```perl6
+if 'properly' ~~ m/ perl / {
+    say "'properly' contains 'perl'";
+}
+```
+
+字母数字和下划线 `_` 按字面值匹配。所有其它字符要么使用反斜线转义(例如, `\:` 匹配一个冒号), 要么用引号引起来:
+
+```perl6
+/ 'two words' /;     # matches 'two words' including the blank 
+/ "a:b"       /;     # matches 'a:b' including the colon 
+/ '#' /;             # matches a hash character 
+```
+
+字符串是从左往右搜索的, 所以如果只有部分字符串匹配正则表达式也足够:
+
+```perl6
+if 'abcdef' ~~ / de / {
+    say ~$/;            # OUTPUT: «de␤» 
+    say $/.prematch;    # OUTPUT: «abc␤» 
+    say $/.postmatch;   # OUTPUT: «f␤» 
+    say $/.from;        # OUTPUT: «3␤» 
+    say $/.to;          # OUTPUT: «5␤» 
+};
+```
+
+匹配结果存储在 `$/` 变量中并且也从匹配中返回。如果匹配成功, 那么结果就是 link:https://docs.perl6.org/type/Match[Match] 类型, 否则它就是 link:https://docs.perl6.org/type/Nil[Nil]
+
+
+## 通配符和字符类
+
+### 点号匹配任意字符: .
+
+在正则表达式中一个未转义的点 `.`  匹配任意单个字符。
+
+所以,  这些都匹配:
+
+```perl6
+'perl' ~~ /per./;       # matches the whole string 
+'perl' ~~ / per . /;    # the same; whitespace is ignored 
+'perl' ~~ / pe.l /;     # the . matches the r 
+'speller' ~~ / pe.l/;   # the . matches the first l 
+```
+
+下面这个不匹配:
+
+```perl6
+'perl' ~~ /. per /;
+```
+
+因为在目标字符串中 `per` 前面没有要匹配的字符。
+
+### 反斜杠, 预定义字符类
+
+
+### Unicode properties
+
+Perl 6 有 `\w` 形式的预定义字符类。大写形式是它的反面, `\W`。
+
+- \d 和 \D
+
+`\d` 匹配单个数字(Unicode 属性 N) 而 `\D` 匹配单个不是数字的字符。
+
+```perl6
+'ab42' ~~ /\d/ and say ~$/;     # OUTPUT: «4␤» 
+'ab42' ~~ /\D/ and say ~$/;     # OUTPUT: «a␤» 
+```
+
+注意, 不仅仅只有阿拉伯数字(通常用于拉丁字母表中)匹配 `\d`, 还有来自其它下标的数字也匹配 \d。
+
+```
+U+0035 5 DIGIT FIVE
+U+07C2 ߂ NKO DIGIT TWO
+U+0E53 ๓ THAI DIGIT THREE
+U+1B56 ᭖ BALINESE DIGIT SIX
+```
+
+- \h 和 \H
+
+`\h` 匹配单个水平空白符。 `\H` 匹配单个不是水平空白符的字符。
+
+水平空白符的例子有:
+
+```
+U+0020 SPACE
+U+00A0 NO-BREAK SPACE
+U+0009 CHARACTER TABULATION
+U+2001 EM QUAD
+```
+
+像换行符那样的垂直空白被显式地排除了; 那些可以用 `\v` 来匹配, 而 `\s` 匹配任何类型的空白:
+
+- \n 和 \N
+
+`\n` 匹配单个逻辑换行符。`\n` 也支持匹配 Windows 的 CR LF 代码点对儿;　尽管还不清楚魔法是发生在读取数据时还是在正则表达式匹配时。 `\N` 匹配单个非逻辑换行符。
+
+- \s 和 \S
+
+`\s` 匹配单个空白符。 `\S` 匹配单个非空白符。
+
+```perl6
+if 'contains a word starting with "w"' ~~ / w \S+ / {
+    say ~$/;        # OUTPUT: «word␤» 
+}
+```
+
+- \t 和 \T
+
+`\t` 匹配单个 tab/制表符, `U+0009`。(注意这儿不包含诸如 `U+000B VERTICAL TABULATION` 这样奇异的制表符)。`\T` 匹配单个非制表符。
+
+- \v 和 \V
+
+`\v` 匹配单个垂直空白符。 `\V` 匹配单个非垂直空白符。
+
+垂直空白符的例子:
+
+```
+U+000A LINE FEED
+U+000B VERTICAL TABULATION
+U+000C FORM FEED
+U+000D CARRIAGE RETURN
+U+0085 NEXT LINE
+U+2028 LINE SEPARATOR
+U+2029 PARAGRAPH SEPARATOR
+```
+
+使用 `\s` 去匹配任意空白, 而不仅仅匹配垂直空白。
+
+- \w 和 \W
+
+`\w` 匹配单个单词字符; 例如: 一个字母(Unicode 类别 L), 一个数字或一个下划线。`\W` 匹配单个非单词字符。
+
+单词字符的例子:
+
+```
+0041 A LATIN CAPITAL LETTER A
+0031 1 DIGIT ONE
+03B4 δ GREEK SMALL LETTER DELTA
+03F3 ϳ GREEK LETTER YOT
+0409 Љ CYRILLIC CAPITAL LETTER LJE
+```
+
+预定义的 subrules:
+
+```perl6
+<alnum>   \w       'alpha' plus 'digit'
+<alpha>   <:L>     Alphabetic characters
+<blank>   \h       Horizontal whitespace
+<cntrl>            Control characters
+<digit>   \d       Decimal digits
+<graph>            'alnum' plus 'punct'
+<lower>   <:Ll>    Lowercase characters
+<print>            'graph' plus 'space', but no 'cntrl'
+<punct>            Punctuation and Symbols (only Punct beyond ASCII)
+<space>   \s       Whitespace
+<upper>   <:Lu>    Uppercase characters
+<|wb>               Word Boundary (zero-width assertion)
+<ww>               Within Word (zero-width assertion)
+<xdigit>           Hexadecimal digit [0-9A-Fa-f]
+```
+
+### Unicode 属性
+
+目前提到的字符类大多是为了方便; 另一种方法是使用 Unicode 字符属性。这些以 `<:property>` 的形式出现, 其中 *property* 可以是短的或长的 Unicode 一般类别名。它们使用 pair 语法。
+
+要匹配一个 Unicode 属性:
+
+```perl6
+"a".uniprop('Script');                 # OUTPUT: «Latin␤» 
+"a" ~~ / <:Script<Latin>> /;
+"a".uniprop('Block');                  # OUTPUT: «Basic Latin␤» 
+"a" ~~ / <:Block('Basic Latin')> /;
+```
+
+下面的 Unicode 通用类别表是从 Perl 5 的 link:http://perldoc.perl.org/perlunicode.html[perlunicode] 文档偷来的:
+
+```
+Short	Long
+L	Letter
+LC	Cased_Letter
+Lu	Uppercase_Letter
+Ll	Lowercase_Letter
+Lt	Titlecase_Letter
+Lm	Modifier_Letter
+Lo	Other_Letter
+M	Mark
+Mn	Nonspacing_Mark
+Mc	Spacing_Mark
+Me	Enclosing_Mark
+N	Number
+Nd	Decimal_Number (also Digit)
+Nl	Letter_Number
+No	Other_Number
+P	Punctuation (also punct)
+Pc	Connector_Punctuation
+Pd	Dash_Punctuation
+Ps	Open_Punctuation
+Pe	Close_Punctuation
+Pi	Initial_Punctuation
+        (may behave like Ps or Pe depending on usage)
+Pf	Final_Punctuation
+        (may behave like Ps or Pe depending on usage)
+Po	Other_Punctuation
+S	Symbol
+Sm	Math_Symbol
+Sc	Currency_Symbol
+Sk	Modifier_Symbol
+So	Other_Symbol
+Z	Separator
+Zs	Space_Separator
+Zl	Line_Separator
+Zp	Paragraph_Separator
+C	Other
+Cc	Control (also cntrl)
+Cf	Format
+Cs	Surrogate
+Co	Private_Use
+Cn	Unassigned
+```
+
+举个例子: `<:Lu>` 匹配单个大写字母。
+
+它的反面是这个: `<:!property>`。所以, `<:!Lu>` 匹配单个非大写字母的字符。
+
+类别可以使用中缀操作符组合在一起:
+
+```
+Operator	Meaning
++	        set union
+|	        set union
+&	        set intersection
+-	        set difference (first minus second)
+^	        symmetric set intersection / XOR
+```
+
+要匹配要么一个小写字母,要么一个数字, 可以写 `<:Ll+:N>` 或 `<:Ll+:Number>` 或 `<+ :Lowercase_Letter + :Number>`。
+
+使用圆括号将类别和一组类别分组也是可以的; 例如:
+
+```perl6
+'perl6' ~~ m{\w+(<:Ll+:N>)}  # OUTPUT: «0 => ｢6｣␤» 
+```
+
+### 可枚举的字符类和区间
+
+有时候, 预先存在的通配符和字符类不够用。幸运的是, 定义你自己的字符类相当简单。在 `<[]>` 中, 你可以放入任何数量的单个字符和字符区间(两个端点之间有两个点号), 带有或不带有空白。
+
+```perl6
+"abacabadabacaba" ~~ / <[ a .. c 1 2 3 ]> /;
+# Unicode hex codepoint range 
+"ÀÁÂÃÄÅÆ" ~~ / <[ \x[00C0] .. \x[00C6] ]> /;
+# Unicode named codepoint range 
+"ÀÁÂÃÄÅÆ" ~~ / <[ \c[LATIN CAPITAL LETTER A WITH GRAVE] .. \c[LATIN CAPITAL LETTER AE] ]> /;
+```
+
+在 `<>` 中你可以使用 `+` 或 `-` 来添加或移除多个区间定义, 甚至混合某些上面的 unicode 属性。你还可以在 `[]` 之间写上反斜线形式的字符类。
+
+```perl6
+/ <[\d] - [13579]> /;
+# starts with \d and removes odd ASCII digits, but not quite the same as 
+/ <[02468]> /;
+# because the first one also contains "weird" unicodey digits 
+```
+
+解析引号分割的字符串的一个常见模式涉及到对字符类取反:
+
+```perl6
+say '"in quotes"' ~~ / '"' <-[ " ]> * '"'/;
+```
+
+这先匹配一个引号, 然后匹配任何不是引号的字符, 再然后还是一个引号。 上面例子中的 `*` 和 `+` 会在link:https://docs.perl6.org/language/regexes#Quantifiers[量词]一节中解释。
+
+就像你可以使用 `-` 用于集合差集和取反单个值, 你也可以在前面显式地放上一个 `+`:
+
+```perl6
+/ <+[123]> /  # same as <[123]> 
+```
+
+## 量词
+
+量词使前面的原子匹配可变次数。例如, `a+` 匹配一个或多个字符 *a*。
+
+量词比连结绑定的更紧, 所以 `ab+` 匹配一个 *a*, 然后跟着一个或多个 *b*。对于引号来说, 有点不同, 所以 `'ab'+` 匹配字符串 *ab*, *abab*, *ababab* 等等。
+
+### 一次 或多次 : +
+
+`+` 量词使它前面的原子匹配一次或多次, 没有次数上限。
+
+例如, 要匹配 `form=value` 形式的字符串, 你可以这样写正则表达式:
+
+```perl6
+/ \w+ '=' \w+ /
+```
+
+### 零次 或 多次: *
+
+`*` 量词使它前面的原子匹配一次或多次, 没有次数上限。
+
+例如, 要允许 *a* 和 *b* 之间出现可选的空白,  你可以这样写:
+
+```perl6
+/ a \s* b /
+```
+
+### 零次 或 一次匹配: ?
+
+`?` 量词使它前面的原子匹配零次或一次。
+
+### 常规量词: ** min..max
+
+要限定原子匹配任意次数,　你可以写出像 `a ** 2..5` 那样的表达式来匹配字符 *a* 至少 2 次, 至多 5 次。
+
+```perl6
+say so 'a' ~~ /a ** 2..5/;        # OUTPUT: «False␤» 
+say so  'aaa' ~~ /a ** 2..5/;     # OUTPUT: «True␤» 
+```
+
+如果最小匹配次数和最大匹配次数相同, 那么使用单个整数: `a ** 5` 精确地匹配 5 次。
+
+```perl6
+say so 'aaaaa' ~~ /a ** 5/;       # OUTPUT: «True␤» 
+```
+
+也可以使用 `^` 脱字符来排除区间的端点:
+
+```perl6
+say so 'a'    ~~ /a ** 1^..^6/;   # OUTPUT: «False␤» -- there are 2 to 5 'a's in a row 
+say so 'aaaa' ~~ /a ** 1^..^6/;   # OUTPUT: «True␤» 
+```
+
+下面这个包含从 0 开始的数值区间:
+
+```perl6
+say so 'aaa' ~~ /a ** ^6/;        # OUTPUT: «True␤» -- there are 0 to 5 'a's in a row 
+```
+
+或使用一个 Whatever Star `*` 操作符来表示无限区间:
+
+```perl6
+say so 'aaaa' ~~ /a ** 1^..*/;    # OUTPUT: «True␤» -- there are 2 or more 'a's in a row 
+```
+
+### Modified quantifier: %
+
+为了更容易地匹配逗号分割那样的值, 你可以在以上任何一个量词后面加上一个 `%` 修饰符以指定某个修饰符必须出现在每一次匹配之间。例如, `a+ % ','` 会匹配 *a*, 或 *a,a* 或 *a,a,a* 等等, 但是不会匹配 *a,* 或 *a,a,* 等。要连这些也要匹配, 那么使用 `%%` 代替 `%`。
+
+### 贪婪量词 Vs. 非贪婪量词: ?
+
+默认地, 量词要求进行贪婪匹配:
+
+```perl6
+'abababa' ~~ /a .* a/ && say ~$/;   # OUTPUT: «abababa␤» 
+```
+
+你可以给量词附加一个 `?` 修饰符来开启非贪婪匹配:
+
+```perl6
+'abababa' ~~ /a .*? a/ && say ~$/;   # OUTPUT: «aba␤» 
+```
+
+你还可以使用 `!` 修饰符显式地要求贪婪匹配。
+
+### 阻止回溯: :
+
+你可以在正则表达式中通过为量词附加一个 `:` 修饰符来阻止回溯:
+
+```perl6
+say so 'abababa' ~~ /a .* aba/;    # OUTPUT: «True␤» 
+say so 'abababa' ~~ /a .*: aba/;   # OUTPUT: «False␤» 
+```
+
+## Alternation: ||
+
+link:https://docs.perl6.org/language/regexes#Alternation:_||[||] 在正则表达式中表示备选分支, 在匹配由 `||` 分割的几个可能的备选分支之一时, **第一个**匹配的备选分支胜出。例如, *ini* 文件有如下形式:
+
+```
+[section]
+key = value
+```
+
+因此, 如果你解析单行 *ini* 文件, 那么它要么是一个 section, 要么是一个键值对儿。所以正则表达式可以是:
+
+```perl6
+/ '[' \w+ ']' || \S+ \s* '=' \s* \S* /
+```
+
+即, 它要么是一个由方括号包围起来的单词, 要么是一个键值对。
+
+## Longest Alternation: |
+
+如果正则表达式由 `|` 分割, 则最长的那个匹配胜出。独立于正则表达式中的词法顺序。
+
+```perl6
+say ('abc' ~~ / a | .b /).Str;    # OUTPUT: «ab␤» 
+```
+
+## Anchors
+
+正则表达式引擎尝试在字符串中从左至右地搜索来查找匹配。
+
+```perl6
+say so 'properly' ~~ / perl/;   # OUTPUT: «True␤» 
+#          ^^^^ 
+```
+
+有时候这不是你想要的。相反, 你可能只想匹配整个字符串, 或一整行, 或精确地一个或几个完整的单词。锚或断言能帮助我们。
+
+为了整个正则表达式能够匹配, 断言需要被成功地匹配但是断言在匹配时不消耗字符。
+
+### ^ , Start of String and $ , End of String
+
+`^` 断言只匹配字符串的开头:
+
+```perl6
+say so 'properly' ~~ /  perl/;    # OUTPUT: «True␤» 
+say so 'properly' ~~ /^ perl/;    # OUTPUT: «False␤» 
+say so 'perly'    ~~ /^ perl/;    # OUTPUT: «True␤» 
+say so 'perl'     ~~ /^ perl/;    # OUTPUT: «True␤» 
+```
+
+`$` 断言只匹配字符串的结尾:
+
+```perl6
+say so 'use perl' ~~ /  perl  /;   # OUTPUT: «True␤» 
+say so 'use perl' ~~ /  perl $/;   # OUTPUT: «True␤» 
+say so 'perly'    ~~ /  perl $/;   # OUTPUT: «False␤» 
+```
+
+你可以把这两个断言组合起来:
+
+```perl6
+say so 'use perl' ~~ /^ perl $/;   # OUTPUT: «False␤» 
+say so 'perl'     ~~ /^ perl $/;   # OUTPUT: «True␤» 
+```
+
+记住, `^` 匹配**字符串**的开头, 而非**行**的开头。同样地, `$` 匹配**字符串**的结尾, 而非**行**的结尾。
+
+下面的是多行字符串:
+
+```perl6
+my $str = q:to/EOS/; 
+   Keep it secret
+   and keep it safe
+   EOS
+ 
+say so $str ~~ /safe   $/;   # OUTPUT: «True␤»  -- 'safe' is at the end of the string 
+say so $str ~~ /secret $/;   # OUTPUT: «False␤» -- 'secret' is at the end of a line -- not the string 
+say so $str ~~ /^Keep   /;   # OUTPUT: «True␤»  -- 'Keep' is at the start of the string 
+say so $str ~~ /^and    /;   # OUTPUT: «False␤» -- 'and' is at the start of a line -- not the string 
+```
+
+### ^^ , Start of Line and $$ , End of Line
+
+`^^` 断言匹配逻辑行的开头。即, 要么在字符串的开头, 要么在换行符之后。然而, 它不匹配字符串的结尾, 即使它以一个换行符结尾。
+
+`$$` 只匹配逻辑换行符的结尾, 即, 在换行符之前, 或在字符串的结尾, 当最后一个字符不是换行符时。
+
+(为了理解下面的示例, 最好先了解 `q:to/EOS/...EOS` 的 "heredoc" 语法移除了前置的缩进, 使之与 `EOS` 标记同级, 以至于第一行, 第二行和最后一行没有前置空格而第三行和第四行各有两个前置空格。)
+
+```perl6
+my $str = q:to/EOS/; 
+    There was a young man of Japan
+    Whose limericks never would scan.
+      When asked why this was,
+      He replied "It's because
+    I always try to fit as many syllables into the last line as ever I possibly can."
+    EOS
+ 
+say so $str ~~ /^^ There/;        # OUTPUT: «True␤»  -- start of string 
+say so $str ~~ /^^ limericks/;    # OUTPUT: «False␤» -- not at the start of a line 
+say so $str ~~ /^^ I/;            # OUTPUT: «True␤»  -- start of the last line 
+say so $str ~~ /^^ When/;         # OUTPUT: «False␤» -- there are blanks between 
+                                  #                       start of line and the "When" 
+ 
+say so $str ~~ / Japan $$/;       # OUTPUT: «True␤»  -- end of first line 
+say so $str ~~ / scan $$/;        # OUTPUT: «False␤» -- there's a . between "scan" 
+                                  #                      and the end of line 
+say so $str ~~ / '."' $$/;        # OUTPUT: «True␤»  -- at the last line 
+```
+
+### <|w> and <!|w>, word boundary
+
+要匹配单词边界, 使用 `<|w>`。这与其它语言的 `\b` 类似，要匹配一个非单词边界, 使用 `<!|w>`, 类似其它语言的 `\B`。这些都是零宽断言。
+
+### << and >> , left and right word boundary
+
+`<<` 匹配左单词边界。它匹配左侧(或者字符串的开头)是非单词字符而右侧是一个单词字符的位置。
+
+`>>` 匹配右单词边界。它匹配左侧有一个单词字符而右侧(或者字符串的结尾)是一个非单词字符的位置。
+
+```perl6
+my $str = 'The quick brown fox';
+say so $str ~~ /br/;              # OUTPUT: «True␤» 
+say so $str ~~ /<< br/;           # OUTPUT: «True␤» 
+say so $str ~~ /br >>/;           # OUTPUT: «False␤» 
+say so $str ~~ /own/;             # OUTPUT: «True␤» 
+say so $str ~~ /<< own/;          # OUTPUT: «False␤» 
+say so $str ~~ /own >>/;          # OUTPUT: «True␤» 
+```
+
+你可以使用变体 **«** 和 **»** :
+
+```perl6
+my $str = 'The quick brown fox';
+say so $str ~~ /« own/;          # OUTPUT: «False␤» 
+say so $str ~~ /own »/;          # OUTPUT: «True␤» 
+```
+
+## 分组和捕获
+
+在普通的(非正则表达式)Perl 6 代码中, 你可以使用圆括号把东西组织到一块, 通常用于覆盖操作符优先级:
+
+```perl6
+say 1+4*2;   # 9, parsed as 1 + (4*2)
+say (1+4)*2; # 输出: 10
+```
+
+在正则表达式中也可以使用同样的分组工具:
+
+```perl6
+/ a || b c/;   # 匹配 'a' 或 'bc'
+/ (a || b) c/; # 匹配 'ac' 或 'bc'
+```
+
+分组可以应用在量词上:
+
+```perl6
+/ a b+ /;      # 匹配一个 'a', 后面再跟着一个或多个 'b'
+/ (a b)+/;     # 匹配一个或多个 'ab' 序列
+/ (a || b)+ /; # 匹配一个 'a' 序列或者 'b' 序列, 至少一次
+```
+
+一个非量词化的捕获产生一个 link:https://docs.perl6.org/type/Match[Match]对象。当捕获被量化(除了使用 ? 量词)之后, 该捕获就变成 link:https://docs.perl6.org/type/Match[Match]对象的列表。
+
+### 捕获
+
+圆括号不仅仅能够分组, 它们也*捕获*; 也就是说, 它们使分组中匹配到的字符串用作变量，并且还作为生成的 link:https://docs.perl6.org/type/Match[Match] 对象的元素:
+
+```perl6
+my $str = 'number 42';
+if $str ~~ /'number' (\d+) / {
+    say "The number is $0";    # The number is 42
+    # or
+    say "The number is $/[0]"; # The number is 42
+}
+```
+
+圆括号对儿是从左到右编号的, 编号从零开始。
+
+```perl6
+if 'abc' ~~ /(a) b (c)/ {
+    say "0:$0; 1:$1"; # 输出: 0:a; 1:c
+}
+```
+
+`$0` 和 `$1` 等语法是简写的。这些捕获可以从用作列表的匹配对象 `$/` 中规范地获取到, 所以, `$0` 实际上是 `$/[0]` 的语法糖。
+
+将匹配对象强制转换为列表可以方便地以编程方式访问所有元素:
+
+```perl6
+if 'abc' ~~ /(a) b (c)/ {
+    say $/.list.join: ','; # 输出 a,c
+}
+```
+
+### 非捕获分组
+
+正则表达式中的圆括号扮演了双重角色: 它们将内部的正则表达式元素分组, 并通过内部的子正则表达式捕获所匹配到的内容。
+
+要仅仅获得分组行为, 可以使用方括号 `[...]` 代替圆括号。
+
+```perl6
+if 'abc' ~~ / [a||b] (c) / {
+    say ~$0;                # OUTPUT: «c␤» 
+}
+```
+
+如果您不需要捕获, 则使用非捕获分组可提供三个好处: 它们更干净地传达正则表达式; 它们使您更容易对您关心的捕获组计数; 并且它匹配比较快。
+
+### 捕获编号
+
+上面已经说明，捕获从左到右编号。 原则上是真的，这也是过于简单的。
+
+为了完整起见，列出了以下规则。 当您发现自己经常使用它们时，考虑命名捕获（可能是 subrules）是值得的。
+
+备选分支会重置捕获计数：
+
+```perl6
+/ (x) (y)  || (a) (.) (.) /
+# $0  $1      $0  $1  $2 
+```
+
+例子:
+
+```perl6
+if 'abc' ~~ /(x)(y) || (a)(.)(.)/ {
+    say ~$1;            # b 
+}
+```
+
+如果两个（或多个）备选分支具有不同的捕获编号，则捕获编号最多的决定了下一个捕获的索引：
+
+```perl6
+$_ = 'abcd';
+ 
+if / a [ b (.) || (x) (y) ] (.) / {
+    #      $0     $0  $1    $2 
+    say ~$2;           # d 
+}
+```
+
+捕获可以嵌套，在这种情况下，它们的每一级都会编号:
+
+```perl6
+if 'abc' ~~ / ( a (.) (.) ) / {
+    say "Outer: $0";                # Outer: abc 
+    say "Inner: $0[0] and $0[1]";   # Inner: b and c 
+}
+```
+
+### 命名捕获
+
+除了给捕获编号，你也可以给他们起名字。 命名捕获的通用和略微冗长的方式是这样的：
+
+```perl6
+if 'abc' ~~ / $<myname> = [ \w+ ] / {
+    say ~$<myname>      # OUTPUT: «abc␤» 
+}
+```
+
+对命名捕获 *$<myname>* 的访问是将匹配对象作为哈希索引的简写，换句话说：`$/{'myname'}` 或 `$/<myname>`。
+
+命名捕获也可以使用常规捕获分组语法进行嵌套:
+
+```perl6
+if 'abc-abc-abc' ~~ / $<string>=( [ $<part>=[abc] ]* % '-' ) / {
+    say ~$<string>;         # OUTPUT: «abc-abc-abc␤» 
+    say ~$<string><part>;   # OUTPUT: «[abc, abc, abc]␤» 
+}
+```
+
+将匹配对象强制为散列可让您轻松地以编程方式访问所有命名捕获:
+
+```perl6
+if 'count=23' ~~ / $<variable>=\w+ '=' $<value>=\w+ / {
+    my %h = $/.hash;
+    say %h.keys.sort.join: ', ';        # OUTPUT: «value, variable␤» 
+    say %h.values.sort.join: ', ';      # OUTPUT: «23, count␤» 
+    
+    for %h.kv -> $k, $v {
+        say "Found value '$v' with key '$k'";
+        # outputs two lines: 
+        #   Found value 'count' with key 'variable' 
+        #   Found value '23' with key 'value' 
+    }
+}
+```
+
+在 Subrules 部分会讨论获取命名捕获的更方便的方法。
+
+### Capture markers: <( )>
+
+`<(` token 表示匹配的整体捕捉的开始，而相应的 `)>` token 表示其末端。 `<(` 类似于其他语言的 `\K` 丢弃 `\K` 之前找到的任何匹配项。
+
+## 替换
+
+正则表达式也可以用来替换另一个文本。 您可以使用它来解决拼写错误(例如, 用 "Pearl Jam" 替换 "Perl Jam"), 从 `yyyy-mm-ddThh:mm:ssZ` 到 `mm-dd-yy h:m {AM,PM}` 重新格式化 ISO8601 日期及其它。
+
+就像搜索替换编辑器的对话框一样，`s///` 操作符有两面，左侧和右侧。 左侧是匹配表达式的位置，右侧是您要替换的表达式。
+
+### 词汇约定
+
+替换和匹配的写法类似，但替换运算符既有正则表达式匹配的区域，也有替换的文本区域：
+
+```perl6
+s/replace/with/;           # a substitution that is applied to $_ 
+$str ~~ s/replace/with/;   # a substitution applied to a scalar 
+```
+
+替换操作法允许除了斜线之外的分隔符:
+
+```perl6
+s|replace|with|;
+s!replace!with!;
+s,replace,with,;
+```
+
+注意, 冒号和诸如 `{}` 或 `()` 的分隔符不能作为替换分割符。带有副词的冒号斜线诸如 `s:i/Foo/Bar` 和其它分割符有其它用途。
+
+就像 `m//` 操作符一样, 通常会忽略空白。在 Perl 6 中, 注释以 *#* 号开头直到当前行的结尾。
+
+### 替换字符串字面值
+
+要替换的最简单的东西就是字符串字面量。你要替换的字符串在替换运算符的左侧, 而替换它的字符串在替换操作符的右侧; 例如:
+
+```perl6
+$_ = 'The Replacements';
+s/Replace/Entrap/;
+.say;                    # OUTPUT: «The Entrapments␤» 
+```
+
+字母数字字符和下划线是文字匹配，就像其表哥 `m//` 操作符一样。 所有其他字符都必须使用反斜杠`\`转义，或包含在引号中：
+
+```perl6
+$_ = 'Space: 1999';
+s/Space\:/Party like it's/;
+.say                        # OUTPUT: «Party like it's 1999␤» 
+```
+
+请注意，匹配约束仅适用于替换表达式的左侧。
+
+默认情况下，替换仅在第一匹配中完成：
+
+```perl6
+$_ = 'There can be twly two';
+s/tw/on/;                     # replace 'tw' with 'on' once 
+.say;                         # OUTPUT: «there can be only two␤» 
+```
+
+### 通配符和字符类
+
+任何可以进入 `m//` 操作符的内容都可以进入替换操作符的左侧，包括通配符和字符类。 当您匹配的文本不是静态的时，这很方便，例如尝试匹配字符串中间的数字：
+
+```perl6
+$_ = "Blake's 9";
+s/\d+/7/;         # replace any sequence of digits with '7' 
+.say;             # OUTPUT: «Blake's 7␤»
+```
+
+当然，你可以使用任何`+`，`*`和`?` 修饰符，它们的行为就像在 `m//` 操作符的上下文中一样。
+
+### 捕获组
+
+就像在匹配运算符中一样，捕获组在左侧被允许，匹配的内容填充 `$0..$n` 变量和 `$/` 对象：
+
+```perl6
+$_ = '2016-01-23 18:09:00';
+s/ (\d+)\-(\d+)\-(\d+) /today/;   # replace YYYY-MM-DD with 'today' 
+.say;                             # OUTPUT: «today 18:09:00␤» 
+"$1-$2-$0".say;                   # OUTPUT: «01-23-2016␤» 
+"$/[1]-$/[2]-$/[0]".say;          # OUTPUT: «01-23-2016␤» 
+```
+
+任何这些变量 `$0`，`$1`，`$/` 也可以在运算符的右侧使用，所以你可以操纵你刚刚匹配的内容。 这样，您可以将日期的YYYY，MM和DD部分分开，并将其重新格式化为 `MM-DD-YYYY` 顺序：
+
+```perl6
+$_ = '2016-01-23 18:09:00';
+s/ (\d+)\-(\d+)\-(\d+) /$1-$2-$0/;    # transform YYYY-MM-DD to MM-DD-YYYY 
+.say;                                 # OUTPUT: «01-23-2016 18:09:00␤» 
+```
+
+由于右侧实际上是一个常规的 Perl 6 内插字符串，因此可以将时间从 `HH:MM` 重新格式化为 `h:MM {AM,PM} 格式, 如下所示：
+
+```perl6
+$_ = '18:38';
+s/(\d+)\:(\d+)/{$0 % 12}\:$1 {$0 < 12 ?? 'AM' !! 'PM'}/;
+.say;                                                    # OUTPUT: «6:38 PM␤» 
+```
+
+使用上面的模数 `%` 运算符将样本代码保留在80个字符以下，否则就是 `$0 <12 ?? $0 !! $0 - 12`。 结合解析器表达式语法的强大功能，真正使您在这里看到的内容成为可能，您可以使用“正则表达式”来解析任何文本。
+
+### Common adverbs
+
+## Tilde for nesting structures
+
+`~` 运算符是一个帮助器，用于匹配具有特定终结符的嵌套子规则作为目标。 它被设计为放置在开口和闭合括号之间，如下所示：
+
+```perl6
+/ '(' ~ ')' <expression> /
+```
+
+然而, 它主要忽略左侧的参数, 并且在接下来的两个原子（可以被量化）上操作。 它对下两个原子的操作是“旋转”它们，使得它们实际上以相反的顺序匹配。 因此，上面的表达式，起初是腮红，只不过是下面的简写:
+
+```perl6
+/ '(' <expression> ')' /
+```
+
+但是除此之外，当它重写原子时，它还会插入将设置内部表达式以识别终止符的设备，并且如果内部表达式不在所需的闭合原子上终止，则产生适当的错误消息。 所以它确实也注意了左边的括号，它实际上把我们的例子改写成更像:
+
+```perl6
+$<OPEN> = '(' <SETGOAL: ')'> <expression> [ $GOAL || <FAILGOAL> ]
+```
+
+FAILGOAL 是一种可以由用户定义的特殊方法，它将在解析失败时被调用：
+
+```perl6
+grammar A { token TOP { '[' ~ ']' \w+  };
+            method FAILGOAL($goal) {
+                die "Cannot find $goal near position {self.pos}"
+            }
+}
+ 
+A.parse: '[good]';  # OUTPUT: «｢[good]｣␤» 
+A.parse: '[bad';    # will throw FAILGOAL exception 
+CATCH { default { put .^name, ': ', .Str } };
+# OUTPUT: «X::AdHoc: Cannot find ']'  near position 5␤» 
+```
+
+请注意，即使没有开头括号，也可以使用此构造来设置闭合结构的期望值：
+
+```perl6
+"3)"  ~~ / <?> ~ ')' \d+ /;  # RESULT: «｢3)｣» 
+"(3)" ~~ / <?> ~ ')' \d+ /;  # RESULT: «｢3)｣» 
+```
+
+这里 `<?>` 在第一个空字符串中返回true。
+
+正则表达式捕获的顺序是原始的：
+
+```perl6
+"abc" ~~ /a ~ (c) (b)/;
+say $0; # OUTPUT: «｢c｣␤» 
+say $1; # OUTPUT: «｢b｣␤» 
+```
+
+
+## Subrules
+
+就像你可以把代码片段放进子例程中一样, 你同样可以把正则表达式片段放进命名规则中(named rules)。
+
+```perl6
+my regex line { \N*\n }
+if "abc\ndef" ~~ /<line> def/ {
+    say "First line:", $<line>.chomp; # OUTPUT:«First line: abc␤» 
+}
+```
+
+命名正则可以使用 `my regex_name { body here }` 来声明, 并使用 `<regex_name>` 来调用。与此同时, 调用命名正则的时候会安装一个同名的命名捕获。
+
+要给捕获起一个和 regex 不同的名字, 那么使用 `<capture_name=regex_name>` 语法。如果不想捕获, 那么使用一个前置的点号来抑制捕获: `<.regex_name>`。
+
+下面是一个更完善的解析 ini 文件的例子:
+
+```perl6
+my regex header { \s* '[' (\w+) ']' \h* \n+ }
+my regex identifier  { \w+ }
+my regex kvpair { \s* <key=identifier> '=' <value=identifier> \n+ }
+my regex section {
+    <header>
+    <kvpair>*
+}
+ 
+my $contents = q:to/EOI/; 
+    [passwords]
+        jack=password1
+        joy=muchmoresecure123
+    [quotas]
+        jack=123
+        joy=42
+EOI
+ 
+my %config;
+if $contents ~~ /<section>*/ {
+    for $<section>.list -> $section {
+        my %section;
+        for $section<kvpair>.list -> $p {
+            say $p<value>;
+            %section{ $p<key> } = ~$p<value>;
+        }
+        %config{ $section<header>[0] } = %section;
+    }
+}
+say %config.perl;
+# OUTPUT: «("passwords" => {"jack" => "password1", "joy" => "muchmoresecure123"},␤ 
+#          "quotas" => {"jack" => "123", "joy" => "42"}).hash» 
+```
+
+命名正则可以规整到 link:https://docs.perl6.org/language/grammars[gramamrs] 中。link:https://design.perl6.org/S05.html#Predefined_Subrules[S05]中有一组预定义的 subrules。
+
+## 副词
+
+副词修改正则表达式的工作方式, 并为某些类型的循环任务提供方便的快捷方式。
+
+有两种副词: 正则表达式副词适用于定义正则表达式时, 匹配副词适用于正则表达式与字符串匹配时。
+
+这种区别往往是模糊的, 因为匹配和声明通常是文本上关闭的, 但使用方法形式的匹配使得区分清晰一点。
+
+`'abc' ~~ /../` 大致相当于 `'abc'.match(/../)`, 甚至可以更清楚地单独写成一行:
+
+```perl6
+my $regex = /../;           # definition 
+if 'abc'.match($regex) {    # matching 
+    say "'abc' has at least two characters";
+}
+```
+
+正则表达式副词像 `:i` 会进入定义行而匹配副词像 `:overlap` 会附加到匹配调用上:
+
+```perl6
+my $regex = /:i . a/;
+for 'baA'.match($regex, :overlap) -> $m {
+    say ~$m;
+}
+# OUTPUT: «ba␤aA␤» 
+```
+
+### Regex Adverbs
+
+在正则表达式声明时出现的副词是实际正则表达式的一部分, 并影响 Perl 6 编译器如何将正则表达式转换为二进制代码。
+
+例如: `:ignorecase (:i)` 副词告诉编译器忽略大写, 小写和标题大小写字母之间的区别。
+
+所以 `'a'~~ /A/` 是假的, 但 `'a' ~~ /:i A /是一个成功的匹配。
+
+正则表达式副词可以在正则表达式声明之前或之内, 并且仅在词法上影响其后的正则表达式部分。 请注意, 在正则表达式之前出现的正则表达式副词必须出现在将正则表达式引入解析器之后, 如 'rx' 或 'm' 或裸的 '/'。 但是这样是无效的:
+
+```perl6
+my $rx1 = :i/a/;      # adverb is before the regex is recognized => exception 
+```
+
+下面这些是等价的:
+
+```perl6
+my $rx1 = rx:i/a/;      # before 
+my $rx2 = rx/:i a/;     # inside 
+```
+
+而下面这两种是不等价的:
+
+```perl6
+my $rx3 = rx/a :i b/;   # matches only the b case insensitively 
+my $rx4 = rx/:i a b/;   # matches completely case insensitively 
+```
+
+方括号和圆括号约束副词的作用域:
+
+```perl6
+/ (:i a b) c /;         # matches 'ABc' but not 'ABC' 
+/ [:i a b] c /;         # matches 'ABc' but not 'ABC' 
+```
+
+### Ratchet
+
+`:ratchet` 或 `:r` 副词会导致正则表达式引擎不回溯。
+
+假如没有这个副词, 那么正则表达式的一部分将尝试不同的路径来匹配字符串, 以使正则表达式的其他部分可以匹配。 例如, 在 `'abc' ~~ / \w+ ./` 中, `\w+` 首先吃光整个字符串 abc, 然后 `.` 就失败了。 因此 `\w+` 放弃一个字符, 只匹配 ab 而 `.` 可以成功匹配字符串 c。 放弃字符的过程(或在轮试的情况下, 尝试不同的分支)被称为回溯。
+
+```perl6
+say so 'abc' ~~ / \w+ . /;        # OUTPUT: «True␤» 
+say so 'abc' ~~ / :r \w+ . /;     # OUTPUT: «False␤» 
+```
+
+Ratcheting 是一种优化, 因为回溯是昂贵的。 但更重要的是, 它与人类解析文本的方式密切相关。 如果你有一个正则表达式 `my regex identifier { \w+ } ` 和 `my regex keyword { if | else | endif }`, 你直观地期望 `identifier` 吞噬整个单词，而不是放弃结束下一个规则，如果下一个 rule 失败时。
+
+例如，你不想让单词 `motif` 被解析为标识符 mot 后面跟着关键字 if。 相反, 你想将 `motif` 解析为标识符; 并且如果解析器期望之后有一个 `if`, 那么最好让它失败, 而不是以你不期望的方式解析输入。
+
+由于 ratcheting 行为在解析器中通常是需要的, 所以有一个快捷方式来声明一个 ratcheting 正则表达式:
+
+```perl6
+my token thing { .... }
+# short for 
+my regex thing { :r ... }
+```
+
+### Sigspace
+
+`:sigspace` 或 `:s` 副词使空白在正则表达式中有意义。
+
+```perl6
+say so "I used Photoshop®"   ~~ m:i/   photo shop /;      # OUTPUT: «True␤»
+say so "I used a photo shop" ~~ m:i:s/ photo shop /;   # OUTPUT: «True␤»
+say so "I used Photoshop®"   ~~ m:i:s/ photo shop /;   # OUTPUT: «False␤»
+```
+
+`m:s/ photo shop /` 的作用和 `m/ photo <.ws> shop <.ws> /` 一样。默认地, `<.ws>` 确保单词是分开的, 所以 `a b` 和 `^$` 会匹配中间的 `<.ws>`, 但是 `ab` 不会。
+
+正则表达式中哪里的空白会被转换为 `<.ws>` 取决于空白前面是什么。在上面的例子中, 正则表达式开头的空白不会被转换为 `<.ws>`, 但是字符后面的空白会被转换为 `<.ws>`。通常, 规则就是, 如果某一项可能匹配某个东西, 那么它后面的空白会被转换为 `<.ws>`。
+
+此外, 如果空白跟在某个 term 之后, 量词(+,* 或 ?)之前, 那么 `<.ws>` 会在每次 term 匹配后匹配。 所以, `foo +` 变为 `[foo <.ws>]+`。另一方面, 量词后面的空白和普通的空白作用一样; 例如: "foo+" 变为 `foo+<.ws>`
+
+### Matching adverbs
+
+和正则表达式副词对比, 其与正则表达式声明有关, 匹配副词只有在将字符串与正则表达式匹配时才有意义。
+
+它们永远不会出现在正则表达式内部, 只能在外部 - 作为 `m/.../` 匹配的一部分或作为匹配方法的参数。
+
+### Continue
+
+`:continue` 或短的 `:c` 副词接收一个参数。 这个参数是正则表达式开始搜索的位置。 默认情况下, 它从字符串的开头搜索, 但是 `:c` 覆盖该位置。 如果没有为 `:c` 指定位置, 它将默认为 0, 除非设置了 `$/`, 在这种情况下, 它默认为 `$/.to`。
+
+```perl6
+given 'a1xa2' {
+    say ~m/a./;         # OUTPUT: «a1␤» 
+    say ~m:c(2)/a./;    # OUTPUT: «a2␤» 
+}
+```
+
+注意: 不同于 `:pos`, 使用 `:continue()` 的匹配将尝试在字符串中进一步匹配, 而不是马上失败:
+
+```perl6
+say "abcdefg" ~~ m:c(3)/e.+/; # OUTPUT: «｢efg｣␤» 
+say "abcdefg" ~~ m:p(3)/e.+/; # OUTPUT: «False␤» 
+```
+
+### Exhaustive
+
+要找到正则表达式的所有可能的匹配 - 包括重叠的 - 和几个从同一位置开始的匹配, 请使用 `:exhaustive`(short: `ex`) 副词。
+
+```perl6
+given 'abracadabra' {
+    for m:exhaustive/ a .* a / -> $match {
+        say ' ' x $match.from, ~$match;
+    }
+}
+```
+
+上面的代码产生这样的输出:
+
+```
+abracadabra
+abracada
+abraca
+abra
+   acadabra
+   acada
+   aca
+     adabra
+     ada
+       abra
+```
+
+### Global
+
+不是搜索一个匹配并返回一个 link:https://docs.perl6.org/type/Match[Match 对象], Global 搜索每个不重叠的匹配, 并将其返回到link:https://docs.perl6.org/type/List[列表]中。 为此, 请使用 `:global` 副词:
+
+```perl6
+given 'several words here' {
+    my @matches = m:global/\w+/;
+    say @matches.elems;         # OUTPUT: «3␤» 
+    say ~@matches[2];           # OUTPUT: «here␤» 
+}
+```
+
+`:g` 是 `:global` 的简写。
+
+### Pos
+
+在字符串的特定位置锚定匹配:
+
+```perl6
+given 'abcdef' {
+    my $match = m:pos(2)/.*/;
+    say $match.from;        # OUTPUT: «2␤» 
+    say ~$match;            # OUTPUT: «cdef␤» 
+}
+```
+
+`:p` 是 `:pos` 的简写。
+
+注意: 不同于 `:continue`, 使用 `:pos()` 锚定的匹配在不匹配时将立即失败, 而不是尝试进一步匹配字符串:
+
+```perl6
+say "abcdefg" ~~ m:c(3)/e.+/; # OUTPUT: «｢efg｣␤» 
+say "abcdefg" ~~ m:p(3)/e.+/; # OUTPUT: «False␤» 
+```
+
+### Overlap
+
+要获得多个匹配, 包括重叠的匹配, 但每个起始位置只有一个(最长的)匹配, 请指定 `:overlap` (short `:ov`) 副词:
+
+```perl6
+given 'abracadabra' {
+    for m:overlap/ a .* a / -> $match {
+        say ' ' x $match.from, ~$match;
+    }
+}
+```
+
+产生:
+
+```perl6
+abracadabra
+   acadabra
+     adabra
+       abra
+```
+
+## Look-around assertions
+
+### Lookahead assertions
+
+要检查一个模式是否出现在另一个模式之前，请通过 `before` 断言使用 lookahead 断言。形式如下：
+
+```perl6
+<?before pattern>
+```
+
+因此，要搜索字符串 foo 后面紧跟着字符串 bar, 请使用以下 regexp:
+
+```perl6
+rx{ foo <?before bar> }
+```
+
+例如:
+
+```perl6
+say "foobar" ~~ rx{ foo <?before bar> };   # OUTPUT: «foo␤» 
+```
+
+但是，如果要搜索一个不紧随某个模式的模式, 那么您需要使用反向向前查看断言, 其形式如下:
+
+```perl6
+<!before pattern>
+```
+
+因此，所有出现的不在 bar 之前的 foo 都会匹配:
+
+```perl6
+rx{ foo <!before bar> }
+```
+
+### Lookbehind assertions
+
+要检查一个模式是否出现在另一个模式之后，请通过 `after` 断言使用 `lookbehind` 断言。 其形式如下：
+
+```perl6
+<?after pattern>
+```
+
+因此, 要搜索字符串 foo 立即跟着的 bar 字符串, 使用如下正则表达式:
+
+```perl6
+rx{ <?after foo> bar } # read as after foo is bar
+```
+
+例如:
+
+```perl6
+say "foobar" ~~ rx{ <?after foo> bar }; #  OUTPUT: «bar␤» 
+```
+
+但是, 如果要搜索的模式不是紧随其后的模式, 那么您需要使用反向的 lookbehind 断言, 其形式如下:
+
+```perl6
+<!after pattern>
+```
+
+因此, bar 前面不是 foo 的所有 bar 将被匹配:
+
+```perl6
+rx{ <!after foo> bar }
+```
+
+## Best practices and gotchas
+
+为了帮助强大的正则表达式和 Grammar, 以下是代码布局和可读性的最佳实践，实际匹配的内容，并避免常见的陷阱。
+
+### Code layout
+
+没有 `:sigspace` 副词, 空白在 Perl 6 正则表达式中就是没有意义的。 在能增加可读性的地方插入空格。 此外, 必要时插入注释。
+
+比较下面这个比较紧凑的正则表达式:
+
+```perl6
+my regex float { <[+-]>?\d*'.'\d+[e<[+-]>?\d+]? }
+```
+
+和可读性更好的版本:
+
+```perl6
+my regex float {
+     <[+-]>?        # optional sign 
+     \d*            # leading digits, optional 
+     '.'
+     \d+
+     [              # optional exponent 
+        e <[+-]>?  \d+
+     ]?
+}
+```
+
+根据经验，在原子周围和分组内部使用空格; 将量词直接置于原子之后; 并垂直对齐开口和闭合方括号和圆括号。
+
+当你在方括号或圆括号中使用一组备选分支时, 请对齐垂直条:
+
+```perl6
+my regex example {
+    <preamble>
+    [
+    || <choice_1>
+    || <choice_2>
+    || <choice_3>
+    ]+
+    <postamble>
+}
+```
+
+### Keep it small
+
+正则表达式通常比常规代码更紧凑。 因为他们短小精悍, 保持正则表达式很短。
+
+当你可以命名正则表达式的一部分时, 通常最好将其放入单独的命名正则表达式中。
+
+例如, 您可以从前面获取 float 正则表达式：
+
+```perl6
+my regex float {
+     <[+-]>?        # optional sign 
+     \d*            # leading digits, optional 
+     '.'
+     \d+
+     [              # optional exponent 
+        e <[+-]>?  \d+
+     ]?
+}
+```
+
+并把它分解成几部分:
+
+```perl6
+my token sign { <[+-]> }
+my token decimal { \d+ }
+my token exponent { 'e' <sign>? <decimal> }
+my regex float {
+    <sign>?
+    <decimal>?
+    '.'
+    <decimal>
+    <exponent>?
+}
+```
+
+这很有用, 特别是当正则表达式变得更加复杂时。 例如, 你可能希望在存在指数的情况下使小数点可选。
+
+```perl6
+my regex float {
+    <sign>?
+    [
+    || <decimal>?  '.' <decimal> <exponent>?
+    || <decimal> <exponent>
+    ]
+}
+```
+
+### What to match
+
+通常，输入数据格式没有明确的规范，或规范对编程人员来说是未知的。 那么，在你期望的时候是自由的，只要没有可能的含糊不清就行了。
+
+例如，在 ini 文件中:
+
+```perl6
+[section]
+key=value
+```
+
+什么可以在 section 标题内? 只允许一个单词可能太限制了。 有人会写 `[two words]`, 或用破折号等等。 而不是询问内部允许的内容, 可能这样问比较好: 什么是不允许的？
+
+显然, 不允许使用括号，因为 `[a] b]` 是不明确的。 同样的论据, 应禁止开口方括号。 这让我们有了
+
+```perl6
+token header { '[' <-[ \[\] ]>+ ']' }
+```
+
+如果你只处理一行就行了。 但是，如果你正在处理整个文件，突然间正则表达式解析到一句
+
+```
+[with a
+newline in between]
+```
+
+这可能不是一个好方法。折中的方式是:
+
+```perl6
+token header { '[' <-[ \[\] \n ]>+ ']' }
+```
+
+然后在扫尾处理中, 从 section 标题中移除前导和尾部空格和制表符。
+
+### Matching Whitespace
+
+`:sigspace` 副词(或使用 `rule` 声明符, 而不是 `token` 或 `regex`) 非常适用于隐式解析许多地方可能出现的空格。
+
+回到解析 ini 文件的例子, 我们有
+
+```perl6
+my regex kvpair { \s* <key=identifier> '=' <value=identifier> \n+ }
+```
+
+这可能不像我们想要的那样自由, 因为用户可能会在等号周围放置空格。 那么我们可以试试这个:
+
+```perl6
+my regex kvpair { \s* <key=identifier> \s* '=' \s* <value=identifier> \n+ }
+```
+
+但这看起来很笨重, 所以我们尝试其他方式:
+
+```perl6
+my rule kvpair { <key=identifier> '=' <value=identifier> \n+ }
+```
+
+可是等等! `value` 之后，隐含的空白匹配用光了所有的空白, 包括换行符, 所以 `\n+` 没有什么可以匹配的(rule 也禁止回溯, 所以运气不佳)。
+
+因此, 重要的是将隐式空白的定义重新定义为输入格式无意义的空白。
+
+这通过重新定义 token `ws`; 但是，它只适用于 link:https://docs.perl6.org/language/grammars[Grammars]:
+
+```perl6
+grammar IniFormat {
+    token ws { <!ww> \h* }
+    rule header { \s* '[' (\w+) ']' \n+ }
+    token identifier  { \w+ }
+    rule kvpair { \s* <key=identifier> '=' <value=identifier> \n+ }
+    token section {
+        <header>
+        <kvpair>*
+    }
+ 
+    token TOP {
+        <section>*
+    }
+}
+ 
+my $contents = q:to/EOI/; 
+    [passwords]
+        jack = password1
+        joy = muchmoresecure123
+    [quotas]
+        jack = 123
+        joy = 42
+EOI
+say so IniFormat.parse($contents);
+```
+
+除了把所有的正则表达式都放在一个 Grammar 中并把它们变成了 tokens(因为他们不需要回溯) 之外, 有趣的新花样是:
+
+```perl6
+token ws { <!ww> \h* }
+```
+
+这被称为隐式空白解析。 当它不在两个字符之间 (`<ww>`, 反向的"within word" 断言)时匹配, 以及零个或多个水平空格字符。 对水平空白的限制很重要, 因为换行符(它们是垂直空白)定界记录, 不应该被隐式地匹配。
+
+还有一些与空白有关的麻烦潜伏着。 正则表达式 `\n+` 将不会匹配 `\n \n` 这样的字符串, 因为两个换行符之间有空白。 要允许这样的输入字符串, 用 `\n\s*` 代替 `\n+`。

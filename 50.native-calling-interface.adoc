@@ -1,0 +1,823 @@
+# 原生调用接口
+
+## 入门指南
+
+能想象出的最简单的 `NativeCall` 用法应该类似于这样的东西：
+
+```perl6
+use NativeCall;
+sub some_argless_function() is native('something') { * }
+some_argless_function();
+```
+
+第一行导入了各种 `traits` 和类型，接下来的一行看起来很像相对普通的 Perl 6 子例程声明 - 稍微有点变化。我们使用**native**这个 `trait ` 是为了指定这个 sub 子例程实际上被定义在**原生库**中。Perl 6 会给你添加特定平台的扩展名（比如 `.so` 或者 `.dll`）还有任何惯常的前缀(例如: 'lib')。
+
+当你第一次调用 “some_argless_function” 时，“**lib**something” 将会被加载，然后会在 libsomething 库中定位到 “some_argless_function” 函数，接下来将会进行一次调用。之后的调用将会更快，因为符号句柄会被保留。
+
+当然，大部分的函数都会接受参数或者返回值 - 但是你可以做的其他事情只是增加了这个声明Perl 6 sub的简单模式
+
+但是一切你需要做的就是增加这个简单的模式，通过声明一个 Perl 6 的过程、在符号后面指出你想要调用的名字，并且使用 “native” trait。
+
+## 改变名字
+
+有时你想要 Perl 6 子例程的名字和加载库中使用的名字不同，可能这个名字很长, 或者有不同的大小写或者在你想要创建的模块的上下文中, 这个名字很繁琐。
+
+NativeCall 为你提供了一个 `symbol` trait 以指定库中**原生子例程**的名字, 这个名字和你的 Perl 6 子例程名字不同。
+
+```perl6
+module Foo;
+use NativeCall;
+our sub init() is native('foo') is symbol('FOO_INIT') { * }
+```
+
+在 `libfoo` 库里面有一个子例程叫 `FOO_INIT`，因为我们创建了一个模块叫做 Foo，我们更愿意使用 `Foo::init` 调用子例程，我们使用 `symbol` trait 来指定在 `libfoo` 库名字符号的名字，然后以任何我们想要的方式调用这个子例程（这里是 “init”）。
+
+## 传递值和返回值
+
+普通的 Perl 6 签名和 `returns` trait 的使用是为了传送原生函数期望的参数类型以及返回的东西，下面有个例子：
+
+```perl6
+sub add(int32, int32) returns int32 is native('calculator') { * }
+```
+
+在这里，我们声明该函数接受两个32位整数，返回一个32位整数。你可以在link:https://docs.perl6.org/language/nativetypes[原生类型]页面中找到可以传递的其他类型。 请注意，缺少 `returns` trait 用于指示 `void` 返回类型。 除指针参数化外，不要在任何地方使用 `void` 类型。
+
+对于字符串，还有一个额外的 `encoded` trait，可以提供一些关于如何进行编组的额外提示。
+
+```perl6
+use NativeCall;
+sub message_box(Str is encoded('utf8')) is native('gui') { * }
+```
+
+为了指定如何对返回类型进行编组，只需在子例程自身应用这个 trait 即可。
+
+```perl6
+use NativeCall;
+sub input_box() returns Str is encoded('utf8') is native('gui') { * }
+```
+
+注意, 可以通过传递 Str 类型对象来传递 NULL 字符串指针; NULL 返回也将由类型对象表示。
+
+如果 C 函数要求字符串的生命周期超过函数调用，则必须手动编码该参数并将其作为 `CArray[uint8]` 传递：
+
+```perl6
+use NativeCall;
+# C prototype is void set_foo(const char *) 
+sub set_foo(CArray[uint8]) is native('foo') { * }
+# C prototype is void use_foo(void) 
+sub use_foo() is native('foo') { * } # will use pointer stored by set_foo() 
+ 
+my $string = "FOO";
+# The lifetime of this variable must be equal to the required lifetime of 
+# the data passed to the C function. 
+my $array = CArray[uint8].new($string.encode.list);
+ 
+set_foo($array);
+# ... 
+use_foo();
+# It's fine if $array goes out of scope starting from here. 
+```
+
+## 指定原生表示
+
+使用原生函数时，有时需要指定要使用的原生数据结构类型。 `is repr` 是用于此的术语。
+
+```perl6
+use NativeCall;
+ 
+class timespec is repr('CStruct') {
+    has uint32 $.tv_sec;
+    has long $.tv_nanosecs;
+}
+ 
+sub clock_gettime(uint32 $clock-id, timespec $tspec --> uint32) is native { * };
+ 
+my timespec $this-time .=new;
+ 
+my $result = clock_gettime( 0, $this-time);
+ 
+say "$result, $this-time"; # OUTPUT: «0, timespec<65385480>␤» 
+```
+
+link:https://linux.die.net/man/3/clock_gettime[我们调用的原始函数], link:https://docs.perl6.org/routine/clock_gettime[clock_gettime] 使用指向 `timespec` 结构的指针作为第二个参数。 我们在这里将它声明为一个link:https://docs.perl6.org/routine/class[类]，但是将其表示指定为 `repr('CStruct')`, 以指示它对应于 C 数据结构。 当我们创建该类的对象时，我们正在创建 `clock_gettime` 所期望的指针类型。 这样，数据可以无缝地传输到原生接口和从原生接口传输。
+
+
+## 指针的基本使用
+
+当你的原生函数签名需要一个指向某些原生类型（`int32`、`uint32`等等）的指针时，所有你需要做的就是将参数声明为 `is rw`：
+
+```perl6
+use NativeCall;
+# C prototype is void my_version(int *major, int *minor) 
+sub my_version(int32 is rw, int32 is rw) is native('foo') { * }
+my_version(my int32 $major, my int32 $minor); # Pass a pointer to 
+```
+
+有的时候你需要获取一个从 C 库返回的指针（比如一个库句柄），你不关心它指向什么 - 你只需要保存它就可以了，`Pointer` 类型就是为此而生的：
+
+```perl6
+use NativeCall;
+sub Foo_init() returns Pointer is native("foo") { * }
+sub Foo_free(Pointer) is native("foo") { * }
+```
+
+这个可以正常工作，但是你可能想要使用比 `Pointer` 更好的类型，事实证明，任何具有表示“CPointer”的类都可以担任此角色，这意味着你可以通过编写如下类来暴露工作在句柄上的库：
+
+```perl6
+use NativeCall;
+ 
+class FooHandle is repr('CPointer') {
+    # Here are the actual NativeCall functions. 
+    sub Foo_init() returns FooHandle is native("foo") { * }
+    sub Foo_free(FooHandle) is native("foo") { * }
+    sub Foo_query(FooHandle, Str) returns int8 is native("foo") { * }
+    sub Foo_close(FooHandle) returns int8 is native("foo") { * }
+ 
+    # Here are the methods we use to expose it to the outside world. 
+    method new {
+        Foo_init();
+    }
+ 
+    method query(Str $stmt) {
+        Foo_query(self, $stmt);
+    }
+ 
+    method close {
+        Foo_close(self);
+    }
+ 
+    # Free data when the object is garbage collected. 
+    submethod DESTROY {
+        Foo_free(self);
+    }
+}
+```
+
+请注意，CPointer 表示只能保存 C 指针。 这意味着你的类不能有额外的属性。 但是，对于简单的库，这可能是向其暴露面向对象的接口的一种巧妙方式。
+
+当然，你总是可以有一个空类：
+
+```perl6
+class DoorHandle is repr('CPointer') { }
+```
+
+只需像使用 `Pointer` 一样使用类，但有可能提高类型安全性和更易读的代码。
+
+同样，类型对象用于表示 NULL 指针。
+
+
+## 函数指针
+
+C 库可以将指向 C 函数的指针暴露为函数的返回值和结构体的成员，例如 structs 和 unions。
+
+使用定义所需函数参数和返回值的签名调用函数“f”返回的函数指针“$fptr”的示例：
+
+```perl6
+sub f() returns Pointer is native('mylib') { * }
+
+my $fptr    = f();
+my $nfptr   = nativecast(:(Str, size_t --> int32), $fptr);
+
+say $nfptr("test", 4);
+```
+
+## 数组
+
+NativeCall 对数组有一些支持。 它受限于使用机器大小的整数，双精度和字符串，定型的数字类型，指针数组，结构体数组和数组的数组。
+
+Perl 6 数组支持懒惰，在内存中以与 C 数组完全不同的方式布局。 因此，NativeCall 库提供了更原始的 CArray 类型，如果使用 C 数组，则必须使用该类型。
+
+这是传递 C 数组的示例。
+
+```perl6
+sub RenderBarChart(Str, int32, CArray[Str], CArray[num64]) is native("chart") { * }
+my @titles := CArray[Str].new;
+@titles[0]  = 'Me';
+@titles[1]  = 'You';
+@titles[2]  = 'Hagrid';
+my @values := CArray[num64].new;
+@values[0]  = 59.5e0;
+@values[1]  = 61.2e0;
+@values[2]  = 180.7e0;
+RenderBarChart('Weights (kg)', 3, @titles, @values);
+```
+
+注意我们对 `@titles` 使用了绑定，而不是赋值，如果你使用赋值，则会把值放进 Perl 6 数组，然后它就不会工作了。如果这令你抓狂，忘记你所知道的关于 `@` 符号的事情，使用 NativeCall 的时候直接使用 `$` 吧。
+
+```perl6
+use NativeCall;
+my $titles = CArray[Str].new;
+$titles[0] = 'Me';
+$titles[1] = 'You';
+$titles[2] = 'Hagrid';
+```
+
+获取数组的返回值也是一样的。
+
+某些库 API 可能会将数组作为缓冲区，将由 C 函数填充，例如，返回填充的实际项数：
+
+```perl6
+use NativeCall;
+sub get_n_ints(CArray[int32], int32) returns int32 is native('ints') { * }
+```
+
+在这些情况下，重要的是 CArray 在将其传递给原生子例程之前至少具有要填充的元素的数量，否则 C 函数可能会遍历 Perl 的内存，从而可能导致不可预测的行为：
+
+```perl6
+my $number_of_ints = 10;
+my $ints = CArray[int32].allocate($number_of_ints); # instantiates an array with 10 elements 
+my $n = get_n_ints($ints, $number_of_ints);
+```
+
+> 注意：`allocate` 是在 Rakudo 2018.05 中引入的。 在此之前，你必须使用此机制将数组扩展为许多元素：
+
+```perl6
+my $ints = CArray[int32].new;
+my $number_of_ints = 10;
+$ints[$number_of_ints - 1] = 0; # extend the array to 10 items 
+```
+
+数组的内存管理很重要。 当你自己创建一个数组时，可以根据需要为其添加元素，并根据需要为你进行扩展。 但是，这可能会导致元素在内存中移动（但是，对现有元素的赋值永远不会导致这种情况）。 这意味着如果在将数组传递给 C 库之后将数组旋转，你最好知道自己在做什么。
+
+相比之下，当 C 库向你返回一个数组时，内存不能由 NativeCall 管理，并且它不知道数组的结束位置。 据推测，库 API 中的某些东西告诉你这一点（例如，你知道当你看到一个 null 元素时，你应该不再读取）。 请注意，NativeCall 在这里无法为您提供任何保护 - 一旦做错了，你将遇到 segfault 错误或导致内存损坏。 这不是 NativeCall 的缺点，它是原生世界的工作方式。害怕吗？ 还在这里，拥抱一下。 祝好运！
+
+## CArray 方法
+
+除了每个 Perl 6 实例上可用的常用方法之外，CArray 还提供了以下方法，可以从 Perl 6 的角度与它进行交互：
+
+- `elems` 提供数组中的元素数量;
+
+- `AT-POS` 在给定位置提供特定元素（从零开始）;
+
+- `list` 提供了从原生数组迭代器构建它的数组中的元素link:https://docs.perl6.org/type/List[列表]。
+
+例如，请考虑以下简单的代码：
+
+```perl6
+use NativeCall;
+ 
+my $native-array = CArray[int32].new( 1, 2, 3, 4, 5 );
+say 'Number of elements: ' ~ $native-array.elems;
+ 
+# walk the array 
+for $native-array.list -> $elem {
+    say "Current element is: $elem";
+}
+ 
+# get every element by its index-based position 
+for 0..$native-array.elems - 1 -> $position {
+    say "Element at position $position is "
+          ~ $native-array.AT-POS( $position );
+}
+```
+
+产生以下输出：
+
+```
+Number of elements: 5
+Current element is: 1
+Current element is: 2
+Current element is: 3
+Current element is: 4
+Current element is: 5
+Element at position 0 is 1
+Element at position 1 is 2
+Element at position 2 is 3
+Element at position 3 is 4
+Element at position 4 is 5
+```
+
+## 结构体
+由于表示多态性，可以声明一个看起来很正常的 Perl 6 类，实际上，C 编译器将它们放置在类似的结构体定义中以相同的方式存储其属性。 所需要的只是快速使用“repr” trait：
+
+```perl6
+class Point is repr('CStruct') {
+    has num64 $.x;
+    has num64 $.y;
+}
+```
+
+声明的属性只能是 NativeCall 已知的可以转换成结构体字段的类型，目前，结构体中可以包含机器大小的整数，doubles，strings 以及其它 NativeCall 对象（CArrays，还有 CPointer 以及 CStruct reprs）。除此之外，你可以做一些跟类一样的常用的设置，你甚至可以让某些属性来自于角色或者从其它的类继承。当然，方法也完全没有问题，疯狂!
+
+CStruct 对象以引用的形式传递到原生函数，并且原生函数必须返回 CStruct 对象的引用，对于这些引用的内存管理规则跟数组的内存管理规则很像，尽管更简单，因为结构体的大小是不变的。当你创建一个结构体，内存也一并为你分配好，当指向 CStruct 实例的变量的生命期结束，GC 会负责释放内存。当基于 CStruct 的类型作为原生函数的返回类型时，GC 并不帮你管理它的内存。
+
+NativeCall 目前并不把对象成员放到容器里面，所以不能对对象进行赋（使用 =）新值。 相反，你必须将新值绑定到私有成员上：
+
+```perl6
+class MyStruct is repr('CStruct') {
+    has CArray[num64] $!arr;
+    has Str $!str;
+    has Point $!point; # Point is a user-defined class 
+ 
+    submethod TWEAK {
+        my $arr := CArray[num64].new;
+        $arr[0] = 0.9e0;
+        $arr[1] = 0.2e0;
+        $!arr := $arr;
+        $!str := 'Perl 6 is fun';
+        $!point := Point.new;
+    }
+}
+```
+
+正如你预测的那样，空指针由结构体类型的类型对象表示的。
+
+## CUnions
+
+同样地，我们可以声明一个 Perl 6 类，它的属性拥有和 C 编译器中联合体（`union`）的相同的内存布局，这可以使用 `CUnion` 表示：
+
+```perl6
+use NativeCall;
+ 
+class MyUnion is repr('CUnion') {
+    has int32 $.flags32;
+    has int64 $.flags64;
+}
+ 
+say nativesizeof(MyUnion.new);  # 8, ie. max(sizeof(MyUnion.flags32), sizeof(MyUnion.flags64)) 
+```
+
+## 嵌套的 CStructs 和 CUnions
+
+反过来, CStructs 和 CUnions 可以被周围的 CStruct 和 CUnion 引用，或者嵌入到其他的 CStructs 和 CUnions 里面，如果是引用我们则像往常一样使用 `has` 来声明，如果是嵌入则使用 `HAS` 代替：
+
+```perl6
+class MyStruct is repr('CStruct') {
+    has Point $.point;  # referenced 
+    has int32 $.flags;
+}
+ 
+say nativesizeof(MyStruct.new);  # 16, ie. sizeof(struct Point *) + sizeof(int32_t) 
+ 
+class MyStruct2 is repr('CStruct') {
+    HAS Point $.point;  # embedded 
+    has int32 $.flags;
+}
+ 
+say nativesizeof(MyStruct2.new);  # 24, ie. sizeof(struct Point) + sizeof(int32_t) 
+```
+
+### 注意内存管理
+
+分配结构体以用作结构体时，请确保在 C 函数中分配自己的内存。 如果要将结构体传递给需要提前分配的 `Str/char*` 的C函数，请确保在将结构体传递给函数之前为 `Str` 类型的变量分配容器。
+
+#### 在你的 Perl 6 代码中...
+
+```perl6
+class AStringAndAnInt is repr("CStruct") {
+  has Str $.a_string;
+  has int32 $.an_int32;
+ 
+  sub init_struct(AStringAndAnInt is rw, Str, int32) is native('simple-struct') { * }
+ 
+  submethod BUILD(:$a_string, :$an_int) {
+    init_struct(self, $a_string, $an_int);
+  }
+}
+```
+
+在此代码中，我们首先设置我们的成员 `$.a_string` 和 `$.an_int32`。 之后，我们声明 `init_struct()` 函数以使 `init()` 方法包装; 然后从 `BUILD` 调用此函数以在返回创建的对象之前有效地分配值。
+
+#### 在你的 C 代码中 ...
+
+```perl6
+typedef struct a_string_and_an_int32_t_ {
+  char *a_string;
+  int32_t an_int32;
+} a_string_and_an_int32_t;
+```
+
+这是结构体。 注意我们在那里有怎么得到一个 `char *`。
+
+```c
+void init_struct(a_string_and_an_int32_t *target, char *str, int32_t int32) {
+  target->an_int32 = int32;
+  target->a_string = strdup(str);
+ 
+  return;
+}
+```
+
+在这个函数中，我们通过按值分配整数并通过引用传递字符串来初始化 C 结构体。 该函数在复制字符串时将 `<point * a_string>` 指向的内存分配到结构中。 （注意，你还必须管理内存的释放以避免内存泄漏。）
+
+```perl6
+# A long time ago in a galaxy far, far away... 
+my $foo = AStringAndAnInt.new(a_string => "str", an_int => 123);
+say "foo is {$foo.a_string} and {$foo.an_int32}";
+# OUTPUT: «foo is str and 123␤» 
+```
+
+## 类型指针
+
+将 `Pointer` 作为参数传递时可以类型化你的 `Pointer`。这不但对原生类型可用，同样适用于 `CArray` 以及 `CStruct` 定义类型，NativeCall 将不会显式为他们分配内存，即使在它们身上调用 `new` 方法也不会。这适用于那种 C 函数返回指针或者 `CStruct` 中嵌入的指针情况。
+
+```perl6
+use NativeCall;
+sub strdup(Str $s --> Pointer[Str]) is native {*}
+my Pointer[Str] $p = strdup("Success!");
+say $p.deref;
+```
+
+原生函数返回指向元素的数组的指针是很常见的。 可以将类型化指针解引用为数组以获取单个元素。
+
+```perl6
+my $n = 5;
+# returns a pointer to an array of length $n 
+my Pointer[Point] $plot = some_other_c_routine($n);
+# display the 5 elements in the array 
+for 1 .. $n -> $i {
+    my $x = $plot[$i - 1].x;
+    my $y = $plot[$i - 1].y;
+    say "$i: ($x, $y)";
+}
+```
+
+指针也可以更新以引用数组中的连续元素：
+
+```perl6
+my Pointer[Point] $elem = $plot;
+# show differences between successive points 
+for 1 ..^ $n {
+    my Point $lo = $elem.deref;
+    ++$elem; # equivalent to $elem = $elem.add(1); 
+    my Point $hi = (++$elem).deref;
+    my $dx = $hi.x = $lo.x;
+    my $dy = $hi.y = $lo.y;
+    say "$_: delta ($dx, $dy)";
+}
+```
+
+通过声明 `Pointerlink:https://docs.perl6.org/language/nativetypes#The_void_type[void]` 也可以使用 Void 指针。 有关该主题的更多信息，请参阅[原生类型文档]。
+
+## 字符串
+
+### 显式内存管理
+
+### Buffers and Blobs
+
+
+## 函数参数
+NativeCall 也支持把函数作为原生函数的参数，一个常用的情况就是事件驱动模型中，使用函数指针作为回调。当通过 NativeCall 绑定了这些函数，只需要提供对等的 signature 作为函数参数的约束。
+
+# void SetCallBack(int (*callback)(char const *))
+my sub SetCallBack(&callback(Str --> int32)) is native('mylib') { * }
+注意：原生代码负责传递给 Perl 6 回调的值的内存管理，换句话说，NativeCall 将不会释放传递给回调的字符串占用的内存。
+
+## 库路径以及名字
+
+native trait 接受库的名字或者全路径：
+
+constant LIBMYSQL = 'mysqlclient';
+constant LIBFOO = '/usr/lib/libfoo.so.1';
+
+sub mysql_affectied_rows( .. ) returns int32 is native(LIBMYSQL);
+sub bar is native(LIBFOO);
+你也可以使用相对路径比如'./foo'，NativeCall 将会自动根据不同的平台添加对应的扩展名。
+注意：native trait 和 constant 都是在编译期求值的，constant类型的变量不要依赖动态变量，比如：
+
+constant LIBMYSQL = %*ENV<P6LIB_MYSQLCLIENT> || 'mysqlclient';
+这将在编译期保持给定的值，在一个模块预编译时，LIBMYSQL将会始终保持那个值。
+
+### ABI/API版本
+
+假设你写的原生库为native('foo')， 在类Unix系统下，NativeCall 将会搜索'libfoo.so'（对于OS X是libfoo.dynlib，win32是foo.dll）。在大多数的现代系统上，将会需要你或者模块的使用者安装开发环境包，因为它们总是建议支持动态库的API/ABI的版本控制，所以'libfoo.so'大多数是一个符号链接，并且只被开发包提供。
+
+sub foo is native('foo', v1);         # 将会查找并加载 libfoo.so.1
+sub foo is native('foo', v1.2.3);    # 将会查找并加载 libfoo.so.1.2.3
+
+my List $lib = ('foo', 'v1');
+sub foo is native($lib);
+
+### 例程
+
+native trait 也可以接受一个Callable作为参数，允许你使用自己的方式指定将会被加载的库文件：
+
+sub foo is native(sub { 'libfoo.so.42' } );
+这个函数只会在第一个调用者访问的时候调用。
+
+### 调用标准库
+
+如果你想调用一个已经被加载的，或者是标准库或者来自你自己的程序的 C 函数，你可以将 Str 类型对象作为参数传递给is native，这将会是is native(Str)。
+比如说，在类UNIX操作系统下，你可以使用下面的代码打印当前用户的home目录：
+
+use NativeCall;
+my class PwStruct is repr('CStruct') {
+    has Str $.pw_name;
+    has Str $.pw_passwd;
+    has uint32 $.pw_uid;
+    has uint32 $.pw_gid;
+    has Str $.pw_gecos;
+    has Str $.pw_dir;
+    has Str $.pw_shell;
+}
+
+sub getuid()                returns uint32         is native(Str) { * }
+sub getpwuid(uint32 $uid)    returns PwStruct     is native(Str) { * }
+
+say getpwuid(getuid());
+不过，使用$*HOME更方便一些 :-)
+
+## 导出的变量
+
+一个库导出的变量 -- 也被叫做“全局（global）”或者 “外部（extern）”变量 -- 可以使用cglobal访问。比如：
+
+my $var := cglobal('libc.so.6', 'error', int32);
+这将会为$var绑定一个新的Proxy对象，并且将对它的访问重定向到被“libc.so.6”导出的叫做errno的整数变量。
+
+## 对C++的支持
+
+NativeCall 也支持使用来自 c++ 的类以及方法，就像这个例子展示的那样（还有相关的 c++ 文件），注意现阶段还不像 C 一样支持测试和开发。
+
+## Helper 函数
+
+### sub nativecast
+
+### sub cglobal
+
+### sub nativesizeof
+
+### sub explicitly-manage
+
+## 例子
+
+一些具体示例，以及在特定平台上使用上述示例的说明。
+
+### PostgreSQL
+
+link:https://github.com/perl6/DBIish/blob/master/examples/pg.p6[DBIish] 中的 PostgreSQL 示例使用 NativeCall 库，并且`原生使用` Windows 中的原生 `_putenv` 函数调用。
+
+### MySQL
+
+注意：请记住，自 Stretch 版本以来，Debian 已经将 MySQL 替换为 MariaDB，因此如果要安装 MySQL，请使用 link:https://dev.mysql.com/downloads/repo/apt/[MySQL APT 存储库]而不是默认存储库。
+
+要在 link:https://github.com/perl6/DBIish/blob/master/examples/mysql.p6[DBIish] 中使用 MySQL 示例，您需要在本地安装 MySQL 服务器; 在Debian-esque 系统上，它可以安装如下：
+
+```shell
+wget https://dev.mysql.com/get/mysql-apt-config_0.8.10-1_all.deb
+sudo dpkg -i mysql-apt-config_0.8.10-1_all.deb # Don't forget to select 5.6.x 
+sudo apt-get update
+sudo apt-get install mysql-community-server -y
+sudo apt-get install libmysqlclient18 -y
+```
+
+在尝试示例之前，请按照这些方法准备系统：
+
+```
+$ mysql -u root -p
+SET PASSWORD = PASSWORD('sa');
+DROP DATABASE test;
+CREATE DATABASE test;
+```
+
+### Microsoft Windows
+
+这是一个 Windows API 调用的例子：
+
+```perl6
+use NativeCall;
+ 
+sub MessageBoxA(int32, Str, Str, int32)
+    returns int32
+    is native('user32')
+    { * }
+ 
+MessageBoxA(0, "We have NativeCall", "ohai", 64);
+```
+
+### 关于调用 C 函数的简明指南
+
+这是一个调用标准函数并在 Perl 6 程序中使用返回信息的示例。
+
+`getaddrinfo` 是 POSIX 标准函数，用于获取有关网络节点的网络信息，例如 `google.com`。 这是一个有趣的功能，因为它说明了 NativeCall 的许多元素。
+
+Linux 手册提供了有关 C 可调用函数的以下信息：
+
+```c
+int getaddrinfo(const char *node, const char *service,
+       const struct addrinfo *hints,
+       struct addrinfo **res);
+```
+
+该函数返回响应码 0 = 错误，1 = 成功。 数据是从 `addrinfo` 元素的链表中提取的，第一个元素由 `res` 指向。
+
+从 NativeCall 类型表我们知道 `int` 是 `int32`。 我们也知道 `char *` 是 C `Str` 的形式 C 之一，它简单地映射到 Str。 但是 `addrinfo` 是一个结构体，这意味着我们需要编写自己的 Type 类。 但是，函数声明很简单：
+
+```perl6
+sub getaddrinfo( Str $node, Str $service, Addrinfo $hints, Pointer $res is rw )
+    returns int32
+    is native
+    { * }
+```
+
+请注意，`$res` 将由函数写入，因此必须将其标记为 `rw`。 由于库是标准 POSIX，因此库名称可以是 Type 定义或 null。
+
+我们现在必须处理结构体 `Addrinfo`。 Linux 手册提供了以下信息：
+
+```c
+struct addrinfo {
+               int              ai_flags;
+               int              ai_family;
+               int              ai_socktype;
+               int              ai_protocol;
+               socklen_t        ai_addrlen;
+               struct sockaddr *ai_addr;
+               char            *ai_canonname;
+               struct addrinfo *ai_next;
+           };
+```
+
+`int`，`char *` 部分很简单。 一些研究表明 `socklen_t` 可以依赖于架构，但是是一个至少32位的无符号整数。 所以 `socklen_t` 可以映射到 `uint32` 类型。
+
+复杂的是 `sockaddr`，它取决于 `ai_socktype` 是否是未定义的，INET 还是 INET6（标准的v4 IP 地址或 v6 地址）。
+
+所以我们创建一个 Perl 6 类来映射到 C `struct addrinfo`; 当我们在它的时候，我们还为 `SockAddr` 创建了另一个类。
+
+```perl6
+class SockAddr is repr('CStruct') {
+    has int32    $.sa_family;
+    has Str      $.sa_data;
+}
+ 
+class Addrinfo is repr('CStruct') {
+    has int32     $.ai_flags;
+    has int32     $.ai_family;
+    has int32     $.ai_socktype;
+    has int32     $.ai_protocol;
+    has int32     $.ai_addrlen;
+    has SockAddr  $.ai_addr       is rw;
+    has Str       $.ai_cannonname is rw;
+    has Addrinfo  $.ai_next       is rw;
+ 
+}
+```
+
+最后三个属性的 `is rw` 反映了这些在 C 中被定义为指针。
+
+映射到 C `Struct` 的重要一点是类的状态部分的结构，即属性。 但是，类可以有方法，而 `NativeCall` 不会“触摸”它们以映射到C.这意味着我们可以向类添加额外的方法以更易读的方式解包属性，例如，
+
+```perl6
+method flags {
+    do for AddrInfo-Flags.enums { .key if $!ai_flags +& .value }
+}
+```
+
+通过定义适当的 `enum`，`flags` 将返回一串键而不是一个打包的整数。
+
+`sockaddr` 结构中最有用的信息是节点的地址，它取决于 Socket 的族。 因此，我们可以将方法地址添加到 Perl 6 类中，该类根据族来解释地址。
+
+为了获得人类可读的 IP 地址，有一个 C 函数 `inet_ntop`，它给出一个带有 `addrinfo` 的缓冲区的 `char *`。
+
+将所有这些组合在一起会产生以下程序：
+
+```perl6
+#!/usr/bin/env perl6 
+ 
+use v6;
+use NativeCall;
+ 
+constant \INET_ADDRSTRLEN = 16;
+constant \INET6_ADDRSTRLEN = 46;
+ 
+enum AddrInfo-Family (
+    AF_UNSPEC                   => 0;
+    AF_INET                     => 2;
+    AF_INET6                    => 10;
+);
+ 
+enum AddrInfo-Socktype (
+    SOCK_STREAM                 => 1;
+    SOCK_DGRAM                  => 2;
+    SOCK_RAW                    => 3;
+    SOCK_RDM                    => 4;
+    SOCK_SEQPACKET              => 5;
+    SOCK_DCCP                   => 6;
+    SOCK_PACKET                 => 10;
+);
+ 
+enum AddrInfo-Flags (
+    AI_PASSIVE                  => 0x0001;
+    AI_CANONNAME                => 0x0002;
+    AI_NUMERICHOST              => 0x0004;
+    AI_V4MAPPED                 => 0x0008;
+    AI_ALL                      => 0x0010;
+    AI_ADDRCONFIG               => 0x0020;
+    AI_IDN                      => 0x0040;
+    AI_CANONIDN                 => 0x0080;
+    AI_IDN_ALLOW_UNASSIGNED     => 0x0100;
+    AI_IDN_USE_STD3_ASCII_RULES => 0x0200;
+    AI_NUMERICSERV              => 0x0400;
+);
+ 
+sub inet_ntop(int32, Pointer, Blob, int32 --> Str)
+    is native {}
+ 
+class SockAddr is repr('CStruct') {
+    has uint16 $.sa_family;
+}
+ 
+class SockAddr-in is repr('CStruct') {
+    has int16 $.sin_family;
+    has uint16 $.sin_port;
+    has uint32 $.sin_addr;
+ 
+    method address {
+        my $buf = buf8.allocate(INET_ADDRSTRLEN);
+        inet_ntop(AF_INET, Pointer.new(nativecast(Pointer,self)+4),
+            $buf, INET_ADDRSTRLEN)
+    }
+}
+ 
+class SockAddr-in6 is repr('CStruct') {
+    has uint16 $.sin6_family;
+    has uint16 $.sin6_port;
+    has uint32 $.sin6_flowinfo;
+    has uint64 $.sin6_addr0;
+    has uint64 $.sin6_addr1;
+    has uint32 $.sin6_scope_id;
+ 
+    method address {
+        my $buf = buf8.allocate(INET6_ADDRSTRLEN);
+        inet_ntop(AF_INET6, Pointer.new(nativecast(Pointer,self)+8),
+            $buf, INET6_ADDRSTRLEN)
+    }
+}
+ 
+class Addrinfo is repr('CStruct') {
+    has int32 $.ai_flags;
+    has int32 $.ai_family;
+    has int32 $.ai_socktype;
+    has int32 $.ai_protocol;
+    has uint32 $.ai_addrNativeCalllen;
+    has SockAddr $.ai_addr is rw;
+    has Str $.ai_cannonname is rw;
+    has Addrinfo $.ai_next is rw;
+ 
+    method flags {
+        do for AddrInfo-Flags.enums { .key if $!ai_flags +& .value }
+    }
+ 
+    method family {
+        AddrInfo-Family($!ai_family)
+    }
+ 
+    method socktype {
+        AddrInfo-Socktype($!ai_socktype)
+    }
+ 
+    method address {
+        given $.family {
+            when AF_INET {
+                nativecast(SockAddr-in, $!ai_addr).address
+            }
+            when AF_INET6 {
+                nativecast(SockAddr-in6, $!ai_addr).address
+            }
+        }
+    }
+}
+ 
+sub getaddrinfo(Str $node, Str $service, Addrinfo $hints,
+                Pointer $res is rw --> int32)
+    is native {};
+ 
+sub freeaddrinfo(Pointer)
+    is native {}
+ 
+sub MAIN() {
+    my Addrinfo $hint .= new(:ai_flags(AI_CANONNAME));
+    my Pointer $res .= new;
+    my $rv = getaddrinfo("google.com", Str, $hint, $res);
+    say "return val: $rv";
+    if ( ! $rv ) {
+        my $addr = nativecast(Addrinfo, $res);
+        while $addr {
+            with $addr {
+                say "Name: ", $_ with .ai_cannonname;
+                say .family, ' ', .socktype;
+                say .address;
+                $addr = .ai_next;
+            }
+        }
+    }
+    freeaddrinfo($res);
+}
+```
+
+这产生如下输出:
+
+```
+return val: 0
+Name: google.com
+AF_INET SOCK_STREAM
+216.58.219.206
+AF_INET SOCK_DGRAM
+216.58.219.206
+AF_INET SOCK_RAW
+216.58.219.206
+AF_INET6 SOCK_STREAM
+2607:f8b0:4006:800::200e
+AF_INET6 SOCK_DGRAM
+2607:f8b0:4006:800::200e
+AF_INET6 SOCK_RAW
+2607:f8b0:4006:800::200e
+```

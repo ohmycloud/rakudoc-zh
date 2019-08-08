@@ -1,0 +1,1787 @@
+## 操作符
+
+### 操作符优先级
+
+在像 `1 + 2 * 3` 这样的表达式中， `2 * 3` 被首先计算， 因为中缀操作符  `*` 的优先级比 `+` 的优先级高。下面的表中总结了 Perl  6 中  的优先级级别， 从最牢固到最松散：
+
+
+```perl6
+A	Level	           Examples
+N	Terms	           42 3.14 "eek" qq["foo"] $x :!verbose @$array
+L	方法后缀	        .meth .+ .? .* .() .[] .{} .<> .«» .:: .= .^ .:
+N	自增	              ++ --
+R	求幂	              **
+L	Symbolic unary	   ! + - ~ ? | || +^ ~^ ?^ ^
+L	乘法	              * / % %% +& +< +> ~& ~< ~> ?& div mod gcd lcm
+L	加法	              + - +| +^ ~| ~^ ?| ?^
+L	重复	              x xx
+X	连结                ~
+X	Junctive and	   &
+X	Junctive or	       | ^
+L	Named unary	       temp let
+N	Structural infix   but does <=> leg cmp .. ..^ ^.. ^..^
+C	Chaining infix	   != == < <= > >= eq ne lt le gt ge ~~ === eqv !eqv
+X	Tight and	       &&
+X	Tight or	       || ^^ // min max
+R	Conditional	       ?? !! ff fff
+R	Item assignment	   = => += -= **= xx= .=
+L	Loose unary	       so not
+X	Comma operator	   , :
+X	List infix	       Z minmax X X~ X* Xeqv ...
+R	List prefix	       print push say die map substr ... [+] [*] any Z=
+X	Loose and	       and andthen
+X	Loose or	       or xor orelse
+X	Sequencer	       <==, ==>, <<==, ==>>
+N	Terminator	       ; {...}, unless, extra ), ], }
+```
+
+下面使用的两处 `!` 符号一般代表任何一对儿拥有相同优先级的操作符， 上表指定的二元操作符的结合性解释如下(其中 A 代表结合性， associativities )：
+
+```perl6
+A	Assoc	Meaning of $a ! $b ! $c
+L	left	($a ! $b) ! $c
+R	right	$a ! ($b ! $c)
+N	non	    ILLEGAL
+C	chain	($a ! $b) and ($b ! $c)
+X	list	infix:<!>($a; $b; $)
+```
+
+对于一元操作符， 这解释为:
+
+```perl6
+A	Assoc	Meaning of !$a!
+L	left	(!$a)!
+R	right	!($a!)
+N	non	    ILLEGAL
+```
+
+下面描述的操作符， 默认假定为 left 结合性。
+
+### 操作符种类
+
+
+操作符能出现在相对于 term 的几个位置处：
+
+```perl6
++term	        prefix         (后缀)
+term1 + term2	infix          (中缀)
+term++	        postfix        (后缀)
+(term)	        circumfix      (环缀)
+term1[term2]	postcircumfix  (后环缀)
+```
+
+每个操作符也可以用作子例程。 这样的子例程的名字由操作符的种类， 然后后跟一个冒号，再加上一组引号结构， 引号结构中是组成操作符的符号(s):
+
+```perl6
+infix:<+>(1, 2)                           # same as 1 + 2
+circumfix:«( )»('a', 'b', 'c')            # same as ('a', 'b', 'c'), 目前编译错误。
+circumfix:<[ ]>('a', 'b', 'c').perl.say   # ["a", "b", "c"]
+```
+
+作为一种特殊情况， listop(列表操作符)既能作为 term 又能作为前缀。子例程调用是最常见的列表操作符。其它情况包括元运算中缀操作符 `[+]| 1, 2, 3` 和 `prefix` 等 stub 操作符。
+
+定义自定义操作符在 link:http://doc.perl6.org/language/functions#Defining_Operators[ /language/functions#Defining_Operators.]  中有涉及。
+
+### Term 优先级
+
+
+Term 怎么翻译才合适？ 我觉得翻译成 `项` 更合适， 表明这是一个名词。
+
+#### 环缀 < >
+
+
+引起单词的结构。以空白隔开内容， 并返回一个单词的 `Parcel`。 如果单词看起来像数字字面量或 `Pair` 字面量， 那么它会被转为合适的数字。
+
+```perl6
+say <a b c>[1]  # b
+```
+
+(Rakudo 当前总是返回一块儿字符串)。
+
+### 环缀 ( )
+
+
+分组操作符。
+
+空的分组 `()` 创建一个空的 `Pracel`。 非空表达式周围的圆括号只是构建了表达式， 而没有额外的语义。
+
+在参数列表中，在参数周围放上圆括号防止了参数被解释为具名参数。
+
+```perl6
+multi sub p(:$a!) { say 'named'      }
+multi sub p($a)   { say 'positional' }
+p a => 1;       # named
+p (a => 1);     # positional
+```
+
+### 环缀 { }
+
+
+Block 或 散列构造器。
+
+如果`{}` 里面的内容看起来像一组 pairs 并且没有 `$_` 或其它占位符参数，就返回一个散列， 这个散列由逐项逐项的 pair 组成。
+
+否则就返回一个 Block。
+
+注意，这个结构没有重新解析内容； 而里面的内容总是被解析为一组句子（例如，像一个 block）， 并且如果后面的分析表明它需要被解析成一个散列， 那么 block 就会被执行并强转为散列。
+
+### 环缀 [ ]
+
+
+数组构造器。在列表上下文中返回一个不会展平的 item 化的数组。
+
+## 方法后缀优先级
+
+
+### 后环缀 [ ]
+
+
+```perl6
+sub postcircumfix:<[ ]>(@container, **@index,
+                        :$k, :$v, :$kv, :$p, :$exists, :$delete)
+```
+
+`:$k` 会创建一个 pair， 它是散列中的一个条目。 键是 `k`， 键值为 `$kv`。 所以， `$k` 等价于 `k` => `$k`
+
+访问 `@container`  中的一个或多个元素，即数组索引操作：
+
+```perl6
+my @alphabet = 'a' .. 'z';
+say @alphabet[0];                   #-> a
+say @alphabet[1];                   #-> b
+say @alphabet[*-1];                 #-> z
+say @alphabet[100]:exists;          #-> False
+say @alphabet[15, 4, 17, 11].join;  #-> perl
+say @alphabet[23 .. *].perl;        #-> ("x", "y", "z")
+
+@alphabet[1, 2] = "B", "C";
+say @alphabet[0..3].perl            #-> ("a", "B", "C", "d")
+```
+
+查看 link:http://doc.perl6.org/language/subscripts[Subscripts] 获取关于该操作符行为的更详细的解释， 还有怎么在自定义类型中实现对它的支持。
+
+### 后环缀 { }
+
+
+```perl6
+sub postcircumfix:<{ }>(%container, **@key,
+                        :$k, :$v, :$kv, :$p, :$exists, :$delete)
+```
+
+访问 `%container` 的一个或多个元素， 即散列索引操作：
+
+```perl6
+my  %color = kiwi => "green", banana => "yellow", cherry => "red";
+say %color{"banana"};               #-> yellow
+say %color{"cherry", "kiwi"}.perl;  #-> ("red", "green")
+say %color{"strawberry"}:exists;    #-> False
+
+%color{"banana", "lime"} = "yellowish", "green";
+%color{"cherry"}:delete;
+say %color;  #-> banana => yellowish, kiwi => green, lime => green
+```
+
+查看 `后环缀 < >` 和 `后环缀 « »` 作为便捷形式， 查看 `Subscripts` 获取这个操作符行为的更详细解释， 还有怎么在自定义类型中实现对它的支持。
+
+### 后环缀 < >
+
+
+`后环缀 { }` 的简写形式， 它会引起它的参数。
+
+```perl6
+my %color = kiwi => "green", banana => "yellow", cherry => "red";
+say %color<banana>;             #-> yellow
+say %color<cherry kiwi>.perl;   #-> ("red", "green")
+say %color<strawberry>:exists;  #-> False
+```
+
+这不是一个真正的操作符， 它仅仅是一个在编译时把 `< >` 变成 `{}` 后环缀操作符的语法糖。
+
+### 后环缀 « »
+
+
+`后环缀 { }` 的简写形式。它会引起它的参数，并且 « » 中能进行变量插值。
+
+```perl6
+my %color = kiwi => "green", banana => "yellow", cherry => "red";
+my $fruit = "kiwi";
+say %color«cherry $fruit».perl;   #-> ("red", "green")
+```
+
+这不是一个真正的操作符， 它仅仅是一个在编译时把 « » 变成 `{}` 后环缀操作符的语法糖。
+
+### 后环缀 ( )
+
+
+调用操作符。把调用者当作 `Callable` 并引用它，它使用圆括号之间的表达式作为参数。
+
+注意，标识符后面直接跟着一对儿圆括号总是被解析为子例程调用。
+
+如果你想要你的对象响应该调用操作符， 你需要实现 `CALL-ME` 方法。
+
+### postfix .
+
+
+该操作符用于调用一个方法， `$invocant.method`。
+
+技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
+
+### postfix .=
+
+
+可变的方法调用。 `$invocant.=method` ， 脱去语法糖后就是 `$invocant = $invocant.method` , 这与 link:http://doc.perl6.org/routine/op%3D[op=.] 类似。
+
+技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
+
+### postfix .^
+
+
+元方法调用。 ` $invocant.^method` 在  `$invocant` 的元类身上调用方法。脱去语法糖后， 它就是 `$invocant.HOW.method($invocant, ...)` 。 查看 link:http://doc.perl6.org/type/HOW[HOW] 获取更多信息。
+
+技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
+
+### postfix .?
+
+
+`有可能被调用`的方法调用。如果有名为 `method` 的方法，  `$invocant.?method` 就在 `$invocant` 上调用 `method` 方法。否则它就返回 `Nil`。
+
+技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
+
+### postfix .+
+
+
+`$invocant.+method ` 从 `$invocant` 身上调用所有叫做 	`method` 的方法， 并返回一个 Parcel 作为结果。 如果没有找到这个名字的方法， 就会死掉。
+
+技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
+
+### postfix .*
+
+
+`$invocant.*method` ` 从 `$invocant` 身上调用所有叫做 `method` 的方法， 并返回一个 Parcel 作为结果。 如果没有找到这个名字的方法，则返回一个空的 Parcel。
+
+技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
+
+### postfix .postfix
+
+
+大多数情况下， 可以在后缀或后环缀前面放上一个点：
+
+```perl6
+@a[1, 2, 3];
+@a.[1, 2, 3]; # Same
+```
+
+这对于视觉清晰或简洁很有帮助。例如，如果对象的属性是一个函数，在属性名后面放置一对儿圆括号会变成方法调用的一部分。 所以要么使用两对儿圆括号， 要么在圆括号前面放上一个点来阻止方法调用。
+
+```perl6
+class Operation {
+    has $.symbol;
+    has &.function;
+}
+my $addition = Operation.new(:symbol<+>, :function{ $^a + $^b });
+say $addition.function()(1, 2); # 3
+```
+
+或者
+
+```perl6
+say $addition.function.(1,2); # 3
+```
+
+ 然而，如果后缀是一个标识符， 那么它会被解释为一个普通的方法调用。
+
+```perl6
+1.i # No such method 'i' for invocant of type 'Int'
+```
+
+技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
+
+### postfix .:<prefix>
+
+
+前缀能够像方法那样， 使用冒号对儿标记法来调用。例如：
+
+```perl6
+my $a = 1;
+say ++$a;     # 2
+say $a.:<++>; # 3
+```
+
+技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
+
+### postfix .::
+
+
+一个类限定的方法调用， 用于调用一个定义在父类或 role 中的方法， 甚至在子类中重新定义了之后。
+
+```perl6
+class Bar {
+    method baz { 42 }
+}
+
+class Foo is Bar {
+    method baz { "nope" }
+}
+say Foo.Bar::baz; # 42
+```
+
+## 自增优先级
+
+
+### prefix ++
+
+
+```perl6
+multi sub prefix:<++>($x is rw) is assoc<none>
+```
+
+把它的参数增加 1， 并返回增加后的值。
+
+```perl6
+my $x = 3;
+say ++$x;    # 4
+say $x;      # 4
+```
+
+它的工作原理是在它的参数身上调用 `succ` 方法， 这可以让自定义类型自由地实现它们自己的增量语义。
+
+### prefix --
+
+
+```perl6
+multi sub prefix:<-->($x is rw) is assoc<none>
+```
+
+把它的参数减少 1， 并返回减少后的值。
+
+```perl6
+my $x = 3;
+say --$x;       # 2
+say $x;         # 2
+```
+
+它的工作原理是在它的参数身上调用 `pred` 方法， 这可以让自定义类型自由地实现它们自己的减量语义。
+
+### postfix ++
+
+
+```perl6
+multi sub postfix:<++>($x is rw) is assoc<none>
+```
+
+把它的参数增加 1， 并返回`unincremented`的那个值。
+
+```perl6
+my $x = 3;
+say $x++;       # 3
+say $x;         # 4
+```
+
+它的工作原理是在它的参数身上调用 `succ` 方法， 这可以让自定义类型自由地实现它们自己的增量语义。
+
+注意这并不一定返回它的参数。 例如，对于未定义的值， 它返回 0:
+
+```perl6
+my $x;
+say $x++;       # 0
+say $x;         # 1
+```
+
+### postfix --
+
+
+```perl6
+multi sub postfix:<-->($x is rw) is assoc<none>
+```
+
+把它的参数减少 1， 并返回`undecremented`的那个值。
+
+```perl6
+my $x = 3;
+say $x--;       # 3
+say $x;         # 2
+```
+
+它的工作原理是在它的参数身上调用 `pred` 方法， 这可以让自定义类型自由地实现它们自己的减量语义。
+
+注意这并不一定返回它的参数。 例如，对于未定义的值， 它返回 0:
+
+```perl6
+my $x;
+say $x--;       # 0
+say $x;         # -1
+```
+
+## 求幂优先级
+
+
+### infix **
+
+
+```perl6
+multi sub infix:<**>(Any, Any) returns Numeric:D is assoc<right>
+```
+
+求幂操作符把它的两个参数都强制转为 `Numeric` , 然后计算，右侧为幂。
+
+如果 `**` 右边是一个非负整数，并且左侧是任意精度类型(Int, FatRat)，那么计算不会损失精度。
+
+## 象形一元操作符的优先级
+
+
+### prefix ?
+
+
+```perl6
+multi sub prefix:<?>(Mu) returns Bool:D
+```
+
+布尔上下文操作符。
+
+通过在参数身上调用 `Bool` 方法强制它的参数为 Bool。注意， 这会使 Junctions 失效。
+
+### prefix !
+
+
+```perl6
+multi sub prefix:<!>(Mu) returns Bool:D
+```
+
+否定的布尔上下文操作符。
+
+通过在参数身上调用 `Bool` 方法强制它的参数为 Bool， 并返回结果的否定值。注意， 这会使 Junctions 失效。
+
+### prefix +
+
+
+```perl6
+multi sub prefix:<+>(Any) returns Numeric:D
+```
+
+
+
+Numeric 上下文操作符。
+
+通过在参数身上调用 Numeric 方法强制将参数转为 Numeric 类型。
+
+### prefix -
+
+
+```perl6
+multi sub prefix:<->(Any) returns Numeric:D
+```
+
+否定的 Numeric 上下文操作符。
+
+通过在参数身上调用 Numeric 方法强制将参数转为 Numeric 类型， 并返回结果的否定值。
+
+### prefix ~
+
+
+```perl6
+multi sub prefix:<->(Any) returns Str:D
+```
+
+字符串上下文操作符。
+
+通过在参数身上调用 `Str` 方法强制把参数转为 `Str` 类型。
+
+### prefix |
+
+
+将  Capture, Enum, Pair, List, Parcel, EnumMap 和 Hash 展平到参数列表中。
+
+（在 Rakudo 中，这不是作为一个合适的操作符来实现的，而是编译器中的一种特殊情况， 这意味着它只对参数列表有效，而非在任意代码中都有效。）
+
+### prefix +^
+
+
+```perl6
+multi sub prefix:<+^>(Any) returns Int:D
+```
+
+Integer bitwise negation
+
+整数按位取反。
+
+将参数强转为 Int 类型并对结果按位取反， 假设两者互补。
+
+### prefix ?^
+
+
+```perl6
+multi sub prefix:<?^>(Mu) returns Bool:D
+```
+
+布尔按位取反。
+
+将参数强转为 Bool， 然后按位反转，这使它和 prefix:<!>  一样。
+
+### prefix ^
+
+
+```perl6
+multi sub prefix:<^>(Any) returns Range:D
+```
+
+upto 操作符.
+
+强制把它的参数转为 Numeric， 生成一个从 0 直到（但是排除） 参数为止的范围。
+
+```perl6
+say ^5;         # 0..^5
+for ^5 { }      # 5 iterations
+```
+
+## 乘法优先级
+
+
+### infix *
+
+
+```perl6
+multi sub infix:<*>(Any, Any) returns Numeric:D
+```
+
+把两边的参数都强转为 Numeric 并把它们相乘。 结果是一个更宽的类型。 查看 Numeric 获取更详细信息。
+
+### infix /
+
+
+```perl6
+multi sub infix:</>(Any, Any) returns Numeric:D
+```
+
+把两边的参数都强制为 Numeric， 并用左边除以右边的数。整数相除返回 Rat， 否则返回"更宽类型” 的结果。
+
+### infix div
+
+
+```perl6
+multi sub infix:<div>(Int:D, Int:D) returns Int:D
+```
+
+整除。向下取整。
+
+### infix %
+
+
+```perl6
+multi sub infix:<%>($x, $y) return Numeric:D
+```
+
+模操作符。首先强制为 Numeric。
+
+通常，下面的等式是成立的：
+
+```perl6
+$x % $y == $x - floor($x / $y) * $y
+```
+
+### infix %%
+
+
+```perl6
+multi sub infix:<%%>($a, $b) returns Bool:D
+```
+
+整除操作符， 如果 ` $a % $b == 0` 则返回 True.
+
+### infix mod
+
+
+```perl6
+multi sub infix:<mod>(Int:D $a, Int:D $b) returns Int:D
+```
+
+整数取模操作符。 返回整数取模操作的剩余部分。
+
+### infix +&
+
+
+```perl6
+multi sub infix:<+&>($a, $b) returns Int:D
+```
+
+Numeric 按位 `AND`。 把两个参数都强转为 Int 并执行按位 AND 操作，假定两者是互补的。
+
+### infix +<
+
+
+```perl6
+multi sub infix:<< +< >>($a, $b) returns Int:D
+```
+
+向左移动整数个位。
+
+### infix +>
+
+
+```perl6
+multi sub infix:<< +> >>($a, $b) returns Int:D
+```
+
+向右移动整数个位。
+
+### infix gcd
+
+
+```perl6
+multi sub infix:<gcd>($a, $b) returns Int:D
+```
+
+强制两个参数都为 Int 并返回最大公分母（greatest common denominator）。
+
+### infix lcm
+
+
+```perl6
+multi sub infix:<lcm>($a, $b) returns Int:D
+```
+
+强制两个参数为 Int 并返回最小公倍数(least common multiple)
+
+## 加法优先级
+
+
+### infix +
+
+
+```perl6
+multi sub infix:<+>($a, $b) returns Numeric:D
+```
+
+强制两个参数为 Numeric 并把它们相加。
+
+### infix -
+
+
+```perl6
+multi sub infix:<->($a, $b) returns Numeric:D
+```
+
+强制两个参数为 Numeric 并用第一个参数减去第二个参数。
+
+### infix +|
+
+
+```perl6
+multi sub infix:<+|>($a, $b) returns Int:D
+```
+
+强制两个参数为 Int 并执行按位 OR（包括 OR）
+
+### infix +^
+
+
+```perl6
+multi sub infix:<+^>($a, $b) returns Int:D
+```
+
+强制两个参数为 Int 并执行按位 XOR（不包括 OR）
+
+### infix ?|
+
+
+```perl6
+multi sub infix:<?|>($a, $b) returns Bool:D
+```
+
+强制两个参数为 Bool 并执行逻辑 OR（不包括 OR）
+
+## 重复操作符优先级
+
+
+### infix x
+
+
+```perl6
+proto sub infix:<x>(Any, Any) returns Str:D
+multi sub infix:<x>(Any, Any)
+multi sub infix:<x>(Str:D, Int:D)
+```
+
+把 `$a` 强转为 Str ， 把 `$b` 强转为 Int， 并重复字符串 `$b` 次。 如果 `$b <= 0` 则返回空字符串。
+
+```perl6
+say 'ab' x 3;       # ababab
+say 42 x 3;         # 424242
+```
+
+### infix xx
+
+
+```perl6
+multi sub infix:<xx>($a, $b) returns List:D
+```
+
+返回一组重复的 `$a` 并计算 `$b` 次（`$b` 被强转为 Int）。 如果 `$b <= 0` ,则返回一个空列表。
+
+
+
+每次重复都会计算左侧的值， 所以
+
+```perl6
+[1, 2] xx 5
+```
+
+返回 5 个不同的数组（但是每次都是相同的内容）并且
+
+```perl6
+rand xx 3
+```
+
+返回 3 个独立的伪随机数。右侧可以是 `*`, 这时会返回一个惰性的，无限的列表。
+
+
+
+## 连结
+
+
+### infix ~
+
+
+```perl6
+proto sub infix:<~>(Any, Any) returns Str:D
+multi sub infix:<~>(Any,   Any)
+multi sub infix:<~>(Str:D, Str:D)
+```
+
+强制两个参数为 Str 并连结它们。
+
+```perl6
+say 'ab' ~ 'c';     # abc
+```
+
+## Junctive AND (all) 优先级
+
+
+### infix &
+
+
+```perl6
+multi sub infix:<&>($a, $b) returns Junction:D is assoc<list>
+```
+
+用它的参数创建一个 `all` Junction。查看 Junctions 获取更多详情。
+
+## Junctive OR (any) Precedence
+
+
+### infix |
+
+
+```perl6
+multi sub infix:<|>($a, $b) returns Junction:D is assoc<list>
+```
+
+用它的参数创建一个 `any` Junction。查看 Junctions 获取更多详情。
+
+### infix ^
+
+
+```perl6
+multi sub infix:<^>($a, $b) returns Junction:D is assoc<list>
+```
+
+用它的参数创建一个 `one` Junction。查看 Junctions 获取更多详情。
+
+## Named Unary Precedence
+
+
+### prefix temp
+
+
+```perl6
+sub prefix:<temp>(Mu $a is rw)
+```
+
+temporizes 传入的变量作为参数， 这意味着退出作用域后它被重置为旧值。（这和 Perl 5 中的 local 操作符类似， 除了 temp 不重置值之外。）
+
+### prefix let
+
+
+```perl6
+sub prefix:<let>(Mu $a is rw)
+```
+
+假定重置：如果通过异常或 fail()退出当前作用域, 旧值就会被恢复。
+
+## Nonchaining Binary Precedence
+
+
+### infix does
+
+
+```perl6
+sub infix:<does>(Mu $obj, Mu $role) is assoc<none>
+```
+
+在运行时把 `$role` 混合进 `$obj` 中。 要求 `$obj` 是可变的。
+
+参数 `$role` 不一定要求是一个 role， 它可以表现的像是一个 role， 例如枚举值。
+
+### infix but
+
+
+```perl6
+sub infix:<but>(Mu $obj, Mu $role) is assoc<none>
+```
+
+把 `$role` 混合进 `$obj` 并创建一个 `$obj` 的副本。因为 `$obj` 是不能修改的，但是能使用 mixins 用于创建不可变值。
+
+参数 `$role` 不一定要求是一个 role， 它可以表现的像是一个 role， 例如枚举值。
+
+### infix cmp
+
+
+```perl6
+proto sub infix:<cmp>(Any, Any) returns Order:D is assoc<none>
+multi sub infix:<cmp>(Any,       Any)
+multi sub infix:<cmp>(Real:D,    Real:D)
+multi sub infix:<cmp>(Str:D,     Str:D)
+multi sub infix:<cmp>(Enum:D,    Enum:D)
+multi sub infix:<cmp>(Version:D, Version:D)
+```
+
+一般的， “智能的” 三路比较器。
+
+比较字符串时使用字符串语义， 比较数字时使用数字语义， 比较 Pair 对象时， 先比较键， 再比较值，等等。
+
+```perl6
+if $a eqv $b, then $a cmp $b always returns Order::Same.
+say (a => 3) cmp (a => 4);      # Less
+say 4        cmp 4.0;           # Same
+say 'b'      cmp 'a';           # More
+```
+
+### infix leg
+
+
+```perl6
+proto sub infix:<leg>($a, $b) returns Order:D is assoc<none>
+multi sub infix:<leg>(Any,   Any)
+multi sub infix:<leg>(Str:D, Str:D)
+```
+
+字符串三路比较器。 leg 是  less, equal 还有 greater 的简写形式？
+
+把两个参数都强转为 `Str` , 然后按照字母次序比较。
+
+```perl6
+say 'a' leg 'b';        Less
+say 'a' leg 'a';        Same
+say 'b' leg 'a';        More
+```
+
+### infix <=>
+
+
+```perl6
+multi sub infix:«<=>»($a, $b) returns Order:D is assoc<none>
+```
+
+Numeric 三路比较器。
+
+把两个参数强转为 Real， 并执行数值比较。
+
+### infix ..
+
+
+```perl6
+multi sub infix:<..>($a, $b) returns Range:D is assoc<none>
+```
+
+由参数创建一个  Range。
+
+### infix ..^
+
+
+```perl6
+multi sub infix:<..^>($a, $b) returns Range:D is assoc<none>
+```
+
+由参数创建一个 Range， 不包含末端。
+
+### infix ^..
+
+
+```perl6
+multi sub infix:<^..>($a, $b) returns Range:D is assoc<none>
+```
+
+由参数创建一个 Range， 不包含开始端点。
+
+### infix ^..^
+
+
+```perl6
+multi sub infix:<^..^>($a, $b) returns Range:D is assoc<none>
+```
+
+由参数创建一个 Range， 不包含开端和末端。
+
+## Chaining Binary Precedence
+
+
+### infix ==
+
+
+```perl6
+proto sub infix:<==>($, $) returns Bool:D is assoc:<chain>
+multi sub infix:<==>(Any, Any)
+multi sub infix:<==>(Int:D, Int:D)
+multi sub infix:<==>(Num:D, Num:D)
+multi sub infix:<==>(Rational:D, Rational:D)
+multi sub infix:<==>(Real:D, Real:D)
+multi sub infix:<==>(Complex:D, Complex:D)
+multi sub infix:<==>(Numeric:D, Numeric:D)
+```
+
+强转两个参数为 Numeric（如果必要）， 并返回 True 如果它们相等。
+
+### infix !=
+
+
+```perl6
+proto sub infix:<!=>(Mu, Mu) returns Bool:D is assoc<chain>
+```
+
+强转两个参数为 Numeric（如果必要）， 并返回 True 如果它们不相等。
+
+### infix <
+
+
+```perl6
+proto sub infix:«<»(Any, Any) returns Bool:D is assoc<chain>
+multi sub infix:«<»(Int:D, Int:D)
+multi sub infix:«<»(Num:D, Num:D)
+multi sub infix:«<»(Real:D, Real:D)
+```
+
+强转两个参数为 Real （如果必要）， 并返回 True 如果第一个参数小于第二个参数。
+
+### infix <=
+
+
+```perl6
+proto sub infix:«<=»(Any, Any) returns Bool:D is assoc<chain>
+multi sub infix:«<=»(Int:D, Int:D)
+multi sub infix:«<=»(Num:D, Num:D)
+multi sub infix:«<=»(Real:D, Real:D)
+```
+
+强转两个参数为 Real （如果必要）， 并返回 True 如果第一个参数小于第二个参数。
+
+### infix >
+
+
+```perl6
+proto sub infix:«>»(Any, Any) returns Bool:D is assoc<chain>
+multi sub infix:«>»(Int:D, Int:D)
+multi sub infix:«>»(Num:D, Num:D)
+multi sub infix:«>»(Real:D, Real:D)
+```
+
+强转两个参数为 Real （如果必要）， 并返回 True 如果第一个参数大于第二个参数。
+
+### infix >=
+
+
+```perl6
+proto sub infix:«>=»(Any, Any) returns Bool:D is assoc<chain>
+multi sub infix:«>=»(Int:D, Int:D)
+multi sub infix:«>=»(Num:D, Num:D)
+multi sub infix:«>=»(Real:D, Real:D)
+```
+
+强转两个参数为 Real （如果必要）， 并返回 True 如果第一个参数大于或等于第二个参数。
+
+### infix eq
+
+
+```perl6
+proto sub infix:<eq>(Any, Any) returns Bool:D is assoc<chain>
+multi sub infix:<eq>(Any,   Any)
+multi sub infix:<eq>(Str:D, Str:D)
+```
+
+强转两个参数为 Str（如果必要）， 并返回 True 如果第一个参数等于第二个参数。
+
+助记法: equal
+
+### infix ne
+
+
+```perl6
+proto sub infix:<ne>(Mu, Mu) returns Bool:D is assoc<chain>
+multi sub infix:<ne>(Mu,    Mu)
+multi sub infix:<ne>(Str:D, Str:D)
+```
+
+强转两个参数为 Str（如果必要）， 并返回 False 如果第一个参数等于第二个参数。
+
+助记法: not equal
+
+### infix gt
+
+
+```perl6
+proto sub infix:<gt>(Mu, Mu) returns Bool:D is assoc<chain>
+multi sub infix:<gt>(Mu,    Mu)
+multi sub infix:<gt>(Str:D, Str:D)
+```
+
+强转两个参数为 Str（如果必要）， 并返回 True 如果第一个参数大于第二个参数。
+
+助记法: greater than
+
+### infix ge
+
+
+```perl6
+proto sub infix:<ge>(Mu, Mu) returns Bool:D is assoc<chain>
+multi sub infix:<ge>(Mu,    Mu)
+multi sub infix:<ge>(Str:D, Str:D)
+```
+
+强转两个参数为 Str（如果必要）， 并返回 True 如果第一个参数大于第二个参数。
+
+助记法: greater or equal
+
+### infix lt
+
+
+```perl6
+proto sub infix:<lt>(Mu, Mu) returns Bool:D is assoc<chain>
+multi sub infix:<lt>(Mu,    Mu)
+multi sub infix:<lt>(Str:D, Str:D)
+```
+
+强转两个参数为 Str（如果必要）， 并返回 True 如果第一个参数小于第二个参数。
+
+助记法: less than
+
+### infix le
+
+
+```perl6
+proto sub infix:<le>(Mu, Mu) returns Bool:D is assoc<chain>
+multi sub infix:<le>(Mu,    Mu)
+multi sub infix:<le>(Str:D, Str:D)
+```
+
+强转两个参数为 Str（如果必要）， 并返回 True 如果第一个参数小于或等于第二个参数。
+
+助记法: less or equal
+
+### infix before
+
+
+```perl6
+proto sub infix:<before>(Any, Any) returns Bool:D is assoc<chain>
+multi sub infix:<before>(Any,       Any)
+multi sub infix:<before>(Real:D,    Real:D)
+multi sub infix:<before>(Str:D,     Str:D)
+multi sub infix:<before>(Enum:D,    Enum:D)
+multi sub infix:<before>(Version:D, Version:D)
+```
+
+一般的排序， 使用和 cmp 相同的语义。 如果第一个参数小于第二个参数则返回 True。
+
+### infix after
+
+
+```perl6
+proto sub infix:<after>(Any, Any) returns Bool:D is assoc<chain>
+multi sub infix:<after>(Any,       Any)
+multi sub infix:<after>(Real:D,    Real:D)
+multi sub infix:<after>(Str:D,     Str:D)
+multi sub infix:<after>(Enum:D,    Enum:D)
+multi sub infix:<after>(Version:D, Version:D)
+```
+
+一般的排序， 使用和 cmp 相同的语义。 如果第一个参数大于第二个参数则返回 True。
+
+### infix eqv
+
+
+```perl6
+proto sub infix:<eqv>(Any, Any) returns Bool:D is assoc<chain>
+proto sub infix:<eqv>(Any, Any)
+```
+
+等值操作符。如果两个参数在结构上相同就返回 True。例如， 相同类型（并且递归）包含相同的值。
+
+```perl6
+say [1, 2, 3] eqv [1, 2, 3];        # True
+say Any eqv Any;                    # True
+say 1 eqv 2;                        # False
+say 1 eqv 1.0;                      # False
+```
+
+对于任意对象使用默认的 eqv 操作是不可能的。例如， eqv 不认为同一对象的两个实例在结构上是相等的：
+
+```perl6
+class A {
+    has $.a;
+}
+
+say A.new(a => 5) eqv A.new(a => 5);  #=> False
+```
+
+要得到这个类的对象相等（eqv）语义， 需要实现一个合适的中缀 eqv 操作符：
+
+```perl6
+class A {
+    has $.a;
+}
+
+multi infix:<eqv>(A $l, A $r) { $l.a eqv $r.a }
+say A.new(a => 5) eqv A.new(a => 5);  #=> True
+```
+
+### infix ===
+
+
+```perl6
+proto sub infix:<===>(Any, Any) returns Bool:D is assoc<chain>
+proto sub infix:<===>(Any, Any)
+```
+
+值相等。如果两个参数都是同一个对象则返回 True。
+
+```perl6
+class A { };
+
+my $a = A.new;
+say $a === $a;              # True
+say A.new === A.new;        # False
+say A === A;                # True
+```
+
+对于值的类型，  `===` 表现的和 eqv 一样:
+
+```perl6
+say 'a' === 'a';            # True
+say 'a' === 'b';            # False
+
+# different types
+say 1 === 1.0;              # False
+```
+
+`===` 使用 `WHICH` 方法来获取对象相等， 所以所有的值类型必须重写方法 `WHICH`。
+
+### infix =:=
+
+
+```perl6
+proto sub infix:<=:=>(Mu \a, Mu \b) returns Bool:D is assoc<chain>
+multi sub infix:<=:=>(Mu \a, Mu \b)
+```
+
+容器相等。返回 True 如果两个参数都绑定到同一个容器上。 如果它返回 True， 那通常意味着修改一个参数也会同时修改另外一个。
+
+```perl6
+my ($a, $b) = (1, 3);
+say $a =:= $b;      # False
+$b = 2;
+say $a;             # 1
+$b := $a;
+say $a =:= $b;      # True
+$a = 5;
+say $b;             # 5
+```
+
+### infix ~~
+
+
+智能匹配操作符。把左侧参数起别名为 `$_` , 然后计算右侧的值， 并在它身上调用 `.ACCEPTS($_)` 。 匹配的语义由右侧操作数的类型决定。  
+
+这儿有一个内建智能匹配函数的摘要：
+
+```perl6
+右侧      比较语义
+Mu:U	  类型检查
+Str	      字符串相等
+Numeric	  数值相等
+Regex	  正则匹配
+Callable  调用的布尔结果
+Any:D	  对象相等
+```
+
+## Tight AND Precedence
+
+
+### infix &&
+
+
+在布尔上下文中返回第一个求值为 False 的参数， 否则返回最后一个参数。
+
+注意这是短路操作符，如果其中的一个参数计算为 false 值， 那么该参数右侧的值绝不会被计算。
+
+```perl6
+sub a { 1 }
+sub b { 0 }
+sub c { die "never called" };
+say a() && b() && c();      # 0
+```
+
+## Tight OR Precedence
+
+
+### infix ||
+
+
+在布尔上下文中返回第一个求值为 True 的参数， 否则返回最后一个参数。
+
+注意这是短路操作符，如果其中的一个参数计算为 true 值， 那么该参数右侧的值绝不会被计算。
+
+```perl6
+sub a { 0 }
+sub b { 1 }
+sub c { die "never called" };
+say a() || b() || c();      # 1
+```
+
+### infix ^^
+
+
+返回第一个值为 true 的参数如果只有一个的话， 否则返回 Nil。只要找到两个值为 true 的参数就发生短路。
+
+```perl6
+say 0 ^^ 42;                # 42
+say 0 ^^ 42 ^^ 1 ^^ die 8;  # (empty line)
+```
+
+注意， 这个操作符的语义可能不是你假想的那样： infix ^^ 翻到它找到的第一个 true 值， 找到第二个 true 值后永远地反转为 Nil 值， 不管还有多少 true 值。（换句话说，它的语义是”找到一个真值”， 而不是布尔起奇偶校验语义）
+
+### infix //
+
+
+Defined-or  操作符。返回第一个定义了的操作数， 否则返回最后一个操作数。短路操作符。
+
+```perl6
+say Any // 0 // 42;         # 0
+```
+
+### infix min
+
+
+返回参数的最小值。语义由 cmp 语义决定。
+
+```perl6
+$foo min= 0  # read as: $foo decreases to 0
+```
+
+### infix max
+
+
+返回参数的最大值。
+
+```perl6
+$foo max= 0  # read as: $foo increases to 0
+```
+
+## Conditional Operator Precedence
+
+
+### infix ?? !!
+
+
+三目操作符， 条件操作符。
+
+`$condition ?? $true !! $false` 计算并返回 `$true` 表达式，如果 `$condition` 为真的话。 否则计算并返回 `$false` 分支。
+
+### infix ff
+
+
+```perl6
+sub infix:<ff>(Mu $a, Mu $b)
+```
+
+Flipflop operator. 触发器操作符。
+
+把两个参数都跟 `$_` 进行比较（即，`$_ ~~ $a` 和 `$_ ~~ $b`）。求值为 False 直到左侧的智能匹配为真， 这时，它求值为真， 直到右侧的智能匹配为真。
+
+实际上，左边的参数是"开始”条件， 右侧的参数是”停止” 条件。 这种结构一般用于收集只在特定区域的行。 例如：
+
+```perl6
+my $excerpt = q:to/END/;
+Here's some unimportant text.
+=begin code
+    This code block is what we're after.
+    We'll use 'ff' to get it.
+=end code
+More unimportant text.
+END
+
+my @codelines = gather for $excerpt.lines {
+    take $_ if "=begin code" ff "=end code"
+}
+
+# this will print four lines,
+# starting with "=begin code" and ending with "=end code"
+say @codelines.join("\n");
+```
+
+匹配开始条件之后，操作符会继续将停止条件与 `$_` 进行匹配， 如果成功就做相应地表现。在这个例子中， 只有第一个元素被打印了：
+
+```perl6
+for <AB C D B E F> {
+    say $_ if /A/ ff /B/;  # prints only "AB"
+}
+```
+
+如果你想测试开始条件， 并且没有结束条件， `*` 能用作 “停止” 条件。
+
+```perl6
+for <A B C D E> {
+    say $_ if /C/ ff *; # prints C, D, and E
+}
+```
+
+对于 sed-like 版本， 在开始条件匹配成功之后，它不会使用停止条件与 `$_` 进行匹配。
+
+这个操作符不能被重载， 因为它被编译器特殊处理过。
+
+### infix ^ff
+
+
+```perl6
+sub infix:<^ff>(Mu $a, Mu $b)
+```
+
+像 ff 那样工作，除了它不会在条目匹配开始条件时返回真。（包括匹配停止条件的条目）
+
+一个比较:
+
+```perl6
+my @list = <A B C>;
+say $_ if /A/ ff /C/ for @list;  # prints A, B, and C
+say $_ if /A/ ^ff /C/ for @list; # prints B and C
+```
+
+sed-like 版本 可以在 ^fff 中找到.
+
+这个操作符不能被重载， 因为它被编译器特殊处理过。
+
+### infix ff^
+
+
+```perl6
+sub infix:<ff^>(Mu $a, Mu $b)
+```
+
+像 ff 那样工作，除了它不会在条目匹配停止条件时返回真。（包括第一次匹配开始条件的条目）
+
+```perl6
+my @list = <A B C>;
+say $_ if /A/ ff /C/ for @list;  # prints A, B, and C
+say $_ if /A/ ff^ /C/ for @list; # prints A and B
+```
+
+sed-like 版本 可以在 fff^ 中找到.
+
+这个操作符不能被重载， 因为它被编译器特殊处理过。
+
+### infix ^ff^
+
+
+```perl6
+sub infix:<^ff^>(Mu $a, Mu $b)
+```
+
+像 ff 那样工作，除了它不会在条目匹配停止条件时返回真, 也不会在条目匹配开始时返回真。（或者两者）
+
+```perl6
+my @list = <A B C>;
+say $_ if /A/ ff /C/ for @list;  # prints A, B, and C
+say $_ if /A/ ^ff^ /C/ for @list; # prints B
+```
+
+sed-like 版本 可以在 ^fff^ 中找到.
+
+这个操作符不能被重载， 因为它被编译器特殊处理过。
+
+### infix fff
+
+
+```perl6
+sub infix:<fff>(Mu $a, Mu $b)
+```
+
+执行 sed-like 那样的 flipflop 操作，在其中，它返回 False 直到左侧的参数与 `$_` 智能匹配， 并且在那之后返回 True 直到右侧的参数和 `$_`  智能匹配。
+
+像 ff 那样工作， 除了它每次调用只尝试一个参数之外。即， 如果 `$_` 和左侧的参数智能匹配， fff 随后不会尝试将同一个 `$_` 和右侧的参数进行匹配。
+
+```perl6
+for <AB C D B E F> {
+    say $_ if /A/ fff /B/;  # Prints "AB", "C", "D", and "B"
+}
+```
+
+对于 non-sed-like 版本， 查看 `ff`.
+
+这个操作符不能被重载， 因为它被编译器特殊处理过。
+
+### infix ^fff
+
+
+```perl6
+sub infix:<^fff>(Mu $a, Mu $b)
+```
+
+像 fff那样， 除了它对于左侧的匹配不返回真之外。
+
+```perl6
+my @list = <A B C>;
+say $_ if /A/ fff /C/ for @list;  # prints A, B, and C
+say $_ if /A/ ^fff /C/ for @list; # prints B and C
+```
+
+对于 non-sed 版本， 查看 `^ff`.
+
+这个操作符不能被重载， 因为它被编译器特殊处理过。
+
+### infix fff^
+
+
+```perl6
+sub infix:<fff^>(Mu $a, Mu $b)
+```
+
+像 fff 那样， 除了它对于右侧的匹配不返回真之外。
+
+```perl6
+my @list = <A B C>;
+say $_ if /A/ fff /C/ for @list;  # prints A, B, and C
+say $_ if /A/ fff^ /C/ for @list; # prints A and B
+```
+
+对于 non-sed 版本， 查看 `ff^`.
+
+这个操作符不能被重载， 因为它被编译器特殊处理过。
+
+### infix ^fff^
+
+
+```perl6
+sub infix:<^fff^>(Mu $a, Mu $b)
+```
+
+像 fff 那样， 除了它对于左侧和右侧的匹配都不返回真之外。
+
+```perl6
+my @list = <A B C>;
+say $_ if /A/ fff /C/ for @list;  # prints A, B, and C
+say $_ if /A/ ^fff^ /C/ for @list; # prints B
+```
+
+对于 non-sed 版本， 查看 `^ff^`.
+
+这个操作符不能被重载， 因为它被编译器特殊处理过。
+
+## Item Assignment Precedence
+
+
+### infix =
+
+
+```perl6
+sub infix:<=>(Mu $a is rw, Mu $b)
+```
+
+Item 赋值.
+
+把 = 号右侧的值放入左侧的容器中。 它真正的语义是由左侧的容器类型决定的。
+
+（注意 item 赋值和列表赋值的优先级级别不同， 并且等号左侧的语法决定了等号是被解析为 item 赋值还是列表赋值操作符）。
+
+### infix =>
+
+
+```perl6
+sub infix:«=>»($key, Mu $value) returns Pair:D
+```
+
+Pair 构造器.
+
+使用左侧值作为键， 右侧值作为值，构造一个 Pair 对象。
+
+注意 `=>` 操作符是语法上的特例，在这个结构中， 它允许左侧是一个未被引起的标识符。
+
+```perl6
+my $p = a => 1;
+say $p.key;         # a
+say $p.value;       # 1
+```
+
+在参数列表中，在 `=>` 左侧使用未被引起的标识符构建的 Pair 会被解释为一个具名参数。
+
+查看 Terms 语言文档了解更多创建 Pair 对象的方式。
+
+## Loose Unary Precedence
+
+
+### prefix not
+
+
+```perl6
+multi sub prefix:<not>(Mu $x) returns Bool:D
+```
+
+在布尔上下文中计算它的参数（因此使 Junctions 失效）， 并返回否定的结果。
+
+### prefix so
+
+
+```perl6
+multi sub prefix:<so>(Mu $x) returns Bool:D
+```
+
+在布尔上下文中计算它的参数（因此使 Junctions 失效）， 并返回结果。
+
+## 逗号操作符优先级
+
+
+### infix ,
+
+
+```perl6
+sub infix:<,>(*@a) is assoc<list> returns Parcel:D
+```
+
+从它的参数宏构建一个 Parcel。也在语法构成上用作函数用的参数的分隔符。
+
+### infix :
+
+
+就像中缀操作符  `,` 那样， `:` 用作参数分隔符， 并把它左侧的参数标记为调用者。
+
+那会把函数调用转为方法调用。
+
+```perl6
+substr('abc': 1);       # same as 'abc'.substr(1)
+```
+
+`Infix :` 只允许出现在非方法调用的第一个参数后面。 在其它位置它会是语法错误。
+
+
+
+## List Infix Precedence
+
+
+### infix Z
+
+
+```perl6
+sub infix:<Z>(**@lists) returns List:D is assoc<chain>
+```
+
+Zip operator.
+
+Z 像一个拉链那样把列表插入进来， 只要第一个输入列表耗尽就停止：
+
+```perl6
+say (1, 2 Z <a b c> Z <+ ->).perl;  # ((1, "a", "+"), (2, "b", "-")).list
+```
+
+`Z` 操作符也作为元操作符存在， 此时内部的 parcels 被应用了元操作符的列表替换：
+
+```perl6
+say 100, 200 Z+ 42, 23;             # 142, 223
+say 1..3 Z~ <a b c> Z~ 'x' xx 3;    # 1ax 2bx 3cx
+```
+
+### infix X
+
+
+```perl6
+sub infix:<X>(**@lists) returns List:D is assoc<chain>
+```
+
+从所有列表创建一个外积。最右边的元素变化得最迅速。
+
+```perl6
+1..3 X <a b c> X 9
+
+# produces   (1, 'a', 9), (1, 'b', 9), (1, 'c', 9),
+         (2, 'a', 9), (2, 'b', 9), (2, 'c', 9),
+         (3, 'a', 9), (3, 'b', 9), (3, 'c', 9)
+
+```
+
+X 操作符也可以作为元操作符， 此时内部的 parcels 被应用了元操作符的列表的值替换：
+
+```perl6
+1..3 X~ <a b c> X~ 9
+
+# produces   '1a9', '1b9', '1c9',
+
+         '2a9', '2b9', '2c9',
+         '3a9', '3b9', '3c9'
+```
+
+### infix ...
+
+
+```perl6
+multi sub infix:<...>(**@) is assoc<list>
+multi sub infix:<...^>(**@) is assoc<list>
+```
+
+序列操作符是一个用于产生惰性列表的普通操作符。
+
+它可以有一个初始元素和一个生成器在 `…` 的左侧， 在右侧是一个端点。
+
+
+
+序列操作符会使用尽可能多的参数来调用生成器。参数会从初始元素和已生成元素中获取。
+
+默认的生成器是 `*.succ` 或 `*.pred` ， 取决于末端怎么比较：
+
+```perl6
+say 1 ... 4;        # 1 2 3 4
+say 4 ... 1;        # 4 3 2 1
+say 'a' ... 'e';    # a b c d e
+say 'e' ... 'a';    # e d c b a
+```
+
+`*`  (Whatever) 末端生成一个无限序列，使用的是默认的生成器 `*.succ`。
+
+```perl6
+say (1 ... *)[^5];  # 1 2 3 4 5
+```
+
+自定义生成器是在 `…` 操作符之前的最后一个参数。下面这个自定义生成器接收两个参数， 生成了斐波纳契数。
+
+```perl6
+say (1, 1, -> $a, $b { $a + $b } ... *)[^8];    # 1 1 2 3 5 8 13 21
+# same but shorter
+say (1, 1, *+* ... *)[^8];                      # 1 1 2 3 5 8 13 21
+```
+
+当然自定义生成器也能只接收一个参数。
+
+```perl6
+say 5, { $_ * 2 } ... 40;                       # 5 10 20 40
+```
+
+生成器的参数个数至少要和初始元素的个数一样多。
+
+如果没有生成器，并且有不止一个初始元素，所有的初始元素都是数值，那么序列操作符会尝试推导出生成器。它知道数学和几何序列。
+
+```perl6
+say 2, 4, 6 ... 12;     # 2 4 6 8 10 12
+say 1, 2, 4 ... 32;     # 1 2 4 8 16 32
+```
+
+如果末端不是 `*`， 它会和每个生成的元素进行智能匹配，当智能匹配成功的时候序列就被终止。对于 `...`  操作符， 会包含最后一个元素， 对于 `...^` 操作符，会排除最后的那个元素。
+
+这允许你这样写：
+
+```perl6
+say 1, 1, *+* ...^ *>= 100;
+```
+
+来生成所有直到 100 但不包括 100 的斐波纳契数。
+
+`...` 操作符还会把初始值看作”已生成的元素”，所以它们也会对末端进行检查：
+
+```perl6
+my $end = 4;
+say 1, 2, 4, 8, 16 ... $end;
+# outputs 1 2 4
+```
+
+## List Prefix Precedence
+
+
+### infix =
+
+
+列表赋值。  它真正的语义是由左侧的容器类型决定的。查看 Array 和 Hash 获取普通案例。
+
+ item 赋值和列表赋值的优先级级别不同， 并且等号左侧的语法决定了等号是被解析为 item 赋值还是列表赋值操作符。
+
+### infix :=
+
+
+绑定。 而 `$x = $y` 是把 `$y` 中的值放到 `$x` 里面， `$x := $y` 会让 `$x` 和 `$y` 引用同一个值。
+
+```perl6
+my $a = 42;
+my $b = $a;
+$b++;
+say $a;
+```
+
+这会输出 42， 因为 $a 和 $b 都包含了数字 42， 但是容器是不同的。
+
+```
+my $a = 42;
+my $b := $a;
+$b++;
+say $a;
+```
+
+这会打印 43， 因为 `$b` 和 `$a` 都代表着`同一个对象`。
+
+### infix ::=
+
+
+只读绑定. 查看  infix :=.
+
+### listop ...
+
+
+这是yada, yada, yada 操作符 或 stub 操作符。如果它在子例程或类型中是唯一的语句，它会把子例程或类型标记为 stub（这在预声明类型和组成 roles 上下文中是有意义的）
+
+如果 `...` 语句被执行了， 它会调用 `&fail` , 伴随着默认的消息 stub 代码的执行。
+
+### listop !!!
+
+
+如果它在子例程或类型中是唯一的语句，它会把子例程或类型标记为 stub（这在预声明类型和组成 roles 上下文中是有意义的）
+
+如果 `!!!` 语句被执行了， 它会调用 `&die` , 伴随着默认的消息 stub 代码的执行。
+
+### listop ???
+
+
+如果它在子例程或类型中是唯一的语句，它会把子例程或类型标记为 stub（这在预声明类型和组成 roles 上下文中是有意义的）
+
+如果 `???` 语句被执行了， 它会调用 `&warn` , 伴随着默认的消息 stub 代码的执行。
+
+## Loose AND precedence
+
+
+### infix and
+
+
+和中缀操作符 `&&` 一样，除了优先级更宽松。
+
+在布尔上下文中返回第一个求值为 False 的操作数， 否则返回最后一个操作数。短路操作符。
+
+### infix andthen
+
+
+返回第一个未定义的参数，否则返回最后一个参数。短路操作符。左侧的结果被绑定到 `$_` 身上， 在右侧中使用， 或者作为参数被传递，如果右侧是一个 block 或 pointy block.
+
+## Loose OR Precedence
+
+
+### infix or
+
+
+和中缀操作符 `||` 一样，除了优先级更宽松。
+
+在布尔上下文中返回第一个求值为 True 的参数， 否则返回最后一个参数。短路操作符。
+
+### infix orelse
+
+
+和中缀操作符 `//` 一样，除了优先级更宽松之外。
+
+返回第一个定义过的参数， 否则返回最后一个参数。短路操作符。

@@ -1,0 +1,24 @@
+== Perl 5 到 Perl 6 的指南 - 概览
+
+这些文档不应该被误认为是初学者教程或 Perl 6 的宣传概述; 它旨在作为具有很强 Perl 5 背景的人学习 Perl 6 的技术参考，以及任何将 Perl 5 代码移植到 Perl 6 的人。
+
+=== 果壳中的 Perl 6
+
+link:https://docs.perl6.org/language/5to6-nutshell[果壳中的 Perl 6]提供了语法，运算符，复合语句，正则表达式，命令行标志以及各种其他零碎内容的快速概述。
+
+=== 句法差异
+
+link:https://docs.perl6.org/language/5to6-perlsyn[语法章节]提供的 Perl 5 和 Perl 6 之间的语法区别的一个概述：它是如何保持大部分形式自由的，写注释的其他方法，以及 `switch` 如何是一个很 Perl 6 的东西。
+
+=== Perl 6 中的运算符
+
+link:https://docs.perl6.org/language/5to6-perlop[运算符章节]将引导您从link:https://metacpan.org/pod/distribution/perl/pod/perlop.pod[Perl 5 的 perlop]运算符在Perl 6 中的等价物。
+
+=== Perl 6 中的函数
+
+该link:https://docs.perl6.org/language/5to6-perlfunc[函数章节]描述了所有的 Perl 5 函数和它们的 Perl 6 等价物和任何行为差异。它还提供了对提供 Perl 5 函数行为的生态系统模块的引用，这些函数存在于 Perl 6 中，具有稍微不同的语义（例如 `shift`），或者在 Perl 6 中不存在（例如 `tie`）。
+
+=== Perl 6 中的特殊变量
+
+link:https://docs.perl6.org/language/5to6-perlvar[特殊变量章节]描述很多 Perl 5 中的特殊（标点符号）变量是否以及如何在 Perl 6 中的支持。
+

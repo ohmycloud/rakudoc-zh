@@ -1,0 +1,141 @@
+Perl 6 对 Unicode 有很高的支持。本文档旨在概述和描述不属于例程和方法文档的 Unicode 功能。
+
+有关 MoarVM 内部字符串表示的概述，请参阅 link:https://github.com/MoarVM/MoarVM/blob/master/docs/strings.asciidoc[MoarVM 字符串文档]。
+
+# 文件句柄和输入输出
+
+## 标准化
+
+默认情况下，Perl 6 对所有输入和输出应用标准化，但存储为 link:(https://docs.perl6.org/language/unicode#UTF8-C8[UTF8-C8]) 的文件名除外;字形是用户可见的字符形式，将使用标准化表示。这是什么意思？例如，字形数字 `á` 可以用两种方式表示，或者使用一个代码点：
+
+```perl6
+á (U+E1 "LATIN SMALL LETTER A WITH ACUTE")
+```
+
+或两个代码点:
+
+```perl6
+a +  ́ (U+61 "LATIN SMALL LETTER A" + U+301 "COMBINING ACUTE ACCENT")
+```
+
+Perl 6 将这两个输入转换为一个代码点，如规范化形式 C（NFC）所指定的那样。在大多数情况下，这很有用，意味着两个相同的输入都被视为相同。 Unicode 具有规范等价的概念，它允许我们确定字符串的规范形式，允许我们正确地比较字符串并操纵它们，而不必担心文本丢失这些属性。默认情况下，您处理或从 Perl 6 输出的任何文本都将采用此“规范”形式，即使在对字符串进行修改或连接时也是如此（请参阅下文，了解如何避免这种情况）。有关规范化表单C和规范等效性的更多详细信息，请参阅Unicode Foundation 的link:https://unicode.org/reports/tr15/#Canon_Compat_Equivalence[规范化和规范等效性]页面。
+
+我们不默认的一种情况是文件名。这是因为必须完全访问文件的名称，就像在磁盘上写入字节一样。
+
+为避免规范化，您可以使用名为 link:https://docs.perl6.org/language/unicode#UTF8-C8[UTF8-C8] 的特殊编码格式。将此编码与任何文件句柄一起使用将允许您读取磁盘上的确切字节，而不进行规范化。如果使用 UTF8 句柄打印出来，打印出来时看起来会很滑稽。如果将其打印到输出编码为 link:https://docs.perl6.org/language/unicode#UTF8-C8[UTF8-C8] 的句柄，则它将按照您通常的预期进行渲染，并且是字节精确复制的字节。有关 MoarVM 上 UTF8-C8 的更多技术细节, 请参见下文。
+
+## UTF8-C8
+
+UTF-8 Clean-8 是一种编码器/解码器，主要用作 UTF-8。但是，遇到一个不能解码为有效 UTF-8 的字节序列，或者由于规范化而不会往返的字节序列时，它将使用 link:(https://docs.perl6.org/language/glossary#NFG[NFG]) 合成来跟踪所涉及的原始字节。这意味着编码回 UTF-8 Clean-8 将能够重新创建它们最初存在的字节。合成物包含4个代码点：
+
+- 代码点 0x10FFFD (这是一个私用的代码点)
+- 代码点 'x'
+- 高4位作为十六进制字符的不可解码字节 (0..9A..F)
+- 低4位作为十进制字符的不可解码字节 (0..9A..F)
+
+在正常的 UTF-8 编码下，这意味着不可代表的字符会像 `?xFF` 那样出现。
+
+UTF-8 Clean-8 用于 MoarVM 从环境，命令行参数和文件系统查询接收字符串的地方，例如解码缓冲区时：
+
+```perl6
+say Buf.new(ord('A'), 0xFE, ord('Z')).decode('utf8-c8');
+#  OUTPUT: «A􏿽xFEZ␤» 
+```
+
+您可以看到 UTF8-C8 使用的两个初始代码点如何显示在此处，就在“FE”之前。您可以使用此类编码来读取具有未知编码的文件：
+
+```perl6
+my $test-file = "/tmp/test";
+given open($test-file, :w, :bin) {
+  .write: Buf.new(ord('A'), 0xFA, ord('B'), 0xFB, 0xFC, ord('C'), 0xFD);
+  .close;
+}
+ 
+say slurp($test-file, enc => 'utf8-c8'); # OUTPUT: «(65 250 66 251 252 67 253)» 
+```
+
+使用这种类型的编码进行读取并将它们编码回 UTF8-C8 将返回原始字节;使用默认的 UTF8-C8 是不可能的。
+
+请注意，到目前为止，这种编码在 Rakudo 的 JVM 实现中不受支持。
+
+# 输入 unicode 代码点和代码点序列
+
+您可以按编号（十进制和十六进制）输入 Unicode 代码点。例如，名为“带有macron的拉丁大写字母ae”的字符具有十进制代码点482和十六进制代码点0x1E2：
+
+```perl6
+say "\c[482]"; # OUTPUT: «Ǣ␤» 
+say "\x1E2";   # OUTPUT: «Ǣ␤» 
+```
+
+您还可以按名称访问 Unicode 代码点：Rakudo 支持所有 Unicode 9.0 名称。
+
+```perl6
+say "\c[PENGUIN]"; # OUTPUT: «🐧␤» 
+say "\c[BELL]";    # OUTPUT: «🔔␤» (U+1F514 BELL) 
+```
+
+所有 Unicode 代码点名称/命名seq /emoji 序列现在都不区分大小写：[从2017.02开始]
+
+```perl6
+say "\c[latin capital letter ae with macron]"; # OUTPUT: «Ǣ␤» 
+say "\c[latin capital letter E]";              # OUTPUT: «E␤» (U+0045) 
+```
+
+您可以使用带有 `\c[]` 的逗号分隔列表来指定多个字符。 您也可以组合数字和命名样式：
+
+```perl6
+say "\c[482,PENGUIN]"; # OUTPUT: «Ǣ🐧␤» 
+```
+
+除了在内插字符串中使用 `\clink:https://docs.perl6.org/routine/uniparse[]` 之外，您还可以使用 [uniparse]:：
+
+```perl6
+say "DIGIT ONE".uniparse;  # OUTPUT: «1␤» 
+say uniparse("DIGIT ONE"); # OUTPUT: «1␤» 
+```
+
+## 名称别名
+
+按名称别名。名称别名主要用于没有正式名称的代码点，缩写或更正（Unicode 名称永远不会更改）。有关它们的完整列表，请参见link:https://www.unicode.org/Public/UCD/latest/ucd/NameAliases.txt[此处]。
+
+没有任何官方名称的控制代码：
+
+```perl6
+say "\c[ALERT]";     # Not visible (U+0007 control code (also accessible as \a)) 
+say "\c[LINE FEED]"; # Not visible (U+000A same as "\n") 
+```
+
+更正:
+
+```perl6
+say "\c[LATIN CAPITAL LETTER GHA]"; # OUTPUT: «Ƣ␤» 
+say "Ƣ".uniname; # OUTPUT: «LATIN CAPITAL LETTER OI␤» 
+# This one is a spelling mistake that was corrected in a Name Alias: 
+say "\c[PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRACKET]".uniname;
+# OUTPUT: «PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRAKCET␤» 
+```
+
+缩写:
+
+```perl6
+say "\c[ZWJ]".uniname;  # OUTPUT: «ZERO WIDTH JOINER␤» 
+say "\c[NBSP]".uniname; # OUTPUT: «NO-BREAK SPACE␤» 
+```
+
+## 命名序列
+
+您也可以使用任何link:https://www.unicode.org/Public/UCD/latest/ucd/NamedSequences.txt[命名序列]，这些不是单个代码点，而是它们的序列。 [从2017.02开始]
+
+```perl6
+say "\c[LATIN CAPITAL LETTER E WITH VERTICAL LINE BELOW AND ACUTE]";      # OUTPUT: «É̩␤» 
+say "\c[LATIN CAPITAL LETTER E WITH VERTICAL LINE BELOW AND ACUTE]".ords; # OUTPUT: «(201 809)␤» 
+```
+
+### Emoji 序列
+
+Rakudo 支持表情符号 4.0（最新的非草稿版本）序列。 对于他们所有人看到：link:(https://www.unicode.org/Public/emoji/4.0/emoji-zwj-sequences.txt[表情符号 ZWJ 序列])和link:https://www.unicode.org/Public/emoji/4.0/emoji-sequences.txt[表情符号序列]。 请注意，任何带逗号的名称都应删除逗号，因为 Perl 6 使用逗号分隔同一 `\c` 序列中的不同代码点/序列。
+
+```perl6
+say "\c[woman gesturing OK]";         # OUTPUT: «🙆‍♀️␤» 
+say "\c[family: man woman girl boy]"; # OUTPUT: «👨‍👩‍👧‍👦␤» 
+```

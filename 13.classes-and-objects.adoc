@@ -1,0 +1,521 @@
+== 类和对象
+
+Perl 6 有一个丰富的内置语法来定义和使用类。
+
+默认构造函数允许为创建的对象设置属性:
+
+```perl6
+class Point {
+    has Int $.x;
+    has Int $.y;
+}
+ 
+class Rectangle {
+    has Point $.lower;
+    has Point $.upper;
+ 
+    method area() returns Int {
+        ($!upper.x - $!lower.x) * ( $!upper.y - $!lower.y);
+    }
+}
+ 
+# Create a new Rectangle from two Points 
+my $r = Rectangle.new(lower => Point.new(x => 0, y => 0), upper => Point.new(x => 10, y => 10));
+ 
+say $r.area(); # OUTPUT: «100␤» 
+```
+
+您也可以提供自己的构建和构建实现。下面更详细的例子展示了 Perl 6 中依赖处理器的外观。它展示了自定义构造函数，私有属性和公共属性，方法以及签名的各个方面。它代码不多，但结果是有趣和有用的。
+
+```perl6
+class Task {
+    has      &!callback;
+    has Task @!dependencies;
+    has Bool $.done;
+ 
+    # Normally doesn't need to be written 
+    # BUILD is the equivalent of a constructor in other languages 
+    method new(&callback, *@dependencies) {
+        return self.bless(:&callback, :@dependencies);
+    }
+ 
+    submethod BUILD(:&!callback, :@!dependencies) { }
+ 
+    method add-dependency(Task $dependency) {
+        push @!dependencies, $dependency;
+    }
+ 
+    method perform() {
+        unless $!done {
+            .perform() for @!dependencies;
+            &!callback();
+            $!done = True;
+        }
+    }
+}
+ 
+my $eat =
+    Task.new({ say 'eating dinner. NOM!' },
+        Task.new({ say 'making dinner' },
+            Task.new({ say 'buying food' },
+                Task.new({ say 'making some money' }),
+                Task.new({ say 'going to the store' })
+            ),
+            Task.new({ say 'cleaning kitchen' })
+        )
+    );
+ 
+$eat.perform();
+```
+
+=== 从类开始
+
+和许多其他语言一样，Perl 6 使用 `class` 关键字来定义一个类。接下来的块可能包含任意代码，就像其他块一样，但类通常包含状态和行为声明。示例代码包括通过 `has` 关键字引入的属性(状态)以及通过 `method` 关键字引入的行为。
+
+声明一个类会创建一个新的*类型对象*，默认情况下，它将被安装到当前包中(就像使用 `our` 作用域声明的变量一样)。此类型对象是类的“空实例”。例如，`Int` 和 `Str` 等类型引用 Perl 6 内置类之一的类型对象。上面的示例使用类名称 `Task`，以便其他代码稍后可以引用它，例如通过调用 `new` 方法来创建类实例。
+
+您可以使用 `.DEFINITE` 方法来确定你拥有的是实例还是类型对象:
+
+```perl6
+say Int.DEFINITE; # OUTPUT: «False␤» (type object) 
+say 426.DEFINITE; # OUTPUT: «True␤»  (instance) 
+ 
+class Foo {};
+say Foo.DEFINITE;     # OUTPUT: «False␤» (type object) 
+say Foo.new.DEFINITE; # OUTPUT: «True␤»  (instance) 
+```
+
+你还可以使用类型表情符号来仅接受实例或类型对象:
+
+```perl6
+multi foo (Int:U) { "It's a type object!" }
+multi foo (Int:D) { "It's an instance!"   }
+say foo Int; # OUTPUT: «It's a type object!␤» 
+say foo 42;  # OUTPUT: «It's an instance!␤» 
+```
+
+=== 状态
+
+类块中的前三行声明所有属性(在其他语言中称为字段或实例存储)。就像 `my` 变量不能从其声明的作用域之外访问一样，属性不能在类的外面访问。这种封装是面向对象设计的关键原则之一。
+
+第一个声明指定回调的实例存储 - 为执行对象表示的任务而调用的一些代码:
+
+```perl6
+has &!callback;
+```
+
+`&` sigil 表示该属性代表可调用的内容。 `!` 字符是一个 *twigil*，或 *secondary sigil*。twigil 组成变量名称的一部分。在这种情况下，`!` twigil 强调，这个属性对类是私有的。
+
+第二个声明也使用私有 twigil:
+
+```perl6
+has Task @!dependencies;
+```
+
+然而，这个属性表示一个项目的数组，所以它需要 `@` sigil。这些项目分别指定一个任务，在完成之前必须先完成这些任务。而且，这个属性的类型声明表明该数组只能包含 `Task` 类的实例(或者它的某个子类)。
+
+第三个属性表示任务完成的状态:
+
+```perl6
+has Bool $.done;
+```
+
+这个标量属性(带有 `$` sigil)有一个 `Bool` 类型。而不是 `!` twigil，使用 `.` twigil。尽管 Perl 6 确实对属性进行了封装，但它也可以避免编写访问器方法。替换！与。都声明属性 $!done 和一个名为 done 的访问器方法。就好像你写了:
+
+```perl6
+has Bool $!done;
+method done() { return $!done }
+```
+
+请注意，这不像某些语言允许的那样声明公共属性;你真的得到了一个私有属性和一个方法，而无需手动编写该方法。你可以自由地编写自己的访问器方法，如果你将来需要做一些比返回值更复杂的事情。
+
+请注意，使用。 twigil创建了一个方法，将提供对该属性的只读访问权限。如果该对象的用户应该能够重置任务的完成状态(也许再次执行)，则可以更改属性声明:
+
+```perl6
+has Bool $.done is rw;
+```
+
+rw特征会导致生成的访问器方法返回一些外部代码可以修改的内容以更改该属性的值。
+
+您还可以为属性提供默认值(对于有和没有访问者的情况，这些默认值同样适用):
+
+```perl6
+has Bool $.done = False;
+```
+
+分配是在对象构建时进行的。此时评估右侧，甚至可以引用早期的属性:
+
+```perl6
+has Task @!dependencies;
+has $.ready = not @!dependencies;
+```
+
+=== 静态字段?
+
+Perl 6 没有静态关键字。尽管如此，任何类都可以声明模块可以做的任何事情，所以使范围变量听起来像是个好主意。
+
+```perl6
+class Singleton {
+    my Singleton $instance;
+    method new {!!!}
+    submethod instance {
+        $instance = Singleton.bless unless $instance;
+        $instance;
+    }
+}
+ 
+```
+
+由我或我们定义的类属性也可以在声明时初始化，但是我们在这里实现Singleton模式，并且必须在第一次使用时创建对象。预测执行属性初始化的时刻不是100％，因为它可以在编译，运行时或两者期间发生，尤其是在使用use关键字导入类时。
+
+```perl6
+class HaveStaticAttr {
+      my Foo $.foo = some_complicated_subroutine;
+}
+```
+
+类属性也可以用辅助sigil声明 - 以类似于对象属性的方式 - 如果属性将被公开，将生成只读访问器。
+
+=== 方法
+
+虽然属性赋予对象状态，但方法赋予对象行为。我们暂时忽略新方法;这是一种特殊的方法。考虑第二种方法add-dependency，它将一项新任务添加到任务的依赖列表中。
+
+```perl6
+method add-dependency(Task $dependency) {
+    push @!dependencies, $dependency;
+}
+```
+
+在许多方面，这看起来很像一个子声明。但是，有两个重要的区别。首先，将此例程声明为方法将其添加到当前类的方法列表中，因此Task类的任何实例都可以使用它调用它。方法调用操作符。其次，一种方法将其调用者放入特殊变量 `self` 中。
+
+该方法本身将传入的参数(它必须是Task类的一个实例)并将其推送到invocant的@！dependencies属性上。
+
+执行方法包含依赖性处理程序的主要逻辑:
+
+```perl6
+method perform() {
+    unless $!done {
+        .perform() for @!dependencies;
+        &!callback();
+        $!done = True;
+    }
+}
+```
+
+它不需要参数，而是使用对象的属性。首先，通过检查$！done属性来检查任务是否已经完成。如果是这样，那就没有什么可做的了。
+
+
+否则，该方法执行所有任务的依赖关系，使用 `for` 构造遍历 `@!dependencies` 属性中的所有项。此迭代将每个项目(每个项目都放置一个Task对象)放入主题变量 `$_` 中。使用 。方法调用操作符而不指定明确的调用者将当前主题用作调用者。因此，迭代构造对当前调用者的 `@!dependencies` 属性中的每个Task对象调用 `.perform()` 方法。
+
+在所有的依赖关系完成之后，通过直接调用 `&!` 回调属性来执行当前任务的任务。这是括号的目的。最后，该方法将 `$!done` 属性设置为 `True`，以便后续对该对象执行的调用(例如，如果此 Task 是另一个 Task 的依赖项)将不会重复该任务。
+
+=== 私有方法
+
+就像属性一样，方法也可以是私有的。私有方法声明带有前缀感叹号。他们被称为 `self!`, 随后是方法的名称。要调用另一个类的私有方法，调用类必须被调用类信任。信任关系是用信任声明的，而且要信任的类必须已经声明。调用另一个类的私有方法需要该类的实例和该方法的全限定名称。信任也允许访问私有属性
+
+```perl6
+class B {...}
+ 
+class C {
+    trusts B;
+    has $!hidden = 'invisible';
+    method !not-yours () { say 'hidden' }
+    method yours-to-use () {
+        say $!hidden;
+        self!not-yours();
+    }
+}
+ 
+class B {
+    method i-am-trusted () {
+        my C $c.=new;
+        $c!C::not-yours();
+    }
+}
+ 
+C.new.yours-to-use(); # the context of this call is GLOBAL, and not trusted by C 
+B.new.i-am-trusted();
+```
+
+信任关系不受继承。要信任全局名称空间，可以使用伪包GLOBAL。
+
+=== 构造函数
+
+Perl 6比构造函数领域的许多语言更自由。构造函数是任何返回类实例的东西。而且，构造函数是普通的方法。您从基类 `Mu` 继承了一个名为 `new` 的默认构造函数，但您可以自由覆盖 `new`，如下例所示:
+
+```perl6
+method new(&callback, *@dependencies) {
+    return self.bless(:&callback, :@dependencies);
+}
+```
+
+Perl 6 中的构造函数和 `C#` 和 `Java` 等语言中的构造函数最大的不同之处在于，它不是以某种方式为已经神奇创建的对象设置状态，而是由 Perl 6 构造函数自己创建对象。最简单的方法是调用也是从Mu继承的祝福方法。 `bless` 方法期望一组命名参数为每个属性提供初始值。
+
+该示例的构造函数将位置参数转换为命名参数，以便该类可以为其用户提供一个很好的构造函数。第一个参数是回调(将执行任务的东西)。其余参数是相关的 Task 实例。构造函数将这些捕获到 `@dependencies` slurpy 数组中，并将它们作为命名参数传递给bless(注意: `&callback` 使用变量的名称 - 减去 sigil  - 作为参数的名称)。
+
+
+私有属性确实是私有的。这意味着 `bless` 不允许直接将事物绑定到 `&!callback` 和 `@!` 依赖关系。为了做到这一点，我们重写 `BUILD` 子方法，这是通过 `bless` 在全新对象上调用的:
+
+```perl6
+submethod BUILD(:&!callback, :@!dependencies) { }
+```
+
+由于 `BUILD` 在新创建的 Task 对象的上下文中运行，因此可以操作这些私有属性。这里的技巧是使用私有属性( `&!callback` 和 `@!` 依赖项)作为 `BUILD` 参数的绑定目标。零样板初始化！查看对象获取更多信息。
+
+BUILD方法负责初始化所有属性，还必须处理默认值:
+
+```perl6
+has &!callback;
+has @!dependencies;
+has Bool ($.done, $.ready);
+submethod BUILD(
+        :&!callback,
+        :@!dependencies,
+        :$!done = False,
+        :$!ready = not @!dependencies
+    ) { }
+```
+
+请参阅对象构造以获取更多影响对象构造和属性初始化的选项。
+
+=== 消费我们的类
+
+创建一个类后，您可以创建该类的实例。声明一个自定义构造函数提供了一种简单的方式来声明任务及其依赖关系。要创建没有依赖关系的单个任务，请写下:
+
+```perl6
+my $eat = Task.new({ say 'eating dinner. NOM!' });
+```
+
+前面的章节解释说，声明类Task在命名空间中安装了一个类型对象。这个类型对象是类的一个“空实例”，特别是没有任何状态的实例。您可以调用该实例的方法，只要它们不尝试访问任何状态;新是一个例子，因为它创建了一个新对象，而不是修改或访问现有对象。
+
+不幸的是，晚餐从未奇迹般地发生。它有依赖任务:
+
+```perl6
+my $eat =
+    Task.new({ say 'eating dinner. NOM!' },
+        Task.new({ say 'making dinner' },
+            Task.new({ say 'buying food' },
+                Task.new({ say 'making some money' }),
+                Task.new({ say 'going to the store' })
+            ),
+            Task.new({ say 'cleaning kitchen' })
+        )
+    );
+```
+
+注意自定义构造函数和明智的空白使用如何清除任务依赖关系。
+
+最后，`perform` 方法调用按顺序递归调用各种其他依赖项上的 `perform` 方法，并给出以下输出:
+
+```
+making some money
+going to the store
+buying food
+cleaning kitchen
+making dinner
+eating dinner. NOM!
+```
+
+=== 继承
+
+面向对象编程提供了继承的概念，作为代码重用的机制之一。 Perl 6 支持一个类从一个或多个类继承的能力。当一个类从另一个类继承时，它会通知方法调度器遵循继承链寻找一个派发方法。对于通过方法关键字定义的标准方法以及通过其他方式(如属性访问器)生成的方法，都会发生这种情况。
+
+```perl6
+class Employee {
+    has $.salary;
+}
+ 
+class Programmer is Employee {
+    has @.known_languages is rw;
+    has $.favorite_editor;
+ 
+    method code_to_solve( $problem ) {
+        return "Solving $problem using $.favorite_editor in "
+        ~ $.known_languages[0];
+    }
+}
+```
+
+现在，Programmer类型的任何对象都可以使用Employee类中定义的方法和访问器，就像它们来自Programmer类一样。
+
+```perl6
+my $programmer = Programmer.new(
+    salary => 100_000,
+    known_languages => <Perl5 Perl6 Erlang C++>,
+    favorite_editor => 'vim'
+);
+ 
+say $programmer.code_to_solve('halting problem'), " will get ", $programmer.salary(), "\$";
+#OUTPUT: «Solving halting problem using vim in Perl5 will get 100000$␤» 
+```
+
+==== 重写继承到的方法
+
+当然，类可以通过定义它们自己来覆盖由父类定义的方法和属性。下面的例子演示了 Baker 类覆盖 Cook 的 `cook` 方法。
+
+```perl6
+class Cook is Employee {
+    has @.utensils  is rw;
+    has @.cookbooks is rw;
+ 
+    method cook( $food ) {
+        say "Cooking $food";
+    }
+ 
+    method clean_utensils {
+        say "Cleaning $_" for @.utensils;
+    }
+}
+ 
+class Baker is Cook {
+    method cook( $confection ) {
+        say "Baking a tasty $confection";
+    }
+}
+ 
+my $cook = Cook.new(
+    utensils => <spoon ladle knife pan>,
+    cookbooks => 'The Joy of Cooking',
+    salary => 40000);
+ 
+$cook.cook( 'pizza' );       # OUTPUT: «Cooking pizza␤» 
+say $cook.utensils.perl;     # OUTPUT: «["spoon", "ladle", "knife", "pan"]␤» 
+say $cook.cookbooks.perl;    # OUTPUT: «["The Joy of Cooking"]␤» 
+say $cook.salary;            # OUTPUT: «40000␤» 
+ 
+my $baker = Baker.new(
+    utensils => 'self cleaning oven',
+    cookbooks => "The Baker's Apprentice",
+    salary => 50000);
+ 
+$baker.cook('brioche');      # OUTPUT: «Baking a tasty brioche␤» 
+say $baker.utensils.perl;    # OUTPUT: «["self cleaning oven"]␤» 
+say $baker.cookbooks.perl;   # OUTPUT: «["The Baker's Apprentice"]␤» 
+say $baker.salary;           # OUTPUT: «50000␤» 
+```
+
+因为调度员会在 Baker 上移到父级之前看到 Cook 的 `cook` 方法，所以调用 Baker 的 `cook` 方法。
+
+要访问继承链中的方法，请使用重新分派或 `MOP`。
+
+=== 多重继承
+
+如前所述，一个类可以从多个类继承。当一个类从多个类继承时，调度员知道在查找方法时要查看这两个类。 Perl 6 使用 `C3` 算法对多个继承层次进行线性化，这比深度优先搜索更好地处理多重继承。
+
+```perl6
+class GeekCook is Programmer is Cook {
+    method new( *%params ) {
+        push( %params<cookbooks>, "Cooking for Geeks" );
+        return self.bless(|%params);
+    }
+}
+ 
+my $geek = GeekCook.new(
+    books           => 'Learning Perl 6',
+    utensils        => ('stainless steel pot', 'knife', 'calibrated oven'),
+    favorite_editor => 'MacVim',
+    known_languages => <Perl6>
+);
+ 
+$geek.cook('pizza');
+$geek.code_to_solve('P =? NP');
+```
+
+现在所有可用于 Programmer 和 Cook 类的方法都可以从 GeekCook 类中获得。
+
+虽然多重继承是知道和偶尔使用的有用概念，但重要的是要了解有更多有用的 OOP 概念。当达到多重继承时，最好考虑是否通过使用角色来更好地实现设计，这通常更安全，因为它们强制类作者明确地解决冲突的方法名称。有关角色的更多信息，请参阅角色。
+
+=== also 声明符
+
+通过在特征前加上也可以在类声明主体中列出要继承的类。这也适用于角色组合特质。
+
+```perl6
+class GeekCook {
+    also is Programmer;
+    also is Cook;
+    # ... 
+}
+ 
+role A {};
+role B {};
+class C { also does A; also does B }
+```
+
+=== 自省
+
+自省是在程序中收集有关某些对象的信息的过程，而不是通过阅读源代码，而是通过查询对象(或控制对象)来获取某些属性，例如其类型。
+
+给定一个对象 `$o` 和前面几节的类定义，我们可以问一些问题:
+
+```perl6
+if $o ~~ Employee { say "It's an employee" };
+if $o ~~ GeekCook { say "It's a geeky cook" };
+say $o.WHAT;
+say $o.perl;
+say $o.^methods(:local)».name.join(', ');
+say $o.^name;
+```
+
+输出可能如下所示:
+
+```
+It's an employee
+(Programmer)
+Programmer.new(known_languages => ["Perl", "Python", "Pascal"],
+        favorite_editor => "gvim", salary => "too small")
+code_to_solve, known_languages, favorite_editor
+Programmer
+```
+
+前两个测试每个智能匹配类名称。如果对象是该类或继承类，则返回 true。因此，所讨论的对象是 `Employee` 类，或者是继承它的类，但不是 `GeekCook`。
+
+`.WHAT` 方法返回与对象 `$o` 关联的类型对象，它告诉我们 `$o` 的确切类型:在这种情况下是 `Programmer`。
+
+`$o.perl` 返回一个可以作为 Perl 代码执行的字符串，并且再现原始对象 `$o`。虽然这在所有情况下都不能很好地工作，但它对调试简单对象非常有用。 `$o.^methods(:local)` 产生一个可以在 `$o` 上调用的方法列表。 `:local` 命名参数将返回的方法限制为在 Programmer 类中定义的方法，并排除继承的方法。
+
+使用 `.^` 而不是单个点调用方法的语法意味着它实际上是对其元类的一个方法调用，该类是管理 Programmer 类的属性的类 - 或者您感兴趣的任何其他类。班级也启用了其他反省方式:
+
+```perl6
+say $o.^attributes.join(', ');
+say $o.^parents.map({ $_.^name }).join(', ');
+```
+
+最后，`$o.^name` 调用元对象的名称方法，这毫不意外地返回类名称。
+
+自省对于调试和学习语言和新库非常有用。当一个函数或方法返回一个你不知道的对象时，用 `.WHAT` 查找它的类型，用 `.perl` 等等来查看它的构造方法，你会很清楚它的返回值是什么。使用 `.^` 方法，您可以了解您可以对课程做些什么。
+
+但也有其他应用程序:将对象序列化为一串字节的例程需要知道该对象的属性，可以通过内省查找该对象的属性。
+
+=== 重写默认的 gist 方法
+
+有些类可能需要它自己的版本，它会覆盖当被调用以提供类的默认表示时被打印的简洁方式。例如，异常可能只想写入有效负载而不是完整对象，以便更清楚发生了什么。但是，每个班级你都可以这样做:
+
+```perl6
+class Cook {
+    has @.utensils  is rw;
+    has @.cookbooks is rw;
+ 
+    method cook( $food ) {
+        return "Cooking $food";
+    }
+ 
+    method clean_utensils {
+        return "Cleaning $_" for @.utensils;
+    }
+ 
+    multi method gist(Cook:U:) { '⚗' ~ self.^name ~ '⚗' }
+    multi method gist(Cook:D:) { '⚗ Cooks with ' ~ @.utensils.join( " ‣ ") ~ ' using ' ~ @.cookbooks.map( "«" ~ * ~ "»").join( " and ") }
+}
+ 
+my $cook = Cook.new(
+    utensils => <spoon ladle knife pan>,
+    cookbooks => ['Cooking for geeks','The French Chef Cookbook']);
+ 
+say Cook.gist; # OUTPUT: «⚗Cook⚗» 
+say $cook.gist; # OUTPUT: «⚗ Cooks with spoon ‣ ladle ‣ knife ‣ pan using «Cooking for geeks» and «The French Chef Cookbook»␤»
+```
+
+通常你会想定义两个方法，一个用于类，另一个用于实例;在这种情况下，类方法使用 alambic 符号，下面定义的实例方法聚合了我们在厨师上的数据以叙述方式显示。
+
+1. 例如，封闭不容易以这种方式复制;如果你不知道封闭是什么，不要担心。此外，当前的实现方式在倾倒循环数据结构方面存在问题，但预期它们可以在某些时候由 `.perl` 正确处理。
+

@@ -1,0 +1,227 @@
+== Pod 6 表格
+
+Perl 6 POD 表的官方规范位于文档规范中：link:https://raw.githubusercontent.com/perl6/specs/master/S26-documentation.pod[表]。虽然 Pod 6 的规格尚未完全妥善处理，但仍有几个项目正在进行纠正。一个这样的项目是确保正确处理 Pod 6 表。
+
+作为该工作的一部分，本文档通过示例解释了 Pod 6 表的当前状态：有效表，无效表和丑陋表（即，由于草率构造，可能导致与用户期望的不同的有效表） 。
+
+=== Restrictions
+
+1.唯一有效的列分隔符要么是可见的（`|` 或 `+`）（注意在可见列分隔符之前和之后至少需要一个空格）或不可见[两个或多个连续的空格（WS）字符（例如， '  '）]。在表格的左侧或右侧通常不会识别列分隔符，但是右侧的列分隔符可能会导致一个或多个空单元格，具体取决于其他行中单元格的数量。（请注意，作为单元格数据一部分的管道或加号字符将导致意外的额外列，除非使用反斜杠转义字符，例如 `\|` 或 `\+`。）  
+
+2.在同一个表中混合可见和不可见的列分隔符是非法的。  
+
+3.唯一有效的行分隔符字符是 `_`，`-`，`+`，`' '`，`|` 和 `=`。  
+
+4.连续的内部行分隔符是非法的。  
+
+5.前导和尾随行分隔符会生成警告。  
+
+6.当前忽略表格单元格中的格式，并将其视为纯文本。  
+
+提示：在开发过程中，使用环境变量 `RAKUDO_POD6_TABLE_DEBUG` 将向您展示 Rakudo 如何在将 pod 表传递给渲染器之前解释它们，例如 **Pod::To::HTML**，**Pod::To::Text** 和 **Pod::To::Markdown**。
+
+=== 最佳实践
+
+提示：由于在表行上进行额外的循环，不遵循以下最佳实践可能需要更多的表处理。
+
+1.对列分隔符使用 WS 很脆弱，它们只能用于简单表。以下 `Ugly Tables` 部分说明了这个问题。  
+
+2.仔细对齐表格列和行。请参阅后面的最佳实践中的示例。  
+
+3.不要在表上使用可见的边框。  
+
+4.对于具有标题和单行或多行内容的表，在标题后使用一个或多个连续的等号（'='）作为行分隔符，并使用一个或多个连续的连字符（'-'）作为表的内容部分中的行分隔符。例如，  
+
+- 标题和单行或多行内容  
+
+```pod
+=begin table
+ hdr col 0 | hdr col 1
+ ======================
+ row 0     | row 0
+ col 0     | col 1
+ ----------------------
+ row 1     | row 1
+ col 0     | col 1
+ ----------------------
+=end table
+```
+
+- 标题和单行内容
+
+```pod
+=begin table
+ hdr col 0   | hdr col 1
+ ======================
+ row 0 col 0 | row 0 col 1
+ row 1 col 0 | row 1 col 1
+=end table
+```
+
+5.对于没有标题和多行内容的表，请使用一个或多个连续连字符（'-'）作为表格内容部分中的行分隔符。例如，
+
+```pod
+=begin table
+ row 0       | row 0
+ col 0       | col 1
+ ----------------------
+ row 1 col 0 | row 1 col 1
+=end table
+```
+
+6.对于具有许多行且没有多行内容的表，不使用行分隔符就可以了。但是，如果一行或多行包含多行内容，则通过在每个内容行之间使用行分隔线（可见或不可见）来确保正确的结果更容易。
+
+7.确保故意空单元格具有列分隔符，否则会出现关于短行填充空单元格的警告。（表行总是与具有最多单元格的行具有相同数量的单元格。右边用空单元格填充短行并生成警告。）
+
+8.此示例中使用的 `=begin table` 行可以为表添加标题：
+
+```pod
+=begin table :caption<My Tasks>
+mow lawn
+take out trash
+=end table
+```
+
+虽然不是一个好的做法，但目前正在使用另一种定义标题的方法，如下例所示：
+
+```pod
+=begin table :config{caption => "My Tasks"}
+mow lawn
+take out trash
+=end table
+```
+
+请注意，把标题放在 `config` 哈希中的替代方法必须在实现 `:caption` 方法之前，但现在认为该方法已被弃用。该练习将在已经发布的 `6.d` 版本中生成警告，并将在 `6.e` 版本中引发异常。
+
+=== Good tables
+
+以下是有效（好）表的示例（取自当前的link:https://github.com/perl6/roast[规范测试]）。
+
+```pod
+=begin table
+        The Shoveller   Eddie Stevens     King Arthur's singing shovel
+        Blue Raja       Geoffrey Smith    Master of cutlery
+        Mr Furious      Roy Orson         Ticking time bomb of fury
+        The Bowler      Carol Pinnsler    Haunted bowling ball
+=end table
+=table
+    Constants           1
+    Variables           10
+    Subroutines         33
+    Everything else     57
+ 
+=for table
+    mouse    | mice
+    horse    | horses
+    elephant | elephants
+ 
+=table
+    Animal | Legs |    Eats
+    =======================
+    Zebra  +   4  + Cookies
+    Human  +   2  +   Pizza
+    Shark  +   0  +    Fish
+ 
+=table
+        Superhero     | Secret          |
+                      | Identity        | Superpower
+        ==============|=================|================================
+        The Shoveller | Eddie Stevens   | King Arthur's singing shovel
+ 
+=begin table
+ 
+                        Secret
+        Superhero       Identity          Superpower
+        =============   ===============   ===================
+        The Shoveller   Eddie Stevens     King Arthur's
+                                          singing shovel
+ 
+        Blue Raja       Geoffrey Smith    Master of cutlery
+ 
+        Mr Furious      Roy Orson         Ticking time bomb
+                                          of fury
+ 
+        The Bowler      Carol Pinnsler    Haunted bowling ball
+ 
+=end table
+=table
+    X | O |
+   ---+---+---
+      | X | O
+   ---+---+---
+      |   | X
+ 
+=table
+    X   O
+   ===========
+        X   O
+   ===========
+            X
+ 
+=begin table
+ 
+foo
+bar
+ 
+=end table
+```
+
+=== Bad tables
+
+以下是无效（坏）表的示例，它们应在解析期间触发未处理异常。
+
+- 同一行中不允许混合列分隔符类型：
+
+```pod
+=begin table
+r0c0 +  r0c1 | r0c3
+=end table
+```
+
+- 同一个表中不允许使用混合的可见和空格列分隔符类型：
+
+```pod
+=begin table
+r0c0 +  r0c1 | r0c3
+r1c0    r0c1   r0c3
+=end table
+```
+
+- 不允许连续两个行内分隔符：
+
+```pod
+=begin table
+r0c0 |  r0c1
+============
+============
+r1c0 |  r1c1
+=end table
+```
+
+=== Ugly tables
+
+以下是有效表可能是两列的示例，但列未对齐，因此每个列都将解析为单列表。
+
+- 带 WS 列分隔符的未对齐列：
+
+请注意，第二行的两个单词仅由**一个** WS 字符分隔，而至少需要**两个**相邻的 WS 字符才能定义列分隔。**这是一个有效的表，但将被解析为单列表**。
+
+```pod
+=begin table
+r0c0    r0c1
+ r1c0 r0c1
+=end table
+```
+
+- 带有可见列分隔符的未对齐列：
+
+请注意，第二行有两个单词由可见字符（`|`）分隔，但该字符不会被识别为列分隔符，因为它的两边都没有相邻的 WS 字符。虽然这是一个合法的表，但结果将不是用户的意图，因为第一行有两列，而第二行只有一列，因此它将有一个空的第二列。
+
+```pod
+=begin table
+r0c0  |  r0c1
+ r1c0 |r0c1
+=end table
+```
+
+

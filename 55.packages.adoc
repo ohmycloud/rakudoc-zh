@@ -1,0 +1,144 @@
+> Packages - Organizing and referencing namespaced program elements
+
+包是指定程序元素的嵌套命名空间。 模块，类，Grammar是包类型。 像目录中的文件一样，通常可以使用其短名称（如果它们是本地的）或使用较长的名称来消除歧义的引用具名元素。
+
+
+## Names
+
+名称是作为变量名称的合法部分的任何东西（不包括sigil符号）。 这包括：
+
+```perl6
+$foo                # 简单标识符
+$Foo::Bar::baz      # 通过 :: 分割的组合标识符
+$Foo::($bar)::baz   # 执行插值的组合标识符
+$42                 # numeric names
+$!                  # 某些标点符号变量
+```
+
+`::` 用于分割嵌套的包名。
+
+### 包限定名
+
+普通的包限定名像这样:
+
+```perl6
+$Foo::Bar::baz  # 包 Foo::Bar 中的 $baz 变量
+```
+
+有时保持sigil与变量名很清晰，所以来写这个的一个替代方式是：
+
+```perl6
+Foo::Bar::<$baz>
+```
+
+这在编译时解决，因为变量名是一个常量。
+
+如果 `::` 之前的名称部分为 null，则意味着包未指定并且必须搜索。 一般来说，这意味着跟在主sigil后面的初始 `::` 是对编译时已知的名字的无操作(no-op)，但 `::()` 也可以用来引入插值。 另外，在没有另一个sigil的情况下，`::` 可以作为它自己的sigil，表明有意使用一个尚未声明的包名。
+
+## 伪包
+
+在名称前面保留以下伪包名称：
+
+```perl6
+MY          # 当前词法作用域中的符号 (aka $?SCOPE)
+OUR         # 当前包中的符号 (aka $?PACKAGE)
+CORE        # 最外层词法作用域, 定义标准 Perl
+GLOBAL      # Interpreter-wide package symbols, really UNIT::GLOBAL
+PROCESS     # 进程相关的全局变量 (superglobals)
+COMPILING   # 正在编译的作用域中的词法符号
+```
+
+以下相对名称也保留，但可以在名称中的任何位置使用：
+
+```perl6
+CALLER      # Contextual symbols in the immediate caller's lexical scope
+CALLERS     # Contextual symbols in any caller's lexical scope
+DYNAMIC     # Contextual symbols in my or any caller's lexical scope
+OUTER       # Symbols in the next outer lexical scope
+OUTERS      # Symbols in any outer lexical scope
+LEXICAL     # Contextual symbols in my or any outer's lexical scope
+UNIT        # Symbols in the outermost lexical scope of compilation unit
+SETTING     # Lexical symbols in the unit's DSL (usually CORE)
+PARENT      # Symbols in this package's parent package (or lexical scope)
+CLIENT      # The nearest CALLER that comes from a different package
+```
+
+文件的作用域称为 `UNIT`，但在对应于语言设置的外面有一个或多个词法作用域（其他文化中通常称为序幕）。 因此，`SETTING` 作用域等价于 `UNIT::OUTERS`。 对于标准的Perl程序，`SETTING` 与 `CORE` 相同，但是各种启动选项（如 `-n` 或 `-p`）可以使您进入特定领域语言，在这种情况下，`CORE` 仍然是标准语言的作用域，而 `SETTING` 表示定义用作当前文件的设置的DSL的作用域。 当作为名称中间的搜索项使用时，SETTING包括其所有外部作用域，直到 `CORE`。 要仅获取设置的最外层作用域，请改用 `UNIT::OUTER`。
+
+
+## 查找名字
+
+### 插值到名字中
+
+您可以使用 `::($expr)` 将字符串插入到包或变量名中，`$expr` 表达式中通常放置包或变量名。 该字符串允许包含额外的 `::` 实例，这将被解释为包嵌套。 您只能内插整个名称，因为结构以 `::` 开头，并且立即结束或用括号之外的另一个 `::` 继续。 大多数符号引用使用这种记法：
+
+```perl6
+$foo = "Bar";
+$foobar = "Foo::Bar";
+$::($foo)           # lexically-scoped $Bar
+$::("MY::$foo")     # lexically-scoped $Bar
+$::("OUR::$foo")    # package-scoped $Bar
+$::("GLOBAL::$foo") # global $Bar
+$::("PROCESS::$foo")# process $Bar
+$::("PARENT::$foo") # current package's parent's $Bar
+$::($foobar)        # $Foo::Bar
+$::($foobar)::baz   # $Foo::Bar::baz
+$::($foo)::Bar::baz # $Bar::Bar::baz
+$::($foobar)baz     # ILLEGAL at compile time (no operator baz)
+```
+
+初始 `::` 不表明全局。 这里作为插值语法的一部分，它甚至不暗示包。 `::()` 组件插值之后，间接名称被查找，就像它在原始源代码中一样，优先级首先指定为前导伪包名称，然后指向词法作用域中的名称（搜索 向外扩展，以`CORE`结束）。 最后搜索当前包。
+
+使用 `MY` 伪包将查找限制为当前词法作用域，`OUR` 将作用域限制为当前包作用域。
+
+
+### 直接查找
+
+要在包的符号表中直接查找而不进行扫描，请将包名视为哈希：
+
+```perl6
+Foo::Bar::{'&baz'}  # same as &Foo::Bar::baz
+PROCESS::<$IN>      # Same as $*IN
+Foo::<::Bar><::Baz> # same as Foo::Bar::Baz
+```
+
+不像 `::()` 符号引用，这不解析`::`的参数，也不从该初始点启动命名空间扫描。 此外，对于常量下标，保证在编译时解析符号。
+
+空伪包是与普通名称搜索有相同的搜索列表。 也就是说，以下各项在意义上是相同的：
+
+```perl6
+$foo
+$::{'foo'}
+::{'$foo'}
+$::<foo>
+::<$foo>
+```
+
+它们中的每一个都向外扫描词法作用域，然后扫描当前的包作用域（虽然当“strict”有效时包作用域被禁止，）。
+
+作为这些规则的结果，您可以把变量名写的很随意：
+
+```perl6
+$::{'!@#$#@'}
+::{'$!@#$#@'}
+```
+
+只要名字中没有空格, 您也可以使用 `::<>` 形式。
+
+### 包查找
+
+将包对象本身下标为哈希对象，其键是变量名，包括任何sigil。 包对象可以通过使用 `::` 后缀从类型名中派生：
+
+```perl6
+MyType::<$foo>
+```
+
+## 全局
+
+解释器全局变量存在于 `GLOBAL` 包中。 用户程序在 `GLOBAL` 包中启动，因此默认情况下，主线代码中的“our”声明会进入该包。 进程范围的变量存在于 `PROCESS`包中。 大多数预定义的全局变量，例如 `$*UID` 和 `$*PID` 实际上是进程全局变量。
+
+## 版本
+
+任何包都可以有一个 link:https://docs.perl6.org/type/Version[Version] 对象。 这个对象可以通过 `$PACKAGE.^ver` 或从包 `Fully::Qualified::Name.^ver` 外部访问。
+
+link:https://docs.perl6.org/language/packages[Packages]
