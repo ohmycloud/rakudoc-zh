@@ -3,7 +3,7 @@
 ## Sigils
 
 |===
-|符号	 |  类型约束	             |  默认类型    | Flattens      | Assignment
+|符号	  |  类型约束	               |  默认类型     | Flattens      | Assignment
 |$	     |Mu (no type constraint)    | Any          |No             |   item
 |&       |Callable	                 | Callable     |No             |   item
 |@	     |Positional                 | Array        |Yes            |   list

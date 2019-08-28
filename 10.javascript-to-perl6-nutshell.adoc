@@ -8,8 +8,6 @@
 
 ==== "Hello, world!"
 
-Let's start with the typical first program when learning new languages. In Node.js, a hello world program would be written like this:
-
 让我们从学习新语言时第一个典型的程序开始。在 Node.js 中，hello world 程序将编写如下：
 
 ```js
@@ -60,10 +58,6 @@ global.foo = 1; // Dynamically scoped; global
 foo = 1;        // Ditto, but implicit; forbidden in strict mode
 ```
 
-In Perl 6 there is no equivalent to `var`. An important note to make is that there is no variable hoisting in Perl 6; variables are defined and assigned at the line they're on, not defined at the top of its scope and later assigned at that line.
-
-This is how the equivalent types of variables are defined in Perl 6:
-
 在 Perl 6 中没有 `var` 的等价物。需要注意的一点是，Perl 6 中没有可变的吊装; 变量在它们所在的行上定义和分配，未在其作用域的顶部定义，稍后在该行赋值。
 
 这是在 Perl 6 中定义等效类型的变量的方式：
@@ -78,17 +72,11 @@ OUR::<$foo> = 1;    # Dynamically scoped with blocks and modules
 GLOBAL::<$foo> = 1; # Dynamically scoped; global 
 ```
 
-Use `my` where you'd use `let`, `our` for variables you'd define in the outermost scope needed, and `constant` where you'd uses `const`.
+使用`my`您使用的位置`let`，`our` 您需要在最外层范围内定义的变量以及 `constant` 您使用的位置 `const`。
 
-Dynamically scoped variables are not referred to in the same way as lexically scoped ones like they are in Node.js. User-defined ones use either a `$*`, `@*`, `%*`, or `&*` twigil. Refer to the documentation on link:https://docs.perl6.org/language/variables[variables] for more information on sigils, twigils, and variable containers.
+动态范围变量的引用方式与它们在Node.js中的词汇范围变量相同。用户定义的那些使用一个`$*`，`@*`，`%*`，或 `&*` twigil。有关 sigils，twigils和变量容器的更多信息，请参阅有关link:https://docs.perl6.org/language/variables[变量]的文档。
 
-Variables in Node.js can override others from outer scopes with the same name (though linters will usually complain about it depending on how they're configured):
-
-使用`my`您使用的位置`let`，`our`您需要在最外层范围内定义的变量以及`constant`您使用的位置`const`。
-
-动态范围变量的引用方式与它们在Node.js中的词汇范围变量相同。用户定义的那些使用一个`$*`，`@*`，`%*`，或`&*`twigil。有关sigils，twigils和变量容器的更多信息，请参阅有关link:https://docs.perl6.org/language/variables[变量]的文档。
-
-Node.js中的变量可以覆盖具有相同名称的外部作用域中的其他变量（尽管linters通常会根据它们的配置方式来抱怨它）：
+Node.js 中的变量可以覆盖具有相同名称的外部作用域中的其他变量（尽管linters通常会根据它们的配置方式来抱怨它）：
 
 ```js
 let foo = 1;
@@ -100,8 +88,6 @@ function logDupe() {
 logDupe(2);       // 2
 console.log(foo); // 1
 ```
-
-Perl 6 also allows this:
 
 Perl 6 也允许这样：
 
@@ -119,10 +105,6 @@ say $foo; # 1
 ==== 运算符
 
 ===== 赋值
-
-The `=` operator works the same across both languages.
-
-The `:=` operator in Perl 6 binds a value to a variable. Binding a variable to another variable gives them the same value and container, meaning mutating attributes of one will mutate the other's as well. Bound variables cannot be reassigned with `=` or mutated with `++`, `--`, etc. but they can be bound to another value again:
 
 `=` 运算符可以跨两种语言相同。
 
@@ -142,10 +124,6 @@ say %bound;         # {}
 
 ===== 相等
 
-Node.js has two equality operators: `==` and `===`.
-
-`==` is the loose equality operator. When comparing operands with the same type, it will return true if both operands are equal. However, if the operands are different types, they are both cast to their primitives before being compared, meaning these will return true:
-
 Node.js有两个相等运算符：`==`和`===`。
 
 `==`是松散的平等算子。比较具有相同类型的操作数时，如果两个操作数相等，则返回true。但是，如果操作数是不同的类型，它们在被比较之前都被转换为它们的基元，这意味着它们将返回true：
@@ -156,8 +134,6 @@ console.log('1' == 1); // true
 console.log([] == 0);  // true
 ```
 
-Similarly, in Perl 6, both operands are cast to Numeric before comparison if they don't share the same type:
-
 类似地，在Perl 6中，如果它们不共享相同的类型，则在比较之前将两个操作数强制转换为Numeric：
 
 ```perl6
@@ -166,22 +142,14 @@ say '1' == 1;     # True
 say [1,2,3] == 3; # True, since the array has three elements 
 ```
 
-The inverse of `==` is `!=`.
-
-Perl 6 has another operator similar to `==`: `eq`. Instead of casting operands to Numeric if they're different types, `eq` will cast them to strings:
-
 倒数`==`是`!=`。
 
-Perl 6有另一个类似于的运算符`==`：`eq`。如果它们是不同的类型，而不是将操作数转换为Numeric，而不是`eq`将它们转换为字符串：
+Perl 6有另一个类似于的运算符 `==`：`eq`。如果它们是不同的类型，而不是将操作数转换为Numeric，而不是`eq`将它们转换为字符串：
 
 ```perl6
 say '1' eq '1'; # True 
 say 1 eq '1';   # True 
 ```
-
-The inverse of `eq` is `ne` or `!eq`.
-
-`===` is the strict equality operator. This returns true if both operands are the same value. When comparing objects, this will *only* return true if they are the exact same object:
 
 逆的`eq`是`ne`或`!eq`。
 
@@ -197,9 +165,7 @@ let obj2 = obj;
 console.log(obj === obj2); // true;
 ```
 
-In Perl 6, the operator behaves the same, with one exception: two objects that have the same value, but different containers, will return false:
-
-在Perl 6中，运算符的行为相同，但有一个例外：两个具有相同值但容器不同的对象将返回false：
+在 Perl 6 中，运算符的行为相同，但有一个例外：两个具有相同值但容器不同的对象将返回false：
 
 ```perl6
 say 1 === 1; # True 
@@ -210,12 +176,6 @@ my \hash = {};
 my %hash = hash;
 say hash === %hash; # False 
 ```
-
-In the last case it's the same object, but containers are different, which is why it returns False.
-
-The inverse of `===` is `!==`.
-
-This is where Perl 6's other equality operators are useful. If the values have different containers, the `eqv` operator can be used. This operator can be also be used to check for deep equality, which you would normally need to use a library for in Node.js:
 
 在最后一种情况下，它是相同的对象，但容器是不同的，这就是它返回False的原因。
 
@@ -231,8 +191,6 @@ my %hash := hash;
 say hash eqv %hash; # True 
 ```
 
-In the case you need to check if two variables have the same container and value, use the `=:=` operator.
-
 如果您需要检查两个变量是否具有相同的容器和值，请使用`=:=`运算符。
 
 ```perl6
@@ -243,9 +201,7 @@ say @arr =:= @arr2; # True
 
 ===== Smartmatching
 
-Perl 6 has one last operator for comparing values, but it is not exactly an equality operator. This is `~~`, the smartmatch operator. This has several uses: it can be used like `instanceof` in Node.js, to match a regex, and to check if a value is a key in a hash, bag, set, or map:
-
-Perl 6有一个用于比较值的最后一个运算符，但它不完全是一个相等运算符。这就是`~~`smartmatch运营商。这有几个用途：它可以像`instanceof`在Node.js中一样使用，以匹配正则表达式，并检查值是否是散列，包，集或映射中的键：
+Perl 6有一个用于比较值的最后一个运算符，但它不完全是一个相等运算符。这就是 `~~` 智能匹配运算符。这有几个用途：它可以像 `instanceof` 在Node.js 中一样使用，以匹配正则表达式，并检查值是否是散列，包，集或映射中的键：
 
 ```perl6
 say 'foo' ~~ Str; # True 
@@ -258,9 +214,7 @@ $str ~~ s/abc/def/; # Mutates $str, like foo.replace('abc', 'def')
 say $str;           # def 
 ```
 
-While we are talking about `instanceof`, the equivalent to the `constructor` property on Node.js objects in Perl 6 is the `WHAT`attribute:
-
-在我们讨论的时候`instanceof`，`constructor`Perl 6中Node.js对象的属性相当于`WHAT`属性：
+在我们讨论 Perl 6 中 `instanceof` 的时候, Node.js 对象的 `constructor`  属性相当于 `WHAT` 属性：
 
 ```js
 console.log('foo'.constructor); // OUTPUT: String
@@ -268,8 +222,6 @@ say 'foo'.WHAT; # OUTPUT: Str
 ```
 
 ===== Numeric
-
-Node.js has `+`, `-`, `/`, `*`, `%`, and (in ES6) `**` as numeric operators. When the operands are different types, similarly to the equality operators, are cast to their primitives before following through with the operation, making this possible:
 
 Node.js的有`+`，`-`，`/`，`*`，`%`，和（在ES6）`**`作为数字运算符。当操作数是不同类型时，类似于相等运算符，在执行操作之前会转换为它们的基元，从而使这成为可能：
 
