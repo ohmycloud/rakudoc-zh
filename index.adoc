@@ -1,34 +1,34 @@
-= Perl 6 官方文档
-:description: Perl 6 documents
-:keywords: perl6, documents
+= Raku 官方文档
+:description: Raku documents
+:keywords: raku, documents
 :Revision: 1.0
 :icons: font
 :source-highlighter: pygments
 //:pygments-style: manni
-:source-language: perl6
+:source-language: raku
 :pygments-linenums-mode: table
 :toc: left
-:doctype: book
+:doctype:
 :lang: zh
 :sectnums:
 
-include::1.brief-introduction.adoc[]
-include::2.perl6-by-example101.adoc[]
-include::3.perl5-to-perl6-guide-in-a-nutshell.adoc[]
-include::4.perl5-to-perl6-guide-overview.adoc[]
-include::5.perl5-to-perl6-guide-functions.adoc[]
-include::6.perl5-to-perl6-guide-operators.adoc[]
-include::7.perl5-to-perl6-guide-syntax.adoc[]
-include::8.perl5-to-perl6-guide-special-variables.adoc[]
-include::9.haskell-to-perl6-nutshell.adoc[]
-include::10.javascript-to-perl6-nutshell.adoc[]
-include::11.python-to-perl6-nutshell.adoc[]
-include::12.ruby-to-perl6.adoc[]
+include::1.brief-introduction.adoc[]   
+include::2.raku-by-example101.adoc[]
+include::3.perl5-to-raku-guide-in-a-nutshell.adoc[]
+include::4.perl5-to-raku-guide-overview.adoc[]
+include::5.perl5-to-raku-guide-functions.adoc[]
+include::6.perl5-to-raku-guide-operators.adoc[]
+include::7.perl5-to-raku-guide-syntax.adoc[]
+include::8.perl5-to-raku-guide-special-variables.adoc[]
+include::9.haskell-to-raku-nutshell.adoc[]
+include::10.javascript-to-raku-nutshell.adoc[]
+include::11.python-to-raku-nutshell.adoc[]
+include::12.ruby-to-raku.adoc[]
 include::13.classes-and-objects.adoc[]
 include::14.command-line-interface.adoc[]
 include::15.concurrency.adoc[]
 include::16.core-modules.adoc[]
-include::17.doing-math-with-perl6.adoc[]
+include::17.doing-math-with-raku.adoc[]
 include::18.entering-unicode-characters.adoc[]
 include::19.grammar-tutorial.adoc[]
 include::20.input-and-output.adoc[]
@@ -43,7 +43,7 @@ include::28.about-the-docs.adoc[]
 include::29.community.adoc[]
 include::30.faq.adoc[]
 include::31.glossary.adoc[]
-include::32.perl6-pod.adoc[]
+include::32.raku-pod.adoc[]
 include::33.pod6-tables.adoc[]
 include::34.terms.adoc[]
 include::35.testing.adoc[]
@@ -62,13 +62,13 @@ include::47.input-and-output-the-definitive-guide.adoc[]
 include::48.lists-sequences-and-arrays.adoc[]
 include::49.meta-object-protocol.adoc[]
 include::50.native-calling-interface.adoc[]
-include::51.newline-handling-in-perl6.adoc[]
+include::51.newline-handling-in-raku.adoc[]
 include::52.numerics.adoc[]
 include::53.object-orientation.adoc[]
 include::54.operators.adoc[]
 include::55.packages.adoc[]
 include::56.performance.adoc[]
-include::57.perl6-native-types.adoc[]
+include::57.raku-native-types.adoc[]
 include::58.phasers.adoc[]
 include::59.pragmas.adoc[]
 include::60.quoting-constructs.adoc[]

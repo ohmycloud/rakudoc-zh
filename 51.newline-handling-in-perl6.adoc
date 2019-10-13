@@ -1,21 +1,21 @@
-不同的操作系统使用不同的字符或字符的组合来表示换行符。每种语言都有自己的一套规则来处理这个问题。 Perl 6 有以下几个规则：
+不同的操作系统使用不同的字符或字符的组合来表示换行符。每种语言都有自己的一套规则来处理这个问题。 Raku 有以下几个规则：
 
 - 字符串字面量中的 `\n` 表示 Unicode 代码点 10。  
-- 由 `say` 附加到字符串的默认 link:https://docs.perl6.org/routine/nl-out[nl-out] 也是 `\n`。  
+- 由 `say` 附加到字符串的默认 link:https://docs.raku.org/routine/nl-out[nl-out] 也是 `\n`。  
 - 在输出时，当在 Windows 上时，编码器默认将 `\n` 转换为 `\r\n`，当它转到文件，进程或终端时（但它不会在套接字上执行此操作）。
 - 在输入时，在任何平台上，解码器默认将 `\r\n` 标准化为 `\n`，以便从文件，进程或终端（同样不是套接字）输入。
 - 以上两点一起意味着你可以 - 把套接字编程放在一边 - 期望永远不会在你的程序中看到 `\r\n`（这也是许多其他语言的工作原理）。
-- link:https://docs.perl6.org/type/Encoding#method_decoder[:$translate-nl] 命名参数存在于控制此转换的各个位置，例如，在 link:https://docs.perl6.org/type/Proc::Async#method_new[Proc::Async.new] 和 link:https://docs.perl6.org/type/Proc::Async#method_Supply[Proc::Async.Supply] 中。  
+- link:https://docs.raku.org/type/Encoding#method_decoder[:$translate-nl] 命名参数存在于控制此转换的各个位置，例如，在 link:https://docs.raku.org/type/Proc::Async#method_new[Proc::Async.new] 和 link:https://docs.raku.org/type/Proc::Async#method_Supply[Proc::Async.Supply] 中。  
 - 正则表达式语言中的 `\n` 是合乎逻辑的，并且匹配 `\r\n`。
 
 您可以通过在创建该句柄时设置 `:nl-out` 属性来更改特定句柄的默认行为。
 
-```perl6
+```raku
 my $crlf-out = open(IO::Special.new('<STDOUT>'), :nl-out("\\\n\r"));
 $*OUT.say: 1;     #OUTPUT: «1␤» 
 $crlf-out.say: 1; #OUTPUT: «1\␤␍» 
 ```
 
-在这个例子中，我们通过使用 link:https://docs.perl6.org/type/IO::Special[IO::Special] 将标准输出复制到新句柄，我们在字符串的末尾附加一个 `\`，然后是换行符 `␤` 和回车符 `␍`; 我们打印到该句柄的所有内容都会在行尾添加这些字符，如图所示。
+在这个例子中，我们通过使用 link:https://docs.raku.org/type/IO::Special[IO::Special] 将标准输出复制到新句柄，我们在字符串的末尾附加一个 `\`，然后是换行符 `␤` 和回车符 `␍`; 我们打印到该句柄的所有内容都会在行尾添加这些字符，如图所示。
 
-在正则表达式中，link:https://docs.perl6.org/language/regexes#index-entry-regex_%5Cn-regex_%5CN-%5Cn_and_%5CN[\n] 是根据link:https://unicode.org/reports/tr18/#Line_Boundaries[逻辑换行符的Unicode定义]定义的。它会匹配 `.`, 还有 `\v`，以及包含空格的任何类。
+在正则表达式中，link:https://docs.raku.org/language/regexes#index-entry-regex_%5Cn-regex_%5CN-%5Cn_and_%5CN[\n] 是根据link:https://unicode.org/reports/tr18/#Line_Boundaries[逻辑换行符的Unicode定义]定义的。它会匹配 `.`, 还有 `\v`，以及包含空格的任何类。

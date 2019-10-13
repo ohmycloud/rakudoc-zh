@@ -1,12 +1,12 @@
-== Python 到 Perl 6 - 简而言之
+== Python 到 Raku - 简而言之
 
-此页面试图为来自 Python 背景的人们提供学习 Perl 6 的方法。我们在 Perl 6 中讨论了许多 Python 构造和惯用法的等价语法。
+此页面试图为来自 Python 背景的人们提供学习 Raku 的方法。我们在 Raku 中讨论了许多 Python 构造和惯用法的等价语法。
 
 === 基本语法
 
 ==== Hello, world
 
-让我们从打印 "Hello, world!" 开始吧。 Perl 6 中的 link:https://docs.perl6.org/routine/put[put] 关键字相当于 Python 中的 link:https://docs.perl6.org/routine/print[print]。与 Python 2 一样，括号是可选的。换行符添加到行尾。
+让我们从打印 "Hello, world!" 开始吧。 Raku 中的 link:https://docs.raku.org/routine/put[put] 关键字相当于 Python 中的 link:https://docs.raku.org/routine/print[print]。与 Python 2 一样，括号是可选的。换行符添加到行尾。
 
 - Python 2
 
@@ -20,27 +20,27 @@ print "Hello, world!"
 print("Hello, world!")
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 put "Hello, world!"
 ```
 
-还有 link:https://docs.perl6.org/routine/say[say] 关键字，其行为类似，但会调用其参数的 link:https://docs.perl6.org/routine/gist[gist] 方法。
+还有 link:https://docs.raku.org/routine/say[say] 关键字，其行为类似，但会调用其参数的 link:https://docs.raku.org/routine/gist[gist] 方法。
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 my $hello = "Hello, world!";
 say $hello;  # also prints "Hello, world!" 
              # same as: put $hello.gist 
 ```
 
-在 Python 中 `'` 和 `"` 是可互换的。在 Perl 6 中两者都可用于引用, 但双引号(`"`)表示应该进行插值。例如, 以 `$` 开头的变量和包含在花括号中的表达式会被插值。
+在 Python 中 `'` 和 `"` 是可互换的。在 Raku 中两者都可用于引用, 但双引号(`"`)表示应该进行插值。例如, 以 `$` 开头的变量和包含在花括号中的表达式会被插值。
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 my $planet = 'earth';
 say "Hello, $planet";   # Hello, earth 
 say 'Hello, $planet';   # Hello, $planet 
@@ -51,7 +51,7 @@ say "Hello, planet number { 1 + 2 }"; # Hello, planet number 3
 
 在 Python 中，换行符表示语句的结束。有一些例外：换行符之前的反斜杠继续跨行语句。此外，如果有一个不匹配的开括号，方括号或花括号，则该语句将继续跨行，直到匹配的花括号被关闭。
 
-在 Perl 6 中，分号表示语句的结束。如果分号是块的最后一个语句，则可以省略分号。如果有一个结束花括号后跟换行符，也可以省略分号。
+在 Raku 中，分号表示语句的结束。如果分号是块的最后一个语句，则可以省略分号。如果有一个结束花括号后跟换行符，也可以省略分号。
 
 - Python
 
@@ -62,9 +62,9 @@ print ( 1 +
     2 )
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 say 1 + 2 +
     3 + 4;
 say 1 +
@@ -73,7 +73,7 @@ say 1 +
 
 ==== 块儿
 
-在 Python 中，缩进用于表示块。 Perl 6 使用花括号表示块儿。
+在 Python 中，缩进用于表示块。 Raku 使用花括号表示块儿。
 
 - Python
 
@@ -84,9 +84,9 @@ else:
     print "1 is not 2."
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 if 1 == 2 {
     say "Wait, what?"
 } else {
@@ -105,15 +105,15 @@ foo = 12
 bar = 19
 ```
 
-在 Perl 6 中，`my` 声明符声明了一个词法变量。变量可以用 `=` 初始化。此变量可以先声明，然后再初始化或声明并立即初始化。
+在 Raku 中，`my` 声明符声明了一个词法变量。变量可以用 `=` 初始化。此变量可以先声明，然后再初始化或声明并立即初始化。
 
-```perl6
+```raku
 my $foo;       # declare 
 $foo = 12;     # initialize 
 my $bar = 19;  # both at once 
 ```
 
-此外，你可能已经注意到，Perl 6 中的变量通常以符号开头 - 符号表示其容器的类型。 以 `$` 开头的变量持有标量。 以 `@` 开头的变量持有数组和以 `%` 开头的变量持有一个 hash(dict)。 如果用 `\` 声明它们，则不可变变量可以是无符号的。
+此外，你可能已经注意到，Raku 中的变量通常以符号开头 - 符号表示其容器的类型。 以 `$` 开头的变量持有标量。 以 `@` 开头的变量持有数组和以 `%` 开头的变量持有一个 hash(dict)。 如果用 `\` 声明它们，则不可变变量可以是无符号的。
 
 - Python
 
@@ -128,9 +128,9 @@ print d['a']
 # 10, 2, 12 
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 my $s = 10;
 my @l = 1, 2, 3;
 my %d = a => 12, b => 99;
@@ -147,7 +147,7 @@ say x;
 
 在 Python 中，函数和类创建一个新的作用域，但没有其他的块构造函数（例如循环，条件）创建一个作用域。在 Python 2 中，列表推导不会创建新的作用域，但在 Python 3 中，它们创建新的作用域。
 
-在 Perl 6 中，每个块都创建了一个词法作用域
+在 Raku 中，每个块都创建了一个词法作用域
 
 - Python
 
@@ -158,9 +158,9 @@ print x
 # x is now 10 
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 if True {
     my $x = 10
 }
@@ -168,7 +168,7 @@ say $x
 # error, $x is not declared in this scope 
 ```
 
-```perl6
+```raku
 my $x;
 if True {
     $x = 10
@@ -187,9 +187,9 @@ print x
 # x is 3 
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 my \x = 10;
 for 1, 2, 3 -> \x {
     # do nothing 
@@ -198,7 +198,7 @@ say x;
 # x is 10 
 ```
 
-Python 中的 Lambdas 可以在 Perl 6 中写为块或尖号块。
+Python 中的 Lambdas 可以在 Raku 中写为块或尖号块。
 
 - Python
 
@@ -206,17 +206,17 @@ Python 中的 Lambdas 可以在 Perl 6 中写为块或尖号块。
 l = lambda i: i + 12
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 my $l = -> $i { $i + 12 }
 ```
 
-构建 lambdas 的另一个Perl 6 惯用法是使用 Whatever star, `*`。
+构建 lambdas 的另一个Raku 惯用法是使用 Whatever star, `*`。
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 my $l = * + 12    # same as above 
 ```
 
@@ -237,9 +237,9 @@ print squareslink:[4]
 # both 16 since there is only one x 
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 my \squares = [];
 for ^5 -> \x {
     squares.append({ x² });
@@ -251,7 +251,7 @@ say squareslink:[4];
 
 注意，`^N` 类似于 `range(N)`。 类似地，`N..^M` 的作用类似于 `range(N,M)`（从 N 到 M-1 的列表）。 范围 `N..M` 是从 N 到 M 的列表。`..` 之前或之后的 `^` 表示应排除列表的开始或结束端点（或两者都）。
 
-另外，`x²` 是一种编写 `x ** 2` 的可爱方式（也可以正常工作）; unicode 上标 2 是一个数字。 许多其他 unicode 运算符正如你所期望的那样工作(指数, 分数, π)，但是可以在 Perl 6 中使用的每个 unicode 运算符或符号都具有 ASCII 等价物。
+另外，`x²` 是一种编写 `x ** 2` 的可爱方式（也可以正常工作）; unicode 上标 2 是一个数字。 许多其他 unicode 运算符正如你所期望的那样工作(指数, 分数, π)，但是可以在 Raku 中使用的每个 unicode 运算符或符号都具有 ASCII 等价物。
 
 ==== 控制流
 
@@ -268,9 +268,9 @@ while j < 3:
 # 1,2,1,2    
 ```
 
-Perl 6 也有 `for` 循环和 `while` 循环:
+Raku 也有 `for` 循环和 `while` 循环:
 
-```perl6
+```raku
 for 1, 2 -> $i {
     say $i
 }
@@ -281,9 +281,9 @@ while $j < 3 {
 }
 ```
 
-(Perl 6 还有一些循环结构：`repeat ... until`，`repeat ... while`，`until` 和 `loop`。)
+(Raku 还有一些循环结构：`repeat ... until`，`repeat ... while`，`until` 和 `loop`。)
 
-`last` 在 Perl 6 中退出一个循环，类似于 Python 中的 `break`。 Python 中的 `continue` 在 Perl 6 中是 `next`。
+`last` 在 Raku 中退出一个循环，类似于 Python 中的 `break`。 Python 中的 `continue` 在 Raku 中是 `next`。
 
 - Python
 
@@ -296,9 +296,9 @@ for i in range(10):
     print i
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 for ^10 -> $i {
     next if $i == 3;
     last if $i == 5;
@@ -306,9 +306,9 @@ for ^10 -> $i {
 }
 ```
 
-使用 `if` 作为语句修饰符(如上所述)在 Perl 6 中是可接受的，甚至在列表解析之外也可以。
+使用 `if` 作为语句修饰符(如上所述)在 Raku 中是可接受的，甚至在列表解析之外也可以。
 
-Python `for` 循环中的 `yield` 语句生成一个 `generator`，就像 Perl 6 中的 `gather/take` 构造一样。这两个都打印 1,2,3。
+Python `for` 循环中的 `yield` 语句生成一个 `generator`，就像 Raku 中的 `gather/take` 构造一样。这两个都打印 1,2,3。
 
 - Python
 
@@ -321,9 +321,9 @@ for c in count():
     print c
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 sub count {
     gather {
         for 1, 2, 3 -> $i {
@@ -339,9 +339,9 @@ for count() -> $c {
 
 ==== Lambdas， 函数和子例程
 
-在 Python 中用 `def` 声明的函数（子例程）在 Perl 6 中是用 `sub` 来完成的。
+在 Python 中用 `def` 声明的函数（子例程）在 Raku 中是用 `sub` 来完成的。
 
-```perl6
+```raku
 def add(a, b):
     return a + b
  
@@ -352,20 +352,20 @@ sub add(\a, \b) {
 
 `return` 是可选的; 最后一个表达式的值被用作返回值:
 
-```perl6
+```raku
 sub add(\a, \b) {
     a + b
 }
 ```
 
-```perl6
+```raku
 # using variables with sigils 
 sub add($a, $b) {
     $a + $b
 }
 ```
 
-可以使用位置参数或关键字参数调用 Python 2 函数。这些是由调用者决定的。在 Python 3 中，一些参数可能是"keyword only"的。在 Perl 6 中，位置参数和命名参数由例程的签名确定。
+可以使用位置参数或关键字参数调用 Python 2 函数。这些是由调用者决定的。在 Python 3 中，一些参数可能是"keyword only"的。在 Raku 中，位置参数和命名参数由例程的签名确定。
 
 - Python
 
@@ -377,11 +377,11 @@ speak('hi', 2)
 speak(word='hi', times=2)
 ```
 
-- Perl 6
+- Raku
 
 位置参数
 
-```perl6
+```raku
 sub speak($word, $times) {
   say $word for ^$times
 }
@@ -390,7 +390,7 @@ speak('hi', 2);
 
 以冒号开头的命名参数:
 
-```perl6
+```raku
 sub speak(:$word, :$times) {
   say $word for ^$times
 }
@@ -398,9 +398,9 @@ speak(word => 'hi', times => 2);
 speak(:word<hi>, :times<2>);      # Alternative, more idiomatic 
 ```
 
-Perl 6 支持多重分派，因此可以通过将例程声明为 `multi` 来提供多个签名。
+Raku 支持多重分派，因此可以通过将例程声明为 `multi` 来提供多个签名。
 
-```perl6
+```raku
 multi sub speak($word, $times) {
   say $word for ^$times
 }
@@ -413,7 +413,7 @@ speak(:word<hi>, :times<2>);
 
 可以使用多种格式发送命名参数：
 
-```perl6
+```raku
 sub hello {...};
 # all the same 
 hello(name => 'world'); # fat arrow syntax 
@@ -431,9 +431,9 @@ hello(:$name);          # lexical var with the same name
 square = lambda x: x ** 2
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 my $square = sub ($x) { $x ** 2 };  # anonymous sub 
 my $square = -> $x { $x ** 2 };     # pointy block 
 my $square = { $^x ** 2 };          # placeholder variable 
@@ -442,24 +442,24 @@ my $square = { $_ ** 2 };           # topic variable
 
 占位符变量按字典顺序排列以形成位置参数。 因此这些是相同的：
 
-```perl6
+```raku
 my $power = { $^x ** $^y };
 my $power = -> $x, $y { $x ** $y };
 ```
 
 ==== 列表解析
 
-可以组合 Postfix 语句修饰符和块以在 Perl 6 中轻松创建列表解析。
+可以组合 Postfix 语句修饰符和块以在 Raku 中轻松创建列表解析。
 
 - Python
 
-```perl6
+```raku
 print [ i * 2 for i in 3, 9 ]                      # OUTPUT: «[6, 18]␤» 
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 say ( $_ * 2 for 3, 9 );                           # OUTPUT: «(6 18)␤» 
 say ( { $^i * 2 } for 3, 9 );                      # OUTPUT: «(6 18)␤» 
 say ( -> \i { i * 2 } for 3, 9 );                  # OUTPUT: «(6 18)␤» 
@@ -475,7 +475,7 @@ print [ x * 2 for x in 1, 2, 3 if x > 1 ]          # OUTPUT: «[4, 6]␤»
 
 vs
 
-```perl6
+```raku
 say ( $_ * 2 if $_ > 1 for 1, 2, 3 );              # OUTPUT: «(4 6)␤» 
 ```
 
@@ -487,7 +487,7 @@ print [ i + j for i in 3,9 for j in 2,10 ]         # OUTPUT: «[5, 13, 11, 19]�
 
 变成以下任何一个：
 
-```perl6
+```raku
 say ( { $_[0] + $_[1] } for (3,9) X (2,10) );      # OUTPUT: «(5 13 11 19)␤» 
 say ( -> (\i, \j) { i + j } for (3,9) X (2,10) );  # OUTPUT: «(5 13 11 19)␤» 
 ```
@@ -496,7 +496,7 @@ say ( -> (\i, \j) { i + j } for (3,9) X (2,10) );  # OUTPUT: «(5 13 11 19)␤»
 
 ==== 类和对象
 
-这是 Python link:https://docs.python.org/3/tutorial/classes.html#class-and-instance-variables[文档]中的一个示例。首先让我们回顾一下"实例变量"，这些变量在 Perl 6 中称为属性:
+这是 Python link:https://docs.python.org/3/tutorial/classes.html#class-and-instance-variables[文档]中的一个示例。首先让我们回顾一下"实例变量"，这些变量在 Raku 中称为属性:
 
 - Python
 
@@ -506,15 +506,15 @@ class Dog:
         self.name = name
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 class Dog {
     has $.name;
 }
 ```
 
-对于每个创建的类，Perl 6 默认提供构造函数方法 `new`，它接受命名参数。
+对于每个创建的类，Raku 默认提供构造函数方法 `new`，它接受命名参数。
 
 - Python
 
@@ -525,16 +525,16 @@ print d.name
 print e.name
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 my $d = Dog.new(:name<Fido>); # or: Dog.new(name => 'Fido') 
 my $e = Dog.new(:name<Buddy>);
 say $d.name;
 say $e.name;
 ```
 
-Perl 6 中的类属性可以通过几种方式声明。一种方法是仅声明一个词法变量和一个访问它的方法。
+Raku 中的类属性可以通过几种方式声明。一种方法是仅声明一个词法变量和一个访问它的方法。
 
 - Python
 
@@ -551,9 +551,9 @@ print d.name
 print e.name
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 class Dog {
     my $kind = 'canine';           # class attribute 
     method kind { $kind }
@@ -568,7 +568,7 @@ say $d.name;
 say $e.name;
 ```
 
-为了在 Perl 6 中改变属性，必须在属性上使用 `is rw` trait：
+为了在 Raku 中改变属性，必须在属性上使用 `is rw` trait：
 
 - Python
 
@@ -580,9 +580,9 @@ d = Dog()
 d.name = 'rover'
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 class Dog {
     has $.name is rw;
 }
@@ -606,9 +606,9 @@ d = Dog()
 d.jump()
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 class Animal {
     method jump {
         say "I am jumping"
@@ -631,9 +631,9 @@ class Dog(Animal, Friend, Pet):
     pass
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 class Animal {}; class Friend {}; class Pet {};
 ...;
 class Dog is Animal is Friend is Pet {};
@@ -641,7 +641,7 @@ class Dog is Animal is Friend is Pet {};
 
 或
 
-```perl6
+```raku
 class Animal {}; class Friend {}; class Pet {};
 ...;
 class Dog is Animal {
@@ -653,7 +653,7 @@ class Dog is Animal {
 
 ==== 装饰器
 
-Python 中的装饰器是一种将函数包装在另一个函数中的方法。在 Perl 6 中，这是通过 `wrap` 完成的。
+Python 中的装饰器是一种将函数包装在另一个函数中的方法。在 Raku 中，这是通过 `wrap` 完成的。
 
 - Python
 
@@ -671,9 +671,9 @@ def world():
 world();
 ```
 
-- Perl 6
+- Raku
 
-```perl6
+```raku
 sub world {
     say 'world'
 }
@@ -688,7 +688,7 @@ world;
 
 另一种方法是使用 trait：
 
-```perl6
+```raku
 # declare the trait 'greeter' 
 multi sub trait_mod:<is>(Routine $r, :$greeter) {
     $r.wrap(sub {
@@ -723,7 +723,7 @@ with hello():
 
 对于 "enter" 和 "exit" 事件，将块作为参数传递将是一种方法：
 
-```perl6
+```raku
 sub hello(Block $b) {
     say 'hello';
     $b();
@@ -735,9 +735,9 @@ hello {
 }
 ```
 
-一个相关的想法是'link:https://docs.perl6.org/language/phasers[Phasers]'，它可以设置为在进入或离开一个区块时运行。
+一个相关的想法是'link:https://docs.raku.org/language/phasers[Phasers]'，它可以设置为在进入或离开一个区块时运行。
 
-```perl6
+```raku
 {
     LEAVE say 'bye';
     ENTER say 'hello';
@@ -754,9 +754,9 @@ user_input = input("Say hi → ")
 print(user_input)
 ```
 
-出现提示时，您可以输入 `Hi` 或任何其他字符串，这些字符串将存储在 `user_input` 变量中。这类似于 Perl 6 中的 link:https://docs.perl6.org/routine/prompt[prompt]：
+出现提示时，您可以输入 `Hi` 或任何其他字符串，这些字符串将存储在 `user_input` 变量中。这类似于 Raku 中的 link:https://docs.raku.org/routine/prompt[prompt]：
 
-```perl6
+```raku
 my $user_input = prompt("Say hi → ");
 say $user_input; # OUTPUT: whatever you entered. 
 ```

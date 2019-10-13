@@ -1,28 +1,28 @@
-# Perl 6 中的函数
+# Raku 中的函数
 
-例程（Routines）是 Perl 6 中代码重用的最小手段。它们有几种形式，最明显的是属于类和角色并与对象相关联的方法，还有函数, 也叫做子例程或短子程序，它们独立于对象而存在。
+例程（Routines）是 Raku 中代码重用的最小手段。它们有几种形式，最明显的是属于类和角色并与对象相关联的方法，还有函数, 也叫做子例程或短子程序，它们独立于对象而存在。
 
 子例程默认是词法（`my`）作用域的，对它们的调用通常在编译时解析。
 
-子例程可以具有link:https://docs.perl6.org/type/Signature[签名]，也称为*参数列表*，其指定签名期望的参数（如果有的话）。 它可以指定（或保持打开）参数的数量和类型，以及返回值。
+子例程可以具有link:https://docs.raku.org/type/Signature[签名]，也称为*参数列表*，其指定签名期望的参数（如果有的话）。 它可以指定（或保持打开）参数的数量和类型，以及返回值。
 
 
-子例程的内省通过link:https://docs.perl6.org/type/Routine[例程]提供。
+子例程的内省通过link:https://docs.raku.org/type/Routine[例程]提供。
 
 ## 定义/创建/使用 函数
 
 ### 子例程
 
-创建子例程的基本方法是使用 `sub` 声明符，后跟可选link:https://docs.perl6.org/language/syntax#Identifiers[标识符]
+创建子例程的基本方法是使用 `sub` 声明符，后跟可选link:https://docs.raku.org/language/syntax#Identifiers[标识符]
 
-```perl6
+```raku
 sub my-func { say "Look ma, no args!" }
 my-func;
 ```
 
-sub 声明符返回可以存储在任何容器中的 link:https://docs.perl6.org/type/Sub[Sub] 类型的值:
+sub 声明符返回可以存储在任何容器中的 link:https://docs.raku.org/type/Sub[Sub] 类型的值:
 
-```perl6
+```raku
 my &c = sub { say "Look ma, no name!" }
 c;     # OUTPUT: «Look ma, no name!␤» 
  
@@ -35,26 +35,26 @@ a.();  # OUTPUT: «raw containers don't implement postcircumfix:<( )>␤»
 
 `sub` 声明符将在编译时在当前作用域内声明一个新名称。因此，任何间接性都必须在编译时解析：
 
-```perl6
+```raku
 constant aname = 'foo';
 sub ::(aname) { say 'oi‽' };
 foo;
 ```
 
-一旦将宏添加到 Perl 6 中，这将变得更有用。
+一旦将宏添加到 Raku 中，这将变得更有用。
 
-为了使子程序接受参数，link:https://docs.perl6.org/type/Signature[签名]被放置在子例程名称和它的函数主体之间，在括号中：
+为了使子程序接受参数，link:https://docs.raku.org/type/Signature[签名]被放置在子例程名称和它的函数主体之间，在括号中：
 
-```perl6
+```raku
 sub exclaim ($phrase) {
     say $phrase ~ "!!!!"
 }
 exclaim "Howdy, World";
 ```
 
-默认地, 子例程是link:https://docs.perl6.org/syntax/my[词法作用域]的。即 `sub foo {...}` 和 `my sub foo {...}` 是相同的并且只被定义在当前作用域中。
+默认地, 子例程是link:https://docs.raku.org/syntax/my[词法作用域]的。即 `sub foo {...}` 和 `my sub foo {...}` 是相同的并且只被定义在当前作用域中。
 
-```perl6
+```raku
 sub escape($str) {
     # Puts a slash before non-alphanumeric characters
     S:g[<-alpha -digit>] = "\\$/" given $str
@@ -77,7 +77,7 @@ say escape 'foo#bar?'; # foo\#bar\?
 
 子例程不必命名; 这种情况下, 它们被叫做匿名的。
 
-```perl6
+```raku
 say sub ($a, $b) { $a ** 2 + $b ** 2 }(3, 4) # 25
 ```
 
@@ -87,19 +87,19 @@ say sub ($a, $b) { $a ** 2 + $b ** 2 }(3, 4) # 25
 
 每当你看到像
 
-```perl6
+```raku
 { $_ + 42 }, -> $a, $b { $a ** $b }
 ```
 
 或
 
-```perl6
+```raku
 { $^text.indent($:spaces) }
 ```
 
-那么这是link:https://docs.perl6.org/type/Block[块]语法。 它在每个 `if`，`for`，`while` 等关键字之后使用。
+那么这是link:https://docs.raku.org/type/Block[块]语法。 它在每个 `if`，`for`，`while` 等关键字之后使用。
 
-```perl6
+```raku
 for 1, 2, 3, 4 -> $a, $b {
     say $a ~ $b;
 }
@@ -108,28 +108,28 @@ for 1, 2, 3, 4 -> $a, $b {
 
 它们也可以作为匿名代码块自己使用。
 
-```perl6
+```raku
 say { $^a ** 2 + $^b ** 2}(3, 4) # 25
 ```
 
-有关块语法的详细信息，请参阅link:https://docs.perl6.org/type/Block[块]类型的文档。
+有关块语法的详细信息，请参阅link:https://docs.raku.org/type/Block[块]类型的文档。
 
 ### 签名
 
 函数接受的参数在其签名中有描述。
 
-```perl6
+```raku
 sub format(Str $s) { ... }
 -> $a, $b { ... }
 ```
 
-有关签名的语法和使用的详细信息，请参阅 link:https://docs.perl6.org/type/Signature[Signature] 类的文档。
+有关签名的语法和使用的详细信息，请参阅 link:https://docs.raku.org/type/Signature[Signature] 类的文档。
 
 ### 自动签名
 
 如果没有提供签名，但在函数体中使用了两个自动变量 `@_` 或 `%_` 中的任何一个，则将生成带有 `*@_` 或 `*%_` 的签名。 两个自动变量可以同时使用。
 
-```perl6
+```raku
 sub s { say @_, %_ };
 dd &s.signature # OUTPUT«:(*@_, *%_)␤»
 ```
@@ -138,7 +138,7 @@ dd &s.signature # OUTPUT«:(*@_, *%_)␤»
 
 参数以逗号分隔列表的形式提供。 要消除嵌套调用的歧义, 可以使用圆括号或副词形式。
 
-```perl6
+```raku
 sub f(&c){ c() * 2 }; # call the function reference c with empty parameter list
 sub g($p){ $p - 2 };
 say(g(42)); # nest call to g in call to say
@@ -147,7 +147,7 @@ f: { say g(666) }; # call f with a block
 
 当调用函数时，位置参数应该以与函数签名相同的顺序提供。 命名参数可以以任何顺序提供，但是最好将命名参数放在位置参数之后。 在函数调用的参数列表中，支持一些特殊的语法：
 
-```perl6
+```raku
 sub f(|c){};
 f :named(35);     # 具名参数(in "adverb" form.)
 f named => 35;    # 也是具名参数.
@@ -157,11 +157,11 @@ my \c = <a b c>.Capture;
 f |c;             # Merge the contents of Capture $c as if they were supplied
 ```
 
-传递给函数的参数在概念上首先被收集在 Capture 容器中。 关于这些容器的语法和使用的细节可以在 link:https://docs.perl6.org/type/Capture[Capture] 类的文档中找到。
+传递给函数的参数在概念上首先被收集在 Capture 容器中。 关于这些容器的语法和使用的细节可以在 link:https://docs.raku.org/type/Capture[Capture] 类的文档中找到。
 
 当使用命名参数时，请注意，正常的 List "pair-chaining" 允许在命名参数之间跳过逗号。
 
-```perl6
+```raku
 sub f(|c){};
 f :dest</tmp/foo> :src</tmp/bar> :lines(512);
 f :32x :50y :110z;   # This flavor of "adverb" works, too
@@ -170,18 +170,18 @@ f :a:b:c;            # The spaces are also optional.
 
 ### 返回值
 
-任何块或例程将把它的最后一个表达式作为返回值提供给调用者。如果 link:https://docs.perl6.org/language/control#return[return] 或 link:https://docs.perl6.org/language/control#return-rw[return-rw] 被调用，它们的参数（如果有的话）将成为返回值。 默认返回值为 link:https://docs.perl6.org/type/Nil[Nil]。
+任何块或例程将把它的最后一个表达式作为返回值提供给调用者。如果 link:https://docs.raku.org/language/control#return[return] 或 link:https://docs.raku.org/language/control#return-rw[return-rw] 被调用，它们的参数（如果有的话）将成为返回值。 默认返回值为 link:https://docs.raku.org/type/Nil[Nil]。
 
-```perl6
+```raku
 sub a { 42 };
 sub b { say a };
 b;
 # OUTPUT«42␤»
 ```
 
-多个返回值作为列表或通过创建link:https://docs.perl6.org/type/Capture[捕获]返回。 解构可以用于解开多个返回值。
+多个返回值作为列表或通过创建link:https://docs.raku.org/type/Capture[捕获]返回。 解构可以用于解开多个返回值。
 
-```perl6
+```raku
 sub a { 42, 'answer' };
 put a.perl;
 # OUTPUT«(42, "answer")␤»
@@ -197,9 +197,9 @@ put b.perl;
 
 ### 返回类型约束
 
-Perl 6 有很多方式来指定函数的返回类型：
+Raku 有很多方式来指定函数的返回类型：
 
-```perl6
+```raku
 sub foo(--> Int)      {}; say &foo.returns; # (Int)
 sub foo() returns Int {}; say &foo.returns; # (Int)
 sub foo() of Int      {}; say &foo.returns; # (Int)
@@ -208,22 +208,22 @@ my Int sub foo()      {}; say &foo.returns; # (Int)
 
 尝试返回另外一种类型的值会引起编译错误。
 
-```perl6
+```raku
 sub foo() returns Int { "a"; }; foo; # Type check fails
 ```
 
 注意，`Nil` 和 `Failure` 是免于返回类型约束，并且可以从任何子例程返回，而不管其约束：
 
-```perl6
+```raku
 sub foo() returns Int { fail   }; foo; # Failure returned
 sub bar() returns Int { return }; bar; # Nil returned
 ```
 
 ### 多重分派
 
-Perl 6 允许你使用同一个名字但是不同签名写出几个子例程。当子例程按名字被调用时, 运行时环境决定哪一个子例程是最佳匹配, 然后调用那个候选者。你使用 `multi` 声明符来声明每个候选者。
+Raku 允许你使用同一个名字但是不同签名写出几个子例程。当子例程按名字被调用时, 运行时环境决定哪一个子例程是最佳匹配, 然后调用那个候选者。你使用 `multi` 声明符来声明每个候选者。
 
-```perl6
+```raku
 multi congratulate($name) {
     say "祝你生日快乐, $name";
 }
@@ -238,7 +238,7 @@ congratulate 'Rakudo', 15; # 祝你 15 岁生日快乐, Rakudo
 
 分发/分派(dispatch) 可以发生在参数的数量(元数)上, 但是也能发生在类型上:
 
-```perl6
+```raku
 multi as-json(Bool $d) { $d ?? 'true' !! 'false' }
 multi as-json(Real $d) { ~$d }
 multi as-json(@d)      { sprintf '[%s]', @d.map(&as-json).join(', ') }
@@ -248,7 +248,7 @@ say as-json([True, 42]); # [true, 42]
 
 不带任何指定例程类型的 `multi` 总是默认为 `sub`, 但是你也可以把 `multi` 用在方法(methods)上。那些候选者全都是对象的 `multi` 方法:
 
-```perl6
+```raku
 class Congrats {
     multi method congratulate($reason, $name) {
         say "Hooray for your $reason, $name";
@@ -273,10 +273,10 @@ $congrats.congratulate('birthday', 'Bob'); #-> Happy birthday, Bob
 ### proto
 
 
-link:https://docs.perl6.org/syntax/proto[proto] 从形式上声明了 `multi` 候选者之间的`共性`。 proto 充当作能检查但不会修改参数的包装器。看看这个基本的例子:
+link:https://docs.raku.org/syntax/proto[proto] 从形式上声明了 `multi` 候选者之间的`共性`。 proto 充当作能检查但不会修改参数的包装器。看看这个基本的例子:
 
 
-```perl6
+```raku
 proto congratulate(Str $reason, Str $name, |) {*}
 multi congratulate($reason, $name) {
    say "Hooray for your $reason, $name";
@@ -292,13 +292,13 @@ congratulate('being a cool number', 42);         # Proto match error
 
 所有的 `multi congratulate` 都会遵守基本的签名, 这个签名中有两个字符串参数, 后面跟着可选的更多的参数。 `|` 是一个未命名的 `Capture` 形参, 它允许 `multi` 接收额外的参数。第三个 congratulate 调用在编译时失败, 因为第一行的 proto 的签名变成了所有三个 multi congratulate 的共同签名, 而 42 不匹配 `Str`。
 
-```perl6
+```raku
 say &congratulate.signature #-> (Str $reason, Str $name, | is raw)
 ```
 
 你可以给 `proto` 一个函数体, 并且在你想执行 dispatch 的地方放上一个 `{*}`。
 
-```perl6
+```raku
 # attempts to notify someone -- returns False if unsuccessful
 proto notify(Str $user,Str $msg) {
    my \hour = DateTime.now.hour;
@@ -313,7 +313,7 @@ proto notify(Str $user,Str $msg) {
 
 `{*}` 总是分派给带有参数的候选者。默认参数和类型强制转换会起作用单不会传递。
 
-```perl6
+```raku
 proto mistake-proto(Str() $str, Int $number = 42) {*}
 multi mistake-proto($str,$number) { say $str.WHAT }
 mistake-proto(7,42);   #-> (Int) -- coercions not passed on
@@ -326,22 +326,22 @@ mistake-proto('test'); #!> fails -- defaults not passed on
 
 ### 吞噬约定
 
-也许最重要的是处理 slurpy 列表参数的方式。 大多数时候，函数不会自动展平吞噬(slurpy)列表。 罕见的例外是在列表的列表上没有合理行为的那些函数（例如chrs），或者与已建立的习语有冲突的函数，例如 link:https://docs.perl6.org/routine/pop[pop] 是 link:https://docs.perl6.org/routine/push[push] 的逆操作。
+也许最重要的是处理 slurpy 列表参数的方式。 大多数时候，函数不会自动展平吞噬(slurpy)列表。 罕见的例外是在列表的列表上没有合理行为的那些函数（例如chrs），或者与已建立的习语有冲突的函数，例如 link:https://docs.raku.org/routine/pop[pop] 是 link:https://docs.raku.org/routine/push[push] 的逆操作。
 
 如果你想匹配这个外观和感觉，任何可迭代(Iterable)参数必须使用 `**@slurpy` 逐个元素地打开，有两个细微差别：
 
-- link:https://docs.perl6.org/language/containers#Scalar_containers[Scalar 容器]内的 Iterable 不计数。
+- link:https://docs.raku.org/language/containers#Scalar_containers[Scalar 容器]内的 Iterable 不计数。
 - 在顶层使用 `,` 创建的列表只能计数为一个 Iterable。
 
 这可以通过使用带有 `+` 或 `+@` 而不是 `**`的 slurpy 来实现：
 
-```perl6
+```raku
 sub grab(+@a) { "grab $_".say for @a }
 ```
 
 这非常接近于:
 
-```perl6
+```raku
 multi sub grab(**@a) { "grab $_".say for @a }
 multi sub grab(\a) {
     a ~~ Iterable and a.VAR !~~ Scalar ?? nextwith(|a) !! nextwith(a,)
@@ -350,7 +350,7 @@ multi sub grab(\a) {
 
 这导致以下行为，称为「单参数规则」，并且理解什么时间调用 slurpy 函数很重要：
 
-```perl6
+```raku
 grab(1, 2);      # grab 1 grab 2
 grab((1, 2));    # grab 1 grab 2
 grab($(1, 2));   # grab 1 2
@@ -359,7 +359,7 @@ grab((1, 2), 3); # grab 1 2 grab 3
 
 这也使得用户请求的展平感觉一致，无论有没有子列表，或很多
 
-```perl6
+```raku
 grab(flat (1, 2), (3, 4));   # grab 1 grab 2 grab 3 grab 4
 grab(flat $(1, 2), $(3, 4)); # grab 1 2 grab 3 4
 grab(flat (1, 2));           # grab 1 grab 2
@@ -368,7 +368,7 @@ grab(flat $(1, 2));          # grab 1 2
 
 值得注意的是，在这些情况下将绑定和无符号变量混合在一起需要一点技巧，因为在绑定期间没有使用 Scalar 中间人。
 
-```perl6
+```raku
 my $a = (1, 2);  # Normal assignment, equivalent to $(1, 2)
 grab($a);       # grab 1 2
 my $b := (1, 2); # Binding, $b links directly to a bare (1, 2)
@@ -383,7 +383,7 @@ grab(c);        # grab 1 grab 2
 
 有几种方法来获取代码对象。 您可以在声明点将其赋值给变量：
 
-```perl6
+```raku
 my $square = sub (Numeric $x) { $x * $x }
 # and then use it:
 say $square(6);    # 36
@@ -391,16 +391,16 @@ say $square(6);    # 36
 
 或者，您可以通过使用它前面的 `&` 来引用现有的具名函数。
 
-```perl6
+```raku
 sub square($x) { $x * $x };
 
 # get hold of a reference to the function:
 my $func = &square
 ```
 
-这对于高阶函数非常有用，即，将其他函数作为输入的函数。 一个简单高阶函数的是 link:https://docs.perl6.org/type/List#routine_map[map]，它对每个输入元素应用一个函数：
+这对于高阶函数非常有用，即，将其他函数作为输入的函数。 一个简单高阶函数的是 link:https://docs.raku.org/type/List#routine_map[map]，它对每个输入元素应用一个函数：
 
-```perl6
+```raku
 sub square($x) { $x * $x };
 my @squared = map &square,  1..5;
 say join ', ', @squared;        # 1, 4, 9, 16, 25
@@ -410,7 +410,7 @@ say join ', ', @squared;        # 1, 4, 9, 16, 25
 
 要像中缀运算符那样调用具有2个参数的子例程，请使用由 `[` 和 `]` 包围的子例程引用。
 
-```perl6
+```raku
 sub plus { $^a + $^b };
 say 21 [&plus] 21;
 # OUTPUT«42␤»
@@ -418,9 +418,9 @@ say 21 [&plus] 21;
 
 ### 闭包
 
-Perl 6 中的所有代码对象都是闭包，这意味着它们可以从外部作用域引用词法变量。
+Raku 中的所有代码对象都是闭包，这意味着它们可以从外部作用域引用词法变量。
 
-```perl6
+```raku
 sub generate-sub($x) {
     my $y = 2 * $x;
     return sub { say $y };
@@ -432,9 +432,9 @@ $generated(); # 42
 
 这里 `$y` 是 `generate-sub` 中的词法变量，并且返回的内部子例程使用了 `$y`。 到内部 sub 被调用时，`generate-sub` 已经退出。 然而内部 sub 仍然可以使用 `$y`，因为它关闭了变量。
 
-一个不太明显但有用的闭包示例是使用 link:https://docs.perl6.org/type/List#routine_map[map] 乘以数字列表：
+一个不太明显但有用的闭包示例是使用 link:https://docs.raku.org/type/List#routine_map[map] 乘以数字列表：
 
-```perl6
+```raku
 my $multiply-by = 5;
 say join ', ', map { $_ * $multiply-by }, 1..5;     # 5, 10, 15, 20, 25
 ```
@@ -445,11 +445,11 @@ say join ', ', map { $_ * $multiply-by }, 1..5;     # 5, 10, 15, 20, 25
 
 ### Routines
 
-例程是遵守 link:https://docs.perl6.org/type/Routine[Routine] 类型的代码对象，最明显的是 link:https://docs.perl6.org/type/Sub[Sub]，link:https://docs.perl6.org/type/Method[方法]，link:https://docs.perl6.org/type/Regex[正则表达式]和link:https://docs.perl6.org/type/Submethod[Submethod]。
+例程是遵守 link:https://docs.raku.org/type/Routine[Routine] 类型的代码对象，最明显的是 link:https://docs.raku.org/type/Sub[Sub]，link:https://docs.raku.org/type/Method[方法]，link:https://docs.raku.org/type/Regex[正则表达式]和link:https://docs.raku.org/type/Submethod[Submethod]。
 
-他们携带除了link:https://docs.perl6.org/type/Block[块]提供的额外的功能：他们可以作为 link:https://docs.perl6.org/language/functions#Multi-dispatch[multis]，你可以link:https://docs.perl6.org/type/Routine#method_wrap[包装]它们，并使用 `return` 提前退出：
+他们携带除了link:https://docs.raku.org/type/Block[块]提供的额外的功能：他们可以作为 link:https://docs.raku.org/language/functions#Multi-dispatch[multis]，你可以link:https://docs.raku.org/type/Routine#method_wrap[包装]它们，并使用 `return` 提前退出：
 
-```perl6
+```raku
 my $keywords = set <if for unless while>;
 
 sub has-keyword(*@words) {
@@ -467,7 +467,7 @@ say has-keyword 'but', 'here', 'for';       # True
 
 例程(Routines)可以是内联的，并且因此为包装设置了障碍。 使用指令 `use soft;` 以防止内联在运行时允许包装。
 
-```perl6
+```raku
 sub testee(Int $i, Str $s){
     rand.Rat * $i ~ $s;
 }
@@ -498,7 +498,7 @@ say testee(10, "ten");
 
 这既适用于向现有运算符添加多个候选项，也适用于定义新的运算符。 在后一种情况下，新子例程的定义自动将新运算符安装到 语法(grammar)中，但仅在当前词法作用域中。 通过 `use` 或 `import` 导入操作符也使其可用。
 
-```perl6
+```raku
 # adding a multi candidate to an existing operator:
 multi infix:<+>(Int $x, "same") { 2 * $x };
 say 21 + "same";            # 42
@@ -510,7 +510,7 @@ say 6!;                     # 720
 
 运算符声明变得尽快可用，因此您甚至可以递归到刚才定义的运算符中，如果您真的想要：
 
-```perl6
+```raku
 sub postfix:<!>(Int $x where { $x >= 0 }) {
     $x == 0 ?? 1 !! $x * ($x - 1)!
 }
@@ -519,7 +519,7 @@ say 6!;                     # 720
 
 环缀和后环缀操作符由两个分隔符组成，一个开口和一个闭合。
 
-```perl6
+```raku
 sub circumfix:<START END>(*@elems) {
     "start", @elems, "end"
 }
@@ -529,7 +529,7 @@ say START 'a', 'b', 'c' END;        # start a b c end
 
 后环缀也接收这个术语，在它们被作为参数解析之后：
 
-```perl6
+```raku
 sub postcircumfix:<!! !!>($left, $inside) {
     "$left -> ( $inside )"
 }
@@ -538,7 +538,7 @@ say 42!! 1 !!;      # 42 -> ( 1 )
 
 块可以直接赋值给操作符名。 使用变量声明符，并在操作符名前加上一个 `&` 符号。
 
-```perl6
+```raku
 my &infix:<ieq> = -> |l { [eq] l>>.fc };
 say "abc" ieq "Abc";
 # OUTPUT«True␤»
@@ -546,11 +546,11 @@ say "abc" ieq "Abc";
 
 ### 优先级
 
-Perl 6 中的运算符优先级相对于现有运算符指定。 `is tighter`、`is equiv` 和 `is looser` 特性能使用一个运算符提供，新的运算符优先级与之相关。 可以应用更多的特征。
+Raku 中的运算符优先级相对于现有运算符指定。 `is tighter`、`is equiv` 和 `is looser` 特性能使用一个运算符提供，新的运算符优先级与之相关。 可以应用更多的特征。
 
 例如，`infix:<*>` 的优先级高于 `infix:<+>`，并且在中间挤压一个像这样：
 
-```perl6
+```raku
 sub infix:<!!>($a, $b) is tighter(&infix:<+>) {
     2 * ($a + $b)
 }
@@ -562,7 +562,7 @@ say 1 + 2 * 3 !! 4;     # 21
 
 可以使用下面的代码实现相同的效果:
 
-```perl6
+```raku
 sub infix:<!!>($a,$b) is looser(&infix:<x>) { ... }
 ```
 
@@ -572,19 +572,19 @@ sub infix:<!!>($a,$b) is looser(&infix:<x>) { ... }
 
 当同一个操作符在一行中连续出现多次时，有多种可能的解释。 例如
 
-```perl6
+```raku
 1 + 2 + 3
 ```
 
 能被解析为
 
-```perl6
+```raku
 (1 + 2) + 3 # 左结合性
 ```
 
 或者解析为
 
-```perl6
+```raku
 1 + (2 + 3) # 右结合性
 ```
 
@@ -592,12 +592,12 @@ sub infix:<!!>($a,$b) is looser(&infix:<x>) { ... }
 
 但对其他运算符来说它很重要。 例如对于指数/幂运算符，`infix:<**>`：
 
-```perl6
+```raku
 say 2 ** (2 ** 3);      # 256
 say (2 ** 2) ** 3;      # 64
 ```
 
-Perl 6 拥有以下可能的结合性配置：
+Raku 拥有以下可能的结合性配置：
 
 |===
 |A	|Assoc	|Meaning of $a ! $b ! $c
@@ -610,7 +610,7 @@ Perl 6 拥有以下可能的结合性配置：
 
 您可以使用 `is assoc` trait 指定运算符的结合性，其中 `left` 是默认的结合性。
 
-```perl6
+```raku
 sub infix:<§>(*@a) is assoc<list> {
     '(' ~ @a.join('|') ~ ')';
 }
@@ -624,7 +624,7 @@ say 1 § 2 § 3;      # (1|2|3)
 
 traits 的例子有：
 
-```perl6
+```raku
 class ChildClass is ParentClass { ... }
 #                ^^ trait, with argument ParentClass
 has $.attrib is rw;
@@ -639,7 +639,7 @@ has $!another-attribute handles <close>;
 
 Traits 是 `trait_mod<VERB>` 形式的 subs, 其中  `VERB` 代表像 `is`、`does`、`handles` 那样的名字。它接受修改后的东西作为参数, 还有名字作为具名参数。
 
-```perl6
+```raku
 multi sub trait_mod:<is>(Routine $r, :$doubles!) {
     $r.wrap({
         2 * callsame;
@@ -653,7 +653,7 @@ sub square($x) is doubles {
 say square 3;       # 18
 ```
 
-请参阅内置常规性状文档的link:https://docs.perl6.org/type/Routine[类型例程]。
+请参阅内置常规性状文档的link:https://docs.raku.org/type/Routine[类型例程]。
 
 ### 重新分派
 
@@ -661,7 +661,7 @@ say square 3;       # 18
 
 在所有这些情况下，您可以使用 `callwith` 通过您自己选择的参数调用链中的下一个例程。
 
-```perl6
+```raku
 multi a(Any $x) {
     say "Any $x";
     return 5;
@@ -683,7 +683,7 @@ a 1;
 
 通常，重新分派传递和调用者接收到的相同的参数，因此有一个特殊的例程：`callsame`。
 
-```perl6
+```raku
 multi a(Any $x) {
     say "Any $x";
     return 5;
@@ -699,7 +699,7 @@ a 1;        # Int 1\n Any 1\n Back in Int with 5
 
 另一个常见的用例是重新分派到链中的下一个例程，之后不执行任何其他操作。 这就是为什么我们有 `nextwith` 和 `nextsame`，它使用任意的参数调用下一个例程（`nextwith`）或与调用者接收（`nextsame`）相同的参数，但不会返回给调用者。 或者对其进行不同的措辞，`nextsame` 和 `nextwith` 变体用下一个候选项替换当前的调用帧(callframe)。
 
-```perl6
+```raku
 multi a(Any $x) {
     say "Any $x";
     return 5;
@@ -715,7 +715,7 @@ a 1;        # Int 1\n Any 1
 
 如前所述，multi sub 不是唯一能在 call，call me，nextwith 和 next 中有帮助的情况。 下面是是调度到包装的例程：
 
-```perl6
+```raku
 # enable wrapping:
 use soft;
 
@@ -733,7 +733,7 @@ say square-root(-4);    # 0+2i
 
 最后一个用例是从父类中重分派给方法。
 
-```perl6
+```raku
 class LoggedVersion is Version {
     method new(|c) {
         note "New version object created with arguments " ~ c.perl;
@@ -746,7 +746,7 @@ say LoggedVersion.new('1.0.2');
 
 如果你需要对被包装的代码进行多次调用或获得一个引用，例如内省它，你可以使用 `nextcallee`。
 
-```perl6
+```raku
 sub power-it($x) { $x * $x }
 sub run-it-again-and-again($x) {
     my &again = nextcallee;
@@ -761,7 +761,7 @@ say power-it(5);    # 625
 
 强制类型可以帮助您在例程中拥有特定类型，但接受更宽的输入。 当调用例程时，参数将自动转换为较窄的类型。
 
-```perl6
+```raku
 sub double(Int(Cool) $x) {
     2 * $x
 }
@@ -776,7 +776,7 @@ say double Any;  # Type check failed in binding $x; expected 'Cool' but got 'Any
 
 强制只需查找与目标类型具有相同名称的方法即可。 所以你可以为你自己的类型定义强制，像这样：
 
-```perl6
+```raku
 class Bar {...}
 
 class Foo {
@@ -803,11 +803,11 @@ print-bar Foo.new;
 
 ## sub MAIN
 
-具有特殊名称 MAIN 的 sub 在所有相关 parsers 之后执行，并且其签名是可以解析命令行参数的装置。 支持 multi 方法，如果未提供命令行参数，则会自动生成并显示使用方法。 所有命令行参数在 link:https://docs.perl6.org/language/variables#Dynamic_variables[@*ARGS] 中也可用，它可以在被 MAIN 处理之前进行变换。
+具有特殊名称 MAIN 的 sub 在所有相关 parsers 之后执行，并且其签名是可以解析命令行参数的装置。 支持 multi 方法，如果未提供命令行参数，则会自动生成并显示使用方法。 所有命令行参数在 link:https://docs.raku.org/language/variables#Dynamic_variables[@*ARGS] 中也可用，它可以在被 MAIN 处理之前进行变换。
 
-`MAIN` 的返回值被忽略。 要提供除 0 以外的退出代码，请调用 link:https://docs.perl6.org/routine/exit[exit]。
+`MAIN` 的返回值被忽略。 要提供除 0 以外的退出代码，请调用 link:https://docs.raku.org/routine/exit[exit]。
 
-```perl6
+```raku
 sub MAIN( Int :$length = 24,
            :file($data) where { .IO.f // die "file not found in $*CWD" } = 'file.dat',
            Bool :$verbose )
@@ -824,7 +824,7 @@ sub MAIN( Int :$length = 24,
 
 如果对于给定的命令行参数没有找到 `MAIN` 的多个候选者，则调用 sub `USAGE`。 如果没有找到此类方法，则输出生成的使用消息。
 
-```perl6
+```raku
 sub MAIN(Int $i){ say $i == 42 ?? 'answer' !! 'dunno' }
 
 sub USAGE(){

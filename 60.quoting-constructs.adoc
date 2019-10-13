@@ -1,11 +1,11 @@
 ## The Q Lang
 
-在 Perl 6 中, 字符串通常使用一些引号结构来表示. 这些引号结构中,最简单的就是 `Q`, 通过便捷方式 `｢…｣` 或 `Q` 后跟着由任意一对儿分隔符包围着的文本. 大多数时候, 你需要的只是 `'…'` 或 `"…"`.
+在 Raku 中, 字符串通常使用一些引号结构来表示. 这些引号结构中,最简单的就是 `Q`, 通过便捷方式 `｢…｣` 或 `Q` 后跟着由任意一对儿分隔符包围着的文本. 大多数时候, 你需要的只是 `'…'` 或 `"…"`.
 
 
 ### Literal strings: Q
 
-```perl6
+```raku
 Q[A literal string]
 ｢More plainly.｣
 Q ^Almost any non-word character can be a delimiter!^
@@ -14,16 +14,16 @@ Q ｢｢Delimiters can be repeated/nested if they are adjacent.｣｣
 
 分隔符能够嵌套, 但是在普通的 Q 形式中, 反斜线转义是不允许的. 换种说法就是, Q 字符串尽可能被作为字面量.
 
-在 `Q`、`q` 或 `qq` 之后不允许立即使用一些分隔符。link:https://docs.perl6.org/language/syntax#Identifiers[标识符]中允许的任何字符都不允许使用，因为在这种情况下，引号结构和这些字符一起被解释为标识符。此外，`( )` 是不允许的，因为它被解释为函数调用。如果你仍然希望使用这些字符作为分隔符，请用空格将它们与 `Q`、`q` 或 `qq` 分隔开。请注意，一些自然语言在字符串的右侧使用左分隔引号。`Q` 不支持这些，因为它依赖unicode 属性来区分左分隔符和右分隔符。
+在 `Q`、`q` 或 `qq` 之后不允许立即使用一些分隔符。link:https://docs.raku.org/language/syntax#Identifiers[标识符]中允许的任何字符都不允许使用，因为在这种情况下，引号结构和这些字符一起被解释为标识符。此外，`( )` 是不允许的，因为它被解释为函数调用。如果你仍然希望使用这些字符作为分隔符，请用空格将它们与 `Q`、`q` 或 `qq` 分隔开。请注意，一些自然语言在字符串的右侧使用左分隔引号。`Q` 不支持这些，因为它依赖unicode 属性来区分左分隔符和右分隔符。
 
-```perl6
+```raku
 Q'this will not work!'
 Q(this won't work either!)
 ```
 
 上面对例子会产生错误。然而，下面这个能起作用：
 
-```perl6
+```raku
 Q (this is fine, because of space after Q)
 Q 'and so is this'
 Q<Make sure you <match> opening and closing delimiters>
@@ -60,7 +60,7 @@ This is still a closing curly brace → \
 
 ### Escaping: q
 
-```perl6
+```raku
 'Very plain';
 q[This back\slash stays];
 q[This back\\slash stays]; # Identical output 
@@ -75,7 +75,7 @@ Q:q!Just a literal "\n" here!;
 
 这些例子产生:
 
-```perl6
+```raku
 Very plain
 This back\slash stays
 This back\slash stays
@@ -86,9 +86,9 @@ No $interpolation {here}!
 Just a literal "\n" here
 ```
 
-`\qqlink:https://docs.perl6.org/language/quoting#Interpolation%3A_qq[...]` 转义序列允许 [qq 插值] 的一部分字符串。当字符串中有 HTML 标记时，使用这个转义序列非常方便，可以避免将尖括号解释为散列键:
+`\qqlink:https://docs.raku.org/language/quoting#Interpolation%3A_qq[...]` 转义序列允许 [qq 插值] 的一部分字符串。当字符串中有 HTML 标记时，使用这个转义序列非常方便，可以避免将尖括号解释为散列键:
 
-```perl6
+```raku
 my $var = 'foo';
 say '<code>$var</code> is <var>\qq[$var.uc()]</var>';
 # OUTPUT: «<code>$var</code> is <var>FOO</var>␤» 
@@ -96,21 +96,21 @@ say '<code>$var</code> is <var>\qq[$var.uc()]</var>';
 
 ### Interpolation: qq
 
-```perl6
+```raku
 my $color = 'blue';
 say "My favorite color is $color!" # My favorite color is blue!
 ```
 
 `qq` 形式 -- 通常使用双引号写成 -- 允许变量的插值, 例如字符串中能写入变量, 以使变量的内容能插入到字符串中. 在 `qq` 引起字符串中, 也能转义变量.
 
-```perl6
+```raku
 say "The \$color variable contains the value '$color'";
 # The $color variable contatins the value 'blue'
 ```
 
-`qq` 的另外一种功能是使用花括号在字符串中插值 Perl 6 代码:
+`qq` 的另外一种功能是使用花括号在字符串中插值 Raku 代码:
 
-```perl6
+```raku
 my ($x, $y, $z) = 4, 3.5, 3;
 say "This room is $x m by $y m by $z m."
 say "Therefore its volume should be { $x * $y * $z } m³!"
@@ -118,14 +118,14 @@ say "Therefore its volume should be { $x * $y * $z } m³!"
 
 输出:
 
-```perl6
+```raku
 This room is 4 m by 3.5 m by 3 m.
 Therefore its volume should be 42 m³!
 ```
 
-默认情况下, 只有带有 `$` 符号的变量才能正常插值. 这时, `"documentation@perl6.org"` 不会插值  `@perl6` 变量. 如果你确实想那么做, 在变量名后面添加一个 `[]`:
+默认情况下, 只有带有 `$` 符号的变量才能正常插值. 这时, `"documentation@raku.org"` 不会插值  `@raku` 变量. 如果你确实想那么做, 在变量名后面添加一个 `[]`:
 
-```perl6
+```raku
 my @neighbors = "Felix", "Danielle", "Lucinda";
 say "@neighbors[] and I try our best to coexist peacefully."
 ```
@@ -138,7 +138,7 @@ Felix Danielle Lucinda and I try our best to coexist peacefully.
 
 通常使用一个方法调用会更合适. 只有在 `qq` 引号中, 方法调用后面有圆括号, 就能进行插值:
 
-```perl6
+```raku
 say "@neighbors.join(', ') and I try our best to coexist peacefully."
 ```
 
@@ -152,41 +152,41 @@ Felix, Danielle, Lucinda and I try our best to coexist peacefully.
 
 要调用子例程请使用 `&` 符号。
 
-```perl6
+```raku
 say "abc&uc("def")ghi";
 # OUTPUT: «abcDEFghi␤» 
 ```
 
-后环缀操作符和 link:https://docs.perl6.org/language/subscripts[subscripts] 也会被插值。
+后环缀操作符和 link:https://docs.raku.org/language/subscripts[subscripts] 也会被插值。
 
-```perl6
+```raku
 my %h = :1st; say "abc%h<st>ghi";
 # OUTPUT: «abc1ghi␤» 
 ```
 
 要输入 unicode 序列，请使用 `\x` 或 `\x[]` 加上字符的十六进制编码或字符列表。
 
-```perl6
-my $s = "I \x2665 Perl 6!";
+```raku
+my $s = "I \x2665 Raku!";
 say $s;
-# OUTPUT: «I ♥ Perl 6!␤» 
+# OUTPUT: «I ♥ Raku!␤» 
  
-$s = "I really \x[2661,2665,2764,1f495] Perl 6!";
+$s = "I really \x[2661,2665,2764,1f495] Raku!";
 say $s;
-# OUTPUT: «I really ♡♥❤💕 Perl 6!␤» 
+# OUTPUT: «I really ♡♥❤💕 Raku!␤» 
 ```
 
-您还可以在 link:https://docs.perl6.org/language/unicode#Entering_unicode_codepoints_and_codepoint_sequences[\c[]] 中使用 link:https://docs.perl6.org/language/unicode#Entering_unicode_codepoints_and_codepoint_sequences[unicode 名称]、link:https://docs.perl6.org/language/unicode#Named_sequences[命名序列]和link:https://docs.perl6.org/language/unicode#Name_aliases[名称别名]。
+您还可以在 link:https://docs.raku.org/language/unicode#Entering_unicode_codepoints_and_codepoint_sequences[\c[]] 中使用 link:https://docs.raku.org/language/unicode#Entering_unicode_codepoints_and_codepoint_sequences[unicode 名称]、link:https://docs.raku.org/language/unicode#Named_sequences[命名序列]和link:https://docs.raku.org/language/unicode#Name_aliases[名称别名]。
 
-```perl6
+```raku
 my $s = "Camelia \c[BROKEN HEART] my \c[HEAVY BLACK HEART]!";
 say $s;
 # OUTPUT: «Camelia 💔 my ❤!␤» 
 ```
 
-对未定义值进行插值将引发控件异常，该异常可以在当前控件块中使用 link:https://docs.perl6.org/language/phasers#CONTROL[CONTROL] 捕获。
+对未定义值进行插值将引发控件异常，该异常可以在当前控件块中使用 link:https://docs.raku.org/language/phasers#CONTROL[CONTROL] 捕获。
 
-```perl6
+```raku
 sub niler {Nil};
 my Str $a = niler;
 say("$a.html", "sometext");
@@ -196,7 +196,7 @@ CONTROL { .die };
 
 ### Word quoting: qw
 
-```perl6
+```raku
 qw|! @ # $ % ^ & * \| < > | eqv '! @ # $ % ^ & * | < >'.words.list
 q:w { [ ] \{ \} } eqv ('[', ']', '{', '}')
 Q:w | [ ] { } | eqv ('[', ']', '{', '}')
@@ -204,35 +204,35 @@ Q:w | [ ] { } | eqv ('[', ']', '{', '}')
 
 `:w` 通常写作 `qw`, 把字符串分割为 "words" (单词). 在这种情景下, 单词被定义为由空格分割的一串非空白字符. `q:w` 和 `qw` 继承了 `q` 的插值和转义语法, 还有单引号字符串分割符, 而 `Qw` 和 `Q:w` 继承了 `Q` 的非转义语法.
 
-```perl6
+```raku
 my @directions = 'left', 'right,', 'up', 'down';
 ```
 
 这样读和写都更容易:
 
-```perl6
+```raku
 my @directions = qw|left right up down|;
 ```
 
 ### Word quoting: <>
 
-```perl6
+```raku
 say <a b c> eqv ('a', 'b', 'c');   # OUTPUT: «True␤»
 say <a b 42> eqv ('a', 'b', '42'); # OUTPUT: «False␤», the 42 became an IntStr allomorph
 say < 42 > ~~ Int; # OUTPUT: «True␤»
 say < 42 > ~~ Str; # OUTPUT: «True␤»
 ```
 
-尖括号的引号类似于 `qw`，但有一个额外的特性，可以让你构造特定数字的link:https://docs.perl6.org/language/glossary#index-entry-Allomorph[同质异形体]或字面量:
+尖括号的引号类似于 `qw`，但有一个额外的特性，可以让你构造特定数字的link:https://docs.raku.org/language/glossary#index-entry-Allomorph[同质异形体]或字面量:
 
-```perl6
+```raku
 say <42 4/2 1e6 1+1i abc>.perl;
 # OUTPUT: «(IntStr.new(42, "42"), RatStr.new(2.0, "4/2"), NumStr.new(1000000e0, "1e6"), ComplexStr.new(<1+1i>, "1+1i"), "abc")␤» 
 ```
 
-要构造 link:https://docs.perl6.org/type/Rat[Rat] 或 link:https://docs.perl6.org/type/Complex[Complex] 字面量，请在数字周围使用尖括号，不带任何额外的空格:
+要构造 link:https://docs.raku.org/type/Rat[Rat] 或 link:https://docs.raku.org/type/Complex[Complex] 字面量，请在数字周围使用尖括号，不带任何额外的空格:
 
-```perl6
+```raku
 say <42/10>.^name;   # OUTPUT: «Rat␤» 
 say <1+42i>.^name;   # OUTPUT: «Complex␤» 
 say < 42/10 >.^name; # OUTPUT: «RatStr␤» 
@@ -241,7 +241,7 @@ say < 1+42i >.^name; # OUTPUT: «ComplexStr␤»
 
 与 `42/10` 和 `1+42i` 相比，不涉及除法(或加法)运算。这对于例程签名中的字面量很有用，例如:
 
-```perl6
+```raku
 sub close-enough-π (<355/113>) {
     say "Your π is close enough!"
 }
@@ -256,13 +256,13 @@ sub compilation-failure (355/113) {}
 
 单词引用的 `qw` 格式将按字面意思处理引用字符，将它们保留在结果单词中:
 
-```perl6
+```raku
 say qw{"a b" c}.perl; # OUTPUT: «("\"a", "b\"", "c")␤» 
 ```
 
 因此，如果您希望在结果单词中保留引用的子字符串作为单个项，则需要使用 `qww` 变体:
 
-```perl6
+```raku
 say qww{"a b" c}.perl; # OUTPUT: «("a b", "c")␤» 
 ```
 
@@ -270,13 +270,13 @@ say qww{"a b" c}.perl; # OUTPUT: «("a b", "c")␤»
 
 `qw` 形式的 word quoting 不会进行变量插值:
 
-```perl6
+```raku
 my $a = 42; say qw{$a b c};  # $a b c
 ```
 
 因此, 如果你想在引号字符串中进行变量插值, 你需要使用 `qqw` 变体:
 
-```perl6
+```raku
 my $a = 42;
 my @list = qqw{$a b c};
 say @list;                # 42 b c
@@ -284,7 +284,7 @@ say @list;                # 42 b c
 
 注意，变量插值发生在单词分割之前:
 
-```perl6
+```raku
 my $a = "a b";
 my @list = qqw{$a c};
 .say for @list; # OUTPUT: «a␤b␤c␤» 
@@ -294,19 +294,19 @@ my @list = qqw{$a c};
 
 `qqw` 形式的单词引用会把引起的字符当作字面量，将引起的字符留在结果单词中:
 
-```perl6
+```raku
 my $a = 42; say qqw{"$a b" c}.perl;  # OUTPUT: «("\"42", "b\"", "c")␤» 
 ```
 
 因此，如果希望在结果单词中保留引起的子字符串为单个项，则需要使用 `qqww` 变体:
 
-```perl6
+```raku
 my $a = 42; say qqww{"$a b" c}.perl; # OUTPUT: «("42 b", "c")␤» 
 ```
 
 引号保护发生在插值之前，插值发生在分词之前，所以来自插值变量内部的引号只是字面引号字符:
 
-```perl6
+```raku
 my $a = "1 2";
 say qqww{"$a" $a}.perl; # OUTPUT: «("1 2", "1", "2")␤» 
 my $b = "1 \"2 3\"";
@@ -315,9 +315,9 @@ say qqww{"$b" $b}.perl; # OUTPUT: «("1 \"2 3\"", "1", "\"2", "3\"")␤»
 
 ### Word quoting with interpolation and quote protection: « »
 
-这种引用方式类似于 `qqww`，但它具有构造 link:https://docs.perl6.org/language/glossary#index-entry-Allomorph[allomorphs] 的额外好处(使其功能相当于 link:https://docs.perl6.org/language/quoting#index-entry-%3Aval_%28quoting_adverb%29[qq:ww:v])。与 `«»` 等价的 ASCII 是双尖括号 `<< >>`。
+这种引用方式类似于 `qqww`，但它具有构造 link:https://docs.raku.org/language/glossary#index-entry-Allomorph[allomorphs] 的额外好处(使其功能相当于 link:https://docs.raku.org/language/quoting#index-entry-%3Aval_%28quoting_adverb%29[qq:ww:v])。与 `«»` 等价的 ASCII 是双尖括号 `<< >>`。
 
-```perl6
+```raku
 # Allomorph Construction 
 my $a = 42; say «  $a b c    ».perl;  # OUTPUT: «(IntStr.new(42, "42"), "b", "c")␤» 
 my $a = 42; say << $a b c   >>.perl;  # OUTPUT: «(IntStr.new(42, "42"), "b", "c")␤» 
@@ -331,15 +331,15 @@ my $a = 42; say << "$a b" c >>.perl;  # OUTPUT: «("42 b", "c")␤»
 
 要将字符串作为外部程序运行，不仅可以将字符串传递给 `shell` 或 `run` 函数，还可以执行 shell 引用。然而，有一些微妙之处需要考虑。`qx` 引号不插入变量。因此
 
-```perl6
+```raku
 my $world = "there";
 say qx{echo "hello $world"}
 ```
 
-仅仅打印 `hello`. 然而, 如果你在调用 `perl6` 之前声明了一个环境变量, 这在 `qx` 里是可用的, 例如:
+仅仅打印 `hello`. 然而, 如果你在调用 `raku` 之前声明了一个环境变量, 这在 `qx` 里是可用的, 例如:
 
-```perl6
-WORLD="there" perl6
+```raku
+WORLD="there" raku
 > say qx{echo "hello $WORLD"}
 ```
 
@@ -347,23 +347,23 @@ WORLD="there" perl6
 
 调用 `qx` 会返回结果, 所以这个结果能被赋值给一个变量以便后来使用:
 
-```perl6
+```raku
 my $output = qx{echo "hello!"};
 say $output;    # hello!
 ```
 
 ### Shell quoting with interpolation: qqx
 
-如果希望在外部命令中使用 Perl 6 变量的内容，那么应该使用 `qqx` shell 引用结构:
+如果希望在外部命令中使用 Raku 变量的内容，那么应该使用 `qqx` shell 引用结构:
 
-```perl6
+```raku
 my $world = "there";
 say qqx{echo "hello $world"};  # hello there
 ```
 
 再一次, 外部命令的输出结果可以保存在一个变量中:
 
-```perl6
+```raku
 my $word = "cool";
 my $option = "-i";
 my $file = "/usr/share/dict/words";
@@ -372,13 +372,13 @@ my $output = qqx{grep $option $word $file};
 say $output;      # Cooley␤Cooley's␤Coolidge␤Coolidge's␤cool␤ ...
 ```
 
-有关执行外部命令的更好方法，请参见 link:https://docs.perl6.org/routine/run[run] 和 link:https://docs.perl6.org/type/Proc::Async[Proc::Async]。
+有关执行外部命令的更好方法，请参见 link:https://docs.raku.org/routine/run[run] 和 link:https://docs.raku.org/type/Proc::Async[Proc::Async]。
 
 ### Heredocs: :to
 
 一种方便的写多行字符串字面量的方式是 *heredocs*，它让你选择自己的分隔符:
 
-```perl6
+```raku
 say q:to/END/;
 Here is
 some multi-line
@@ -388,7 +388,7 @@ END
 
 heredoc 的内容总是从下一行开始，所以你可以(也应该)完成这一行。
 
-```perl6
+```raku
 my $escaped = my-escaping-function(q:to/TERMINATOR/, language => 'html');
 Here are the contents of the heredoc.
 Potentially multiple lines.
@@ -397,7 +397,7 @@ TERMINATOR
 
 如果终止分隔符缩进了, 同等数量的缩进会从字符串字面量上移除. 因此下面这个 heredoc
 
-```perl6
+```raku
 say q:to/END/;
     Here is
     some multi line
@@ -407,7 +407,7 @@ say q:to/END/;
 
 输出:
 
-```perl6
+```raku
 Here is
 some multi line
     string
@@ -417,7 +417,7 @@ heredoc 包含了终止符之前的换行符。
 
 要允许对变量进行插值，可以使用 `qq` 形式，但如果不是已定义变量的标识符，则必须转义元字符 `{\` 和 `$`。例如:
 
-```perl6
+```raku
 my $f = 'db.7.3.8';
 my $s = qq:to/END/; 
 option \{
@@ -429,7 +429,7 @@ say $s;
 
 会产生：
 
-```perl6
+```raku
 option {
     file "db.7.3.8";
 };
@@ -437,7 +437,7 @@ option {
 
 您可以在同一行开始多个 heredoc。
 
-```perl6
+```raku
 my ($first, $second) = qq:to/END1/, qq:to/END2/; 
   FIRST
   MULTILINE
@@ -453,7 +453,7 @@ my ($first, $second) = qq:to/END1/, qq:to/END2/;
 
 字面量字符串允许使用转义序列插入内嵌的引用结构，例如:
 
-```perl6
+```raku
 my $animal="quaggas";
 say 'These animals look like \qq[$animal]'; # OUTPUT: «These animals look like quaggas␤» 
 say 'These animals are \qqw[$animal or zebras]'; # OUTPUT: «These animals are quaggas or zebras␤» 
@@ -463,5 +463,5 @@ say 'These animals are \qqw[$animal or zebras]'; # OUTPUT: «These animals are q
 
 ### Regexes
 
-有关在 regexes 中应用的引用的信息，请参阅link:https://docs.perl6.org/language/regexes[正则表达式文档]。
+有关在 regexes 中应用的引用的信息，请参阅link:https://docs.raku.org/language/regexes[正则表达式文档]。
 

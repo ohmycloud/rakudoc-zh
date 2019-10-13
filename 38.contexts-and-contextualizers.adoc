@@ -1,24 +1,24 @@
 == 上下文和上下文化
 
-在许多情况下，需要上下文来解释容器的值。在 Perl 6 中，我们将使用 context 将容器的值强制转换为某种类型或类，或者决定如何处理它，就像接收器(sink)上下文的情况一样。
+在许多情况下，需要上下文来解释容器的值。在 Raku 中，我们将使用 context 将容器的值强制转换为某种类型或类，或者决定如何处理它，就像接收器(sink)上下文的情况一样。
 
 === Sink 上下文
 
 *Sink* 相当于 `void` 上下文，也就是说，我们抛出（在接收器下面）操作的结果或块的返回值的上下文。通常，当语句不知道如何处理该值时，将在警告和错误中调用此上下文。
 
-```perl6
+```raku
 my $sub = -> $a { return $a² };
 $sub; # OUTPUT: «WARNINGS:
 Useless use of $sub in sink context (line 1)» 
 ```
 
-您可以使用 link:https://docs.perl6.org/routine/sink-all[`sink-all`] 方法在 link:https://docs.perl6.org/type/Iterator[Iterator] 上强制使用该接收器上下文。link:https://docs.perl6.org/type/Proc[Proc]也可以通过 link:https://docs.perl6.org/type/Proc#method_sink[`sink`] 方法沉没，迫使它们引发异常而不返回任何东西。
+您可以使用 link:https://docs.raku.org/routine/sink-all[`sink-all`] 方法在 link:https://docs.raku.org/type/Iterator[Iterator] 上强制使用该接收器上下文。link:https://docs.raku.org/type/Proc[Proc]也可以通过 link:https://docs.raku.org/type/Proc#method_sink[`sink`] 方法沉没，迫使它们引发异常而不返回任何东西。
 
-通常，如果在 sink 上下文中进行计算，则块将发出警告; 但是，在 sink 上下文中 link:https://docs.perl6.org/language/control#Flow%2529_gather_take[gather/take] 块是显式计算的，并使用 `take` 显式返回值。
+通常，如果在 sink 上下文中进行计算，则块将发出警告; 但是，在 sink 上下文中 link:https://docs.raku.org/language/control#Flow%2529_gather_take[gather/take] 块是显式计算的，并使用 `take` 显式返回值。
 
 在 sink 上下文中，对象将调用其 `sink` 方法（如果存在）：
 
-```perl6
+```raku
 sub foo {
     return [<a b c>] does role {
         method sink { say "sink called" }
@@ -30,11 +30,11 @@ foo
 
 === Number 上下文
 
-这个上下文，可能除了上面的所有内容之外，都是*转换*或*解释*上下文，因为它们接收无类型或类型化的变量，并将其类型化为执行操作所需的任何内容。在某些情况下，这意味着转换（例如从 link:https://docs.perl6.org/type/Str[Str] 到 link:https://docs.perl6.org/type/Numeric[Numeric]）; 在其他情况下只是一种解释（link:https://docs.perl6.org/type/IntStr[IntStr] 将被解释为 link:https://docs.perl6.org/type/Int[Int] 或 link:https://docs.perl6.org/type/Str[Str]）。
+这个上下文，可能除了上面的所有内容之外，都是*转换*或*解释*上下文，因为它们接收无类型或类型化的变量，并将其类型化为执行操作所需的任何内容。在某些情况下，这意味着转换（例如从 link:https://docs.raku.org/type/Str[Str] 到 link:https://docs.raku.org/type/Numeric[Numeric]）; 在其他情况下只是一种解释（link:https://docs.raku.org/type/IntStr[IntStr] 将被解释为 link:https://docs.raku.org/type/Int[Int] 或 link:https://docs.raku.org/type/Str[Str]）。
 
 每当我们需要对变量应用数值运算时，就会调用*数字上下文*。
 
-```perl6
+```raku
 my $not-a-string="1                 ";
 my $neither-a-string="3                        ";
 say $not-a-string+$neither-a-string; # OUTPUT: «4» 
@@ -42,9 +42,9 @@ say $not-a-string+$neither-a-string; # OUTPUT: «4»
 
 在上面的代码中，只要只有几个数字而没有其他字符，字符串将在数字上下文中解释。但是，它可以具有任意数量的前导或尾随空格。
 
-可以使用算术运算符强制数字上下文，例如 `+` 或 `-`。在该上下文中，link:https://docs.perl6.org/routine/Numeric[`Numeric`] 将调用该方法（如果可用），并将返回的值用作对象的数值。
+可以使用算术运算符强制数字上下文，例如 `+` 或 `-`。在该上下文中，link:https://docs.raku.org/routine/Numeric[`Numeric`] 将调用该方法（如果可用），并将返回的值用作对象的数值。
 
-```perl6
+```raku
 my $t = True;
 my $f = False;
 say $t+$f;      # OUTPUT: «1» 
@@ -54,53 +54,53 @@ my $list= <a b c>;
 say True+$list; # OUTPUT: «4» 
 ```
 
-在*列表*那样的东西的情况下，数值通常等于 `.elems`; 在某些情况下，像link:https://docs.perl6.org/routine/Numeric#%28Thread%29_method_Numeric[Thread] 一样，它将返回唯一的线程标识符。
+在*列表*那样的东西的情况下，数值通常等于 `.elems`; 在某些情况下，像link:https://docs.raku.org/routine/Numeric#%28Thread%29_method_Numeric[Thread] 一样，它将返回唯一的线程标识符。
 
 === String 上下文
 
 在*字符串上下文中*，值可以作为字符串进行操作。例如，此上下文用于强制非字符串值，以便可以将它们打印到标准输出。
 
-```perl6
+```raku
 put $very-complicated-and-hairy-object; # OUTPUT: something meaningful 
 ```
 
 或者当智能匹配正则表达式时：
 
-```perl6
+```raku
 put 333444777 ~~ /(3+)/; # OUTPUT: «｢333｣ 0 => ｢333｣» 
 ```
 
-通常，将在变量上调用 link:https://docs.perl6.org/routine/Str[`Str`] 例程以将其上下文化; 因为这个方法是从 link:https://docs.perl6.org/type/Mu[Mu] 继承的，所以它始终存在，但并不总能保证工作。在某些核心类中，它会发出警告。
+通常，将在变量上调用 link:https://docs.raku.org/routine/Str[`Str`] 例程以将其上下文化; 因为这个方法是从 link:https://docs.raku.org/type/Mu[Mu] 继承的，所以它始终存在，但并不总能保证工作。在某些核心类中，它会发出警告。
 
-link:https://docs.perl6.org/routine/~[`~`] 是（一元）字符串上下文化器。作为运算符，它连接字符串，但作为前缀运算符，它成为字符串上下文运算符。
+link:https://docs.raku.org/routine/~[`~`] 是（一元）字符串上下文化器。作为运算符，它连接字符串，但作为前缀运算符，它成为字符串上下文运算符。
 
-```perl6
+```raku
 my @array = [ [1,2,3], [4,5,6]];
 say ~@array; # OUTPUT: «1 2 3 4 5 6» 
 ```
 
-当 `link:https://docs.perl6.org/language/operators#Reduction_operators[~]` 应用于列表时，这也将在 [*reduction*] 上下文中发生：
+当 `link:https://docs.raku.org/language/operators#Reduction_operators[~]` 应用于列表时，这也将在 [*reduction*] 上下文中发生：
 
-```perl6
+```raku
 say [~] [ 3, 5+6i, Set(<a b c>), [1,2,3] ]; # OUTPUT: «35+6ic a b1 2 3» 
 ```
 
 在那个情况下, 空列表或其它容器会字符串化为一个空字符串：
 
-```perl6
+```raku
 say [~] [] ; # OUTPUT: «␤» 
 ```
 
-由于 link:https://docs.perl6.org/routine/~#%28Operators%29_infix_~[`~`] 也作为缓冲区连接运算符，因此必须检查每个元素是否为空，因为字符串上下文中的单个空缓冲区将表现为字符串，从而产生错误。
+由于 link:https://docs.raku.org/routine/~#%28Operators%29_infix_~[`~`] 也作为缓冲区连接运算符，因此必须检查每个元素是否为空，因为字符串上下文中的单个空缓冲区将表现为字符串，从而产生错误。
 
-```perl6
+```raku
 say [~] Buf.new(0x3,0x33), Buf.new(0x2,0x22);
 # OUTPUT: «Buf:0x<03 33 02 22>» 
 ```
 
 然而,
 
-```perl6
+```raku
 my $non-empty = Buf.new(0x3, 0x33);
 my $empty = [];
 my $non-empty-also = Buf.new(0x2,0x22);
@@ -108,9 +108,9 @@ say [~] $non-empty, $empty, $non-empty-also;
 # OUTPUT: «Cannot use a Buf as a string, but you called the Stringy method on it 
 ```
 
-由于 `~` 将字符串上下文放入此列表的第二个元素，link:https://docs.perl6.org/routine/~#%28Operators%29_infix_~[`~`] 将使用适用于字符串的第二个形式，从而产生所显示的错误。只需确保连接的所有内容都是缓冲区即可避免此问题。
+由于 `~` 将字符串上下文放入此列表的第二个元素，link:https://docs.raku.org/routine/~#%28Operators%29_infix_~[`~`] 将使用适用于字符串的第二个形式，从而产生所显示的错误。只需确保连接的所有内容都是缓冲区即可避免此问题。
 
-```perl6
+```raku
 my $non-empty = Buf.new(0x3, 0x33);
 my $empty = Buf.new();
 my $non-empty-also = Buf.new(0x2,0x22);
@@ -119,7 +119,7 @@ say [~] $non-empty, $empty, $non-empty-also; # OUTPUT: «Buf:0x<03 33 02 22>»
 
 通常，上下文会通过调用 contextualizer 将变量强制转换为特定类型; 在 mixins 的情况下，如果混合了上下文类，它将以这种方式运行。
 
-```perl6
+```raku
 my $described-number = 1i but 'Unity in complex plane';
 put $described-number; # OUTPUT: «Unity in complex plane» 
 ```

@@ -5,7 +5,7 @@
 在像 `1 + 2 * 3` 这样的表达式中， `2 * 3` 被首先计算， 因为中缀操作符  `*` 的优先级比 `+` 的优先级高。下面的表中总结了 Perl  6 中  的优先级级别， 从最牢固到最松散：
 
 
-```perl6
+```raku
 A	Level	           Examples
 N	Terms	           42 3.14 "eek" qq["foo"] $x :!verbose @$array
 L	方法后缀	        .meth .+ .? .* .() .[] .{} .<> .«» .:: .= .^ .:
@@ -37,7 +37,7 @@ N	Terminator	       ; {...}, unless, extra ), ], }
 
 下面使用的两处 `!` 符号一般代表任何一对儿拥有相同优先级的操作符， 上表指定的二元操作符的结合性解释如下(其中 A 代表结合性， associativities )：
 
-```perl6
+```raku
 A	Assoc	Meaning of $a ! $b ! $c
 L	left	($a ! $b) ! $c
 R	right	$a ! ($b ! $c)
@@ -48,7 +48,7 @@ X	list	infix:<!>($a; $b; $)
 
 对于一元操作符， 这解释为:
 
-```perl6
+```raku
 A	Assoc	Meaning of !$a!
 L	left	(!$a)!
 R	right	!($a!)
@@ -62,7 +62,7 @@ N	non	    ILLEGAL
 
 操作符能出现在相对于 term 的几个位置处：
 
-```perl6
+```raku
 +term	        prefix         (后缀)
 term1 + term2	infix          (中缀)
 term++	        postfix        (后缀)
@@ -72,7 +72,7 @@ term1[term2]	postcircumfix  (后环缀)
 
 每个操作符也可以用作子例程。 这样的子例程的名字由操作符的种类， 然后后跟一个冒号，再加上一组引号结构， 引号结构中是组成操作符的符号(s):
 
-```perl6
+```raku
 infix:<+>(1, 2)                           # same as 1 + 2
 circumfix:«( )»('a', 'b', 'c')            # same as ('a', 'b', 'c'), 目前编译错误。
 circumfix:<[ ]>('a', 'b', 'c').perl.say   # ["a", "b", "c"]
@@ -80,7 +80,7 @@ circumfix:<[ ]>('a', 'b', 'c').perl.say   # ["a", "b", "c"]
 
 作为一种特殊情况， listop(列表操作符)既能作为 term 又能作为前缀。子例程调用是最常见的列表操作符。其它情况包括元运算中缀操作符 `[+]| 1, 2, 3` 和 `prefix` 等 stub 操作符。
 
-定义自定义操作符在 link:http://doc.perl6.org/language/functions#Defining_Operators[ /language/functions#Defining_Operators.]  中有涉及。
+定义自定义操作符在 link:http://doc.raku.org/language/functions#Defining_Operators[ /language/functions#Defining_Operators.]  中有涉及。
 
 ### Term 优先级
 
@@ -92,7 +92,7 @@ Term 怎么翻译才合适？ 我觉得翻译成 `项` 更合适， 表明这是
 
 引起单词的结构。以空白隔开内容， 并返回一个单词的 `Parcel`。 如果单词看起来像数字字面量或 `Pair` 字面量， 那么它会被转为合适的数字。
 
-```perl6
+```raku
 say <a b c>[1]  # b
 ```
 
@@ -107,7 +107,7 @@ say <a b c>[1]  # b
 
 在参数列表中，在参数周围放上圆括号防止了参数被解释为具名参数。
 
-```perl6
+```raku
 multi sub p(:$a!) { say 'named'      }
 multi sub p($a)   { say 'positional' }
 p a => 1;       # named
@@ -136,7 +136,7 @@ Block 或 散列构造器。
 ### 后环缀 [ ]
 
 
-```perl6
+```raku
 sub postcircumfix:<[ ]>(@container, **@index,
                         :$k, :$v, :$kv, :$p, :$exists, :$delete)
 ```
@@ -145,7 +145,7 @@ sub postcircumfix:<[ ]>(@container, **@index,
 
 访问 `@container`  中的一个或多个元素，即数组索引操作：
 
-```perl6
+```raku
 my @alphabet = 'a' .. 'z';
 say @alphabet[0];                   #-> a
 say @alphabet[1];                   #-> b
@@ -158,19 +158,19 @@ say @alphabet[23 .. *].perl;        #-> ("x", "y", "z")
 say @alphabet[0..3].perl            #-> ("a", "B", "C", "d")
 ```
 
-查看 link:http://doc.perl6.org/language/subscripts[Subscripts] 获取关于该操作符行为的更详细的解释， 还有怎么在自定义类型中实现对它的支持。
+查看 link:http://doc.raku.org/language/subscripts[Subscripts] 获取关于该操作符行为的更详细的解释， 还有怎么在自定义类型中实现对它的支持。
 
 ### 后环缀 { }
 
 
-```perl6
+```raku
 sub postcircumfix:<{ }>(%container, **@key,
                         :$k, :$v, :$kv, :$p, :$exists, :$delete)
 ```
 
 访问 `%container` 的一个或多个元素， 即散列索引操作：
 
-```perl6
+```raku
 my  %color = kiwi => "green", banana => "yellow", cherry => "red";
 say %color{"banana"};               #-> yellow
 say %color{"cherry", "kiwi"}.perl;  #-> ("red", "green")
@@ -188,7 +188,7 @@ say %color;  #-> banana => yellowish, kiwi => green, lime => green
 
 `后环缀 { }` 的简写形式， 它会引起它的参数。
 
-```perl6
+```raku
 my %color = kiwi => "green", banana => "yellow", cherry => "red";
 say %color<banana>;             #-> yellow
 say %color<cherry kiwi>.perl;   #-> ("red", "green")
@@ -202,7 +202,7 @@ say %color<strawberry>:exists;  #-> False
 
 `后环缀 { }` 的简写形式。它会引起它的参数，并且 « » 中能进行变量插值。
 
-```perl6
+```raku
 my %color = kiwi => "green", banana => "yellow", cherry => "red";
 my $fruit = "kiwi";
 say %color«cherry $fruit».perl;   #-> ("red", "green")
@@ -229,14 +229,14 @@ say %color«cherry $fruit».perl;   #-> ("red", "green")
 ### postfix .=
 
 
-可变的方法调用。 `$invocant.=method` ， 脱去语法糖后就是 `$invocant = $invocant.method` , 这与 link:http://doc.perl6.org/routine/op%3D[op=.] 类似。
+可变的方法调用。 `$invocant.=method` ， 脱去语法糖后就是 `$invocant = $invocant.method` , 这与 link:http://doc.raku.org/routine/op%3D[op=.] 类似。
 
 技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
 
 ### postfix .^
 
 
-元方法调用。 ` $invocant.^method` 在  `$invocant` 的元类身上调用方法。脱去语法糖后， 它就是 `$invocant.HOW.method($invocant, ...)` 。 查看 link:http://doc.perl6.org/type/HOW[HOW] 获取更多信息。
+元方法调用。 ` $invocant.^method` 在  `$invocant` 的元类身上调用方法。脱去语法糖后， 它就是 `$invocant.HOW.method($invocant, ...)` 。 查看 link:http://doc.raku.org/type/HOW[HOW] 获取更多信息。
 
 技术上讲， 这不是一个操作符，而是编译器中特殊情况下的语法。
 
@@ -266,14 +266,14 @@ say %color«cherry $fruit».perl;   #-> ("red", "green")
 
 大多数情况下， 可以在后缀或后环缀前面放上一个点：
 
-```perl6
+```raku
 @a[1, 2, 3];
 @a.[1, 2, 3]; # Same
 ```
 
 这对于视觉清晰或简洁很有帮助。例如，如果对象的属性是一个函数，在属性名后面放置一对儿圆括号会变成方法调用的一部分。 所以要么使用两对儿圆括号， 要么在圆括号前面放上一个点来阻止方法调用。
 
-```perl6
+```raku
 class Operation {
     has $.symbol;
     has &.function;
@@ -284,13 +284,13 @@ say $addition.function()(1, 2); # 3
 
 或者
 
-```perl6
+```raku
 say $addition.function.(1,2); # 3
 ```
 
  然而，如果后缀是一个标识符， 那么它会被解释为一个普通的方法调用。
 
-```perl6
+```raku
 1.i # No such method 'i' for invocant of type 'Int'
 ```
 
@@ -301,7 +301,7 @@ say $addition.function.(1,2); # 3
 
 前缀能够像方法那样， 使用冒号对儿标记法来调用。例如：
 
-```perl6
+```raku
 my $a = 1;
 say ++$a;     # 2
 say $a.:<++>; # 3
@@ -314,7 +314,7 @@ say $a.:<++>; # 3
 
 一个类限定的方法调用， 用于调用一个定义在父类或 role 中的方法， 甚至在子类中重新定义了之后。
 
-```perl6
+```raku
 class Bar {
     method baz { 42 }
 }
@@ -331,13 +331,13 @@ say Foo.Bar::baz; # 42
 ### prefix ++
 
 
-```perl6
+```raku
 multi sub prefix:<++>($x is rw) is assoc<none>
 ```
 
 把它的参数增加 1， 并返回增加后的值。
 
-```perl6
+```raku
 my $x = 3;
 say ++$x;    # 4
 say $x;      # 4
@@ -348,13 +348,13 @@ say $x;      # 4
 ### prefix --
 
 
-```perl6
+```raku
 multi sub prefix:<-->($x is rw) is assoc<none>
 ```
 
 把它的参数减少 1， 并返回减少后的值。
 
-```perl6
+```raku
 my $x = 3;
 say --$x;       # 2
 say $x;         # 2
@@ -365,13 +365,13 @@ say $x;         # 2
 ### postfix ++
 
 
-```perl6
+```raku
 multi sub postfix:<++>($x is rw) is assoc<none>
 ```
 
 把它的参数增加 1， 并返回`unincremented`的那个值。
 
-```perl6
+```raku
 my $x = 3;
 say $x++;       # 3
 say $x;         # 4
@@ -381,7 +381,7 @@ say $x;         # 4
 
 注意这并不一定返回它的参数。 例如，对于未定义的值， 它返回 0:
 
-```perl6
+```raku
 my $x;
 say $x++;       # 0
 say $x;         # 1
@@ -390,13 +390,13 @@ say $x;         # 1
 ### postfix --
 
 
-```perl6
+```raku
 multi sub postfix:<-->($x is rw) is assoc<none>
 ```
 
 把它的参数减少 1， 并返回`undecremented`的那个值。
 
-```perl6
+```raku
 my $x = 3;
 say $x--;       # 3
 say $x;         # 2
@@ -406,7 +406,7 @@ say $x;         # 2
 
 注意这并不一定返回它的参数。 例如，对于未定义的值， 它返回 0:
 
-```perl6
+```raku
 my $x;
 say $x--;       # 0
 say $x;         # -1
@@ -418,7 +418,7 @@ say $x;         # -1
 ### infix **
 
 
-```perl6
+```raku
 multi sub infix:<**>(Any, Any) returns Numeric:D is assoc<right>
 ```
 
@@ -432,7 +432,7 @@ multi sub infix:<**>(Any, Any) returns Numeric:D is assoc<right>
 ### prefix ?
 
 
-```perl6
+```raku
 multi sub prefix:<?>(Mu) returns Bool:D
 ```
 
@@ -443,7 +443,7 @@ multi sub prefix:<?>(Mu) returns Bool:D
 ### prefix !
 
 
-```perl6
+```raku
 multi sub prefix:<!>(Mu) returns Bool:D
 ```
 
@@ -454,7 +454,7 @@ multi sub prefix:<!>(Mu) returns Bool:D
 ### prefix +
 
 
-```perl6
+```raku
 multi sub prefix:<+>(Any) returns Numeric:D
 ```
 
@@ -467,7 +467,7 @@ Numeric 上下文操作符。
 ### prefix -
 
 
-```perl6
+```raku
 multi sub prefix:<->(Any) returns Numeric:D
 ```
 
@@ -478,7 +478,7 @@ multi sub prefix:<->(Any) returns Numeric:D
 ### prefix ~
 
 
-```perl6
+```raku
 multi sub prefix:<->(Any) returns Str:D
 ```
 
@@ -496,7 +496,7 @@ multi sub prefix:<->(Any) returns Str:D
 ### prefix +^
 
 
-```perl6
+```raku
 multi sub prefix:<+^>(Any) returns Int:D
 ```
 
@@ -509,7 +509,7 @@ Integer bitwise negation
 ### prefix ?^
 
 
-```perl6
+```raku
 multi sub prefix:<?^>(Mu) returns Bool:D
 ```
 
@@ -520,7 +520,7 @@ multi sub prefix:<?^>(Mu) returns Bool:D
 ### prefix ^
 
 
-```perl6
+```raku
 multi sub prefix:<^>(Any) returns Range:D
 ```
 
@@ -528,7 +528,7 @@ upto 操作符.
 
 强制把它的参数转为 Numeric， 生成一个从 0 直到（但是排除） 参数为止的范围。
 
-```perl6
+```raku
 say ^5;         # 0..^5
 for ^5 { }      # 5 iterations
 ```
@@ -539,7 +539,7 @@ for ^5 { }      # 5 iterations
 ### infix *
 
 
-```perl6
+```raku
 multi sub infix:<*>(Any, Any) returns Numeric:D
 ```
 
@@ -548,7 +548,7 @@ multi sub infix:<*>(Any, Any) returns Numeric:D
 ### infix /
 
 
-```perl6
+```raku
 multi sub infix:</>(Any, Any) returns Numeric:D
 ```
 
@@ -557,7 +557,7 @@ multi sub infix:</>(Any, Any) returns Numeric:D
 ### infix div
 
 
-```perl6
+```raku
 multi sub infix:<div>(Int:D, Int:D) returns Int:D
 ```
 
@@ -566,7 +566,7 @@ multi sub infix:<div>(Int:D, Int:D) returns Int:D
 ### infix %
 
 
-```perl6
+```raku
 multi sub infix:<%>($x, $y) return Numeric:D
 ```
 
@@ -574,14 +574,14 @@ multi sub infix:<%>($x, $y) return Numeric:D
 
 通常，下面的等式是成立的：
 
-```perl6
+```raku
 $x % $y == $x - floor($x / $y) * $y
 ```
 
 ### infix %%
 
 
-```perl6
+```raku
 multi sub infix:<%%>($a, $b) returns Bool:D
 ```
 
@@ -590,7 +590,7 @@ multi sub infix:<%%>($a, $b) returns Bool:D
 ### infix mod
 
 
-```perl6
+```raku
 multi sub infix:<mod>(Int:D $a, Int:D $b) returns Int:D
 ```
 
@@ -599,7 +599,7 @@ multi sub infix:<mod>(Int:D $a, Int:D $b) returns Int:D
 ### infix +&
 
 
-```perl6
+```raku
 multi sub infix:<+&>($a, $b) returns Int:D
 ```
 
@@ -608,7 +608,7 @@ Numeric 按位 `AND`。 把两个参数都强转为 Int 并执行按位 AND 操�
 ### infix +<
 
 
-```perl6
+```raku
 multi sub infix:<< +< >>($a, $b) returns Int:D
 ```
 
@@ -617,7 +617,7 @@ multi sub infix:<< +< >>($a, $b) returns Int:D
 ### infix +>
 
 
-```perl6
+```raku
 multi sub infix:<< +> >>($a, $b) returns Int:D
 ```
 
@@ -626,7 +626,7 @@ multi sub infix:<< +> >>($a, $b) returns Int:D
 ### infix gcd
 
 
-```perl6
+```raku
 multi sub infix:<gcd>($a, $b) returns Int:D
 ```
 
@@ -635,7 +635,7 @@ multi sub infix:<gcd>($a, $b) returns Int:D
 ### infix lcm
 
 
-```perl6
+```raku
 multi sub infix:<lcm>($a, $b) returns Int:D
 ```
 
@@ -647,7 +647,7 @@ multi sub infix:<lcm>($a, $b) returns Int:D
 ### infix +
 
 
-```perl6
+```raku
 multi sub infix:<+>($a, $b) returns Numeric:D
 ```
 
@@ -656,7 +656,7 @@ multi sub infix:<+>($a, $b) returns Numeric:D
 ### infix -
 
 
-```perl6
+```raku
 multi sub infix:<->($a, $b) returns Numeric:D
 ```
 
@@ -665,7 +665,7 @@ multi sub infix:<->($a, $b) returns Numeric:D
 ### infix +|
 
 
-```perl6
+```raku
 multi sub infix:<+|>($a, $b) returns Int:D
 ```
 
@@ -674,7 +674,7 @@ multi sub infix:<+|>($a, $b) returns Int:D
 ### infix +^
 
 
-```perl6
+```raku
 multi sub infix:<+^>($a, $b) returns Int:D
 ```
 
@@ -683,7 +683,7 @@ multi sub infix:<+^>($a, $b) returns Int:D
 ### infix ?|
 
 
-```perl6
+```raku
 multi sub infix:<?|>($a, $b) returns Bool:D
 ```
 
@@ -695,7 +695,7 @@ multi sub infix:<?|>($a, $b) returns Bool:D
 ### infix x
 
 
-```perl6
+```raku
 proto sub infix:<x>(Any, Any) returns Str:D
 multi sub infix:<x>(Any, Any)
 multi sub infix:<x>(Str:D, Int:D)
@@ -703,7 +703,7 @@ multi sub infix:<x>(Str:D, Int:D)
 
 把 `$a` 强转为 Str ， 把 `$b` 强转为 Int， 并重复字符串 `$b` 次。 如果 `$b <= 0` 则返回空字符串。
 
-```perl6
+```raku
 say 'ab' x 3;       # ababab
 say 42 x 3;         # 424242
 ```
@@ -711,7 +711,7 @@ say 42 x 3;         # 424242
 ### infix xx
 
 
-```perl6
+```raku
 multi sub infix:<xx>($a, $b) returns List:D
 ```
 
@@ -721,13 +721,13 @@ multi sub infix:<xx>($a, $b) returns List:D
 
 每次重复都会计算左侧的值， 所以
 
-```perl6
+```raku
 [1, 2] xx 5
 ```
 
 返回 5 个不同的数组（但是每次都是相同的内容）并且
 
-```perl6
+```raku
 rand xx 3
 ```
 
@@ -741,7 +741,7 @@ rand xx 3
 ### infix ~
 
 
-```perl6
+```raku
 proto sub infix:<~>(Any, Any) returns Str:D
 multi sub infix:<~>(Any,   Any)
 multi sub infix:<~>(Str:D, Str:D)
@@ -749,7 +749,7 @@ multi sub infix:<~>(Str:D, Str:D)
 
 强制两个参数为 Str 并连结它们。
 
-```perl6
+```raku
 say 'ab' ~ 'c';     # abc
 ```
 
@@ -759,7 +759,7 @@ say 'ab' ~ 'c';     # abc
 ### infix &
 
 
-```perl6
+```raku
 multi sub infix:<&>($a, $b) returns Junction:D is assoc<list>
 ```
 
@@ -771,7 +771,7 @@ multi sub infix:<&>($a, $b) returns Junction:D is assoc<list>
 ### infix |
 
 
-```perl6
+```raku
 multi sub infix:<|>($a, $b) returns Junction:D is assoc<list>
 ```
 
@@ -780,7 +780,7 @@ multi sub infix:<|>($a, $b) returns Junction:D is assoc<list>
 ### infix ^
 
 
-```perl6
+```raku
 multi sub infix:<^>($a, $b) returns Junction:D is assoc<list>
 ```
 
@@ -792,7 +792,7 @@ multi sub infix:<^>($a, $b) returns Junction:D is assoc<list>
 ### prefix temp
 
 
-```perl6
+```raku
 sub prefix:<temp>(Mu $a is rw)
 ```
 
@@ -801,7 +801,7 @@ temporizes 传入的变量作为参数， 这意味着退出作用域后它被�
 ### prefix let
 
 
-```perl6
+```raku
 sub prefix:<let>(Mu $a is rw)
 ```
 
@@ -813,7 +813,7 @@ sub prefix:<let>(Mu $a is rw)
 ### infix does
 
 
-```perl6
+```raku
 sub infix:<does>(Mu $obj, Mu $role) is assoc<none>
 ```
 
@@ -824,7 +824,7 @@ sub infix:<does>(Mu $obj, Mu $role) is assoc<none>
 ### infix but
 
 
-```perl6
+```raku
 sub infix:<but>(Mu $obj, Mu $role) is assoc<none>
 ```
 
@@ -835,7 +835,7 @@ sub infix:<but>(Mu $obj, Mu $role) is assoc<none>
 ### infix cmp
 
 
-```perl6
+```raku
 proto sub infix:<cmp>(Any, Any) returns Order:D is assoc<none>
 multi sub infix:<cmp>(Any,       Any)
 multi sub infix:<cmp>(Real:D,    Real:D)
@@ -848,7 +848,7 @@ multi sub infix:<cmp>(Version:D, Version:D)
 
 比较字符串时使用字符串语义， 比较数字时使用数字语义， 比较 Pair 对象时， 先比较键， 再比较值，等等。
 
-```perl6
+```raku
 if $a eqv $b, then $a cmp $b always returns Order::Same.
 say (a => 3) cmp (a => 4);      # Less
 say 4        cmp 4.0;           # Same
@@ -858,7 +858,7 @@ say 'b'      cmp 'a';           # More
 ### infix leg
 
 
-```perl6
+```raku
 proto sub infix:<leg>($a, $b) returns Order:D is assoc<none>
 multi sub infix:<leg>(Any,   Any)
 multi sub infix:<leg>(Str:D, Str:D)
@@ -868,7 +868,7 @@ multi sub infix:<leg>(Str:D, Str:D)
 
 把两个参数都强转为 `Str` , 然后按照字母次序比较。
 
-```perl6
+```raku
 say 'a' leg 'b';        Less
 say 'a' leg 'a';        Same
 say 'b' leg 'a';        More
@@ -877,7 +877,7 @@ say 'b' leg 'a';        More
 ### infix <=>
 
 
-```perl6
+```raku
 multi sub infix:«<=>»($a, $b) returns Order:D is assoc<none>
 ```
 
@@ -888,7 +888,7 @@ Numeric 三路比较器。
 ### infix ..
 
 
-```perl6
+```raku
 multi sub infix:<..>($a, $b) returns Range:D is assoc<none>
 ```
 
@@ -897,7 +897,7 @@ multi sub infix:<..>($a, $b) returns Range:D is assoc<none>
 ### infix ..^
 
 
-```perl6
+```raku
 multi sub infix:<..^>($a, $b) returns Range:D is assoc<none>
 ```
 
@@ -906,7 +906,7 @@ multi sub infix:<..^>($a, $b) returns Range:D is assoc<none>
 ### infix ^..
 
 
-```perl6
+```raku
 multi sub infix:<^..>($a, $b) returns Range:D is assoc<none>
 ```
 
@@ -915,7 +915,7 @@ multi sub infix:<^..>($a, $b) returns Range:D is assoc<none>
 ### infix ^..^
 
 
-```perl6
+```raku
 multi sub infix:<^..^>($a, $b) returns Range:D is assoc<none>
 ```
 
@@ -927,7 +927,7 @@ multi sub infix:<^..^>($a, $b) returns Range:D is assoc<none>
 ### infix ==
 
 
-```perl6
+```raku
 proto sub infix:<==>($, $) returns Bool:D is assoc:<chain>
 multi sub infix:<==>(Any, Any)
 multi sub infix:<==>(Int:D, Int:D)
@@ -943,7 +943,7 @@ multi sub infix:<==>(Numeric:D, Numeric:D)
 ### infix !=
 
 
-```perl6
+```raku
 proto sub infix:<!=>(Mu, Mu) returns Bool:D is assoc<chain>
 ```
 
@@ -952,7 +952,7 @@ proto sub infix:<!=>(Mu, Mu) returns Bool:D is assoc<chain>
 ### infix <
 
 
-```perl6
+```raku
 proto sub infix:«<»(Any, Any) returns Bool:D is assoc<chain>
 multi sub infix:«<»(Int:D, Int:D)
 multi sub infix:«<»(Num:D, Num:D)
@@ -964,7 +964,7 @@ multi sub infix:«<»(Real:D, Real:D)
 ### infix <=
 
 
-```perl6
+```raku
 proto sub infix:«<=»(Any, Any) returns Bool:D is assoc<chain>
 multi sub infix:«<=»(Int:D, Int:D)
 multi sub infix:«<=»(Num:D, Num:D)
@@ -976,7 +976,7 @@ multi sub infix:«<=»(Real:D, Real:D)
 ### infix >
 
 
-```perl6
+```raku
 proto sub infix:«>»(Any, Any) returns Bool:D is assoc<chain>
 multi sub infix:«>»(Int:D, Int:D)
 multi sub infix:«>»(Num:D, Num:D)
@@ -988,7 +988,7 @@ multi sub infix:«>»(Real:D, Real:D)
 ### infix >=
 
 
-```perl6
+```raku
 proto sub infix:«>=»(Any, Any) returns Bool:D is assoc<chain>
 multi sub infix:«>=»(Int:D, Int:D)
 multi sub infix:«>=»(Num:D, Num:D)
@@ -1000,7 +1000,7 @@ multi sub infix:«>=»(Real:D, Real:D)
 ### infix eq
 
 
-```perl6
+```raku
 proto sub infix:<eq>(Any, Any) returns Bool:D is assoc<chain>
 multi sub infix:<eq>(Any,   Any)
 multi sub infix:<eq>(Str:D, Str:D)
@@ -1013,7 +1013,7 @@ multi sub infix:<eq>(Str:D, Str:D)
 ### infix ne
 
 
-```perl6
+```raku
 proto sub infix:<ne>(Mu, Mu) returns Bool:D is assoc<chain>
 multi sub infix:<ne>(Mu,    Mu)
 multi sub infix:<ne>(Str:D, Str:D)
@@ -1026,7 +1026,7 @@ multi sub infix:<ne>(Str:D, Str:D)
 ### infix gt
 
 
-```perl6
+```raku
 proto sub infix:<gt>(Mu, Mu) returns Bool:D is assoc<chain>
 multi sub infix:<gt>(Mu,    Mu)
 multi sub infix:<gt>(Str:D, Str:D)
@@ -1039,7 +1039,7 @@ multi sub infix:<gt>(Str:D, Str:D)
 ### infix ge
 
 
-```perl6
+```raku
 proto sub infix:<ge>(Mu, Mu) returns Bool:D is assoc<chain>
 multi sub infix:<ge>(Mu,    Mu)
 multi sub infix:<ge>(Str:D, Str:D)
@@ -1052,7 +1052,7 @@ multi sub infix:<ge>(Str:D, Str:D)
 ### infix lt
 
 
-```perl6
+```raku
 proto sub infix:<lt>(Mu, Mu) returns Bool:D is assoc<chain>
 multi sub infix:<lt>(Mu,    Mu)
 multi sub infix:<lt>(Str:D, Str:D)
@@ -1065,7 +1065,7 @@ multi sub infix:<lt>(Str:D, Str:D)
 ### infix le
 
 
-```perl6
+```raku
 proto sub infix:<le>(Mu, Mu) returns Bool:D is assoc<chain>
 multi sub infix:<le>(Mu,    Mu)
 multi sub infix:<le>(Str:D, Str:D)
@@ -1078,7 +1078,7 @@ multi sub infix:<le>(Str:D, Str:D)
 ### infix before
 
 
-```perl6
+```raku
 proto sub infix:<before>(Any, Any) returns Bool:D is assoc<chain>
 multi sub infix:<before>(Any,       Any)
 multi sub infix:<before>(Real:D,    Real:D)
@@ -1092,7 +1092,7 @@ multi sub infix:<before>(Version:D, Version:D)
 ### infix after
 
 
-```perl6
+```raku
 proto sub infix:<after>(Any, Any) returns Bool:D is assoc<chain>
 multi sub infix:<after>(Any,       Any)
 multi sub infix:<after>(Real:D,    Real:D)
@@ -1106,14 +1106,14 @@ multi sub infix:<after>(Version:D, Version:D)
 ### infix eqv
 
 
-```perl6
+```raku
 proto sub infix:<eqv>(Any, Any) returns Bool:D is assoc<chain>
 proto sub infix:<eqv>(Any, Any)
 ```
 
 等值操作符。如果两个参数在结构上相同就返回 True。例如， 相同类型（并且递归）包含相同的值。
 
-```perl6
+```raku
 say [1, 2, 3] eqv [1, 2, 3];        # True
 say Any eqv Any;                    # True
 say 1 eqv 2;                        # False
@@ -1122,7 +1122,7 @@ say 1 eqv 1.0;                      # False
 
 对于任意对象使用默认的 eqv 操作是不可能的。例如， eqv 不认为同一对象的两个实例在结构上是相等的：
 
-```perl6
+```raku
 class A {
     has $.a;
 }
@@ -1132,7 +1132,7 @@ say A.new(a => 5) eqv A.new(a => 5);  #=> False
 
 要得到这个类的对象相等（eqv）语义， 需要实现一个合适的中缀 eqv 操作符：
 
-```perl6
+```raku
 class A {
     has $.a;
 }
@@ -1144,14 +1144,14 @@ say A.new(a => 5) eqv A.new(a => 5);  #=> True
 ### infix ===
 
 
-```perl6
+```raku
 proto sub infix:<===>(Any, Any) returns Bool:D is assoc<chain>
 proto sub infix:<===>(Any, Any)
 ```
 
 值相等。如果两个参数都是同一个对象则返回 True。
 
-```perl6
+```raku
 class A { };
 
 my $a = A.new;
@@ -1162,7 +1162,7 @@ say A === A;                # True
 
 对于值的类型，  `===` 表现的和 eqv 一样:
 
-```perl6
+```raku
 say 'a' === 'a';            # True
 say 'a' === 'b';            # False
 
@@ -1175,14 +1175,14 @@ say 1 === 1.0;              # False
 ### infix =:=
 
 
-```perl6
+```raku
 proto sub infix:<=:=>(Mu \a, Mu \b) returns Bool:D is assoc<chain>
 multi sub infix:<=:=>(Mu \a, Mu \b)
 ```
 
 容器相等。返回 True 如果两个参数都绑定到同一个容器上。 如果它返回 True， 那通常意味着修改一个参数也会同时修改另外一个。
 
-```perl6
+```raku
 my ($a, $b) = (1, 3);
 say $a =:= $b;      # False
 $b = 2;
@@ -1200,7 +1200,7 @@ say $b;             # 5
 
 这儿有一个内建智能匹配函数的摘要：
 
-```perl6
+```raku
 右侧      比较语义
 Mu:U	  类型检查
 Str	      字符串相等
@@ -1220,7 +1220,7 @@ Any:D	  对象相等
 
 注意这是短路操作符，如果其中的一个参数计算为 false 值， 那么该参数右侧的值绝不会被计算。
 
-```perl6
+```raku
 sub a { 1 }
 sub b { 0 }
 sub c { die "never called" };
@@ -1237,7 +1237,7 @@ say a() && b() && c();      # 0
 
 注意这是短路操作符，如果其中的一个参数计算为 true 值， 那么该参数右侧的值绝不会被计算。
 
-```perl6
+```raku
 sub a { 0 }
 sub b { 1 }
 sub c { die "never called" };
@@ -1249,7 +1249,7 @@ say a() || b() || c();      # 1
 
 返回第一个值为 true 的参数如果只有一个的话， 否则返回 Nil。只要找到两个值为 true 的参数就发生短路。
 
-```perl6
+```raku
 say 0 ^^ 42;                # 42
 say 0 ^^ 42 ^^ 1 ^^ die 8;  # (empty line)
 ```
@@ -1261,7 +1261,7 @@ say 0 ^^ 42 ^^ 1 ^^ die 8;  # (empty line)
 
 Defined-or  操作符。返回第一个定义了的操作数， 否则返回最后一个操作数。短路操作符。
 
-```perl6
+```raku
 say Any // 0 // 42;         # 0
 ```
 
@@ -1270,7 +1270,7 @@ say Any // 0 // 42;         # 0
 
 返回参数的最小值。语义由 cmp 语义决定。
 
-```perl6
+```raku
 $foo min= 0  # read as: $foo decreases to 0
 ```
 
@@ -1279,7 +1279,7 @@ $foo min= 0  # read as: $foo decreases to 0
 
 返回参数的最大值。
 
-```perl6
+```raku
 $foo max= 0  # read as: $foo increases to 0
 ```
 
@@ -1296,7 +1296,7 @@ $foo max= 0  # read as: $foo increases to 0
 ### infix ff
 
 
-```perl6
+```raku
 sub infix:<ff>(Mu $a, Mu $b)
 ```
 
@@ -1306,7 +1306,7 @@ Flipflop operator. 触发器操作符。
 
 实际上，左边的参数是"开始”条件， 右侧的参数是”停止” 条件。 这种结构一般用于收集只在特定区域的行。 例如：
 
-```perl6
+```raku
 my $excerpt = q:to/END/;
 Here's some unimportant text.
 =begin code
@@ -1327,7 +1327,7 @@ say @codelines.join("\n");
 
 匹配开始条件之后，操作符会继续将停止条件与 `$_` 进行匹配， 如果成功就做相应地表现。在这个例子中， 只有第一个元素被打印了：
 
-```perl6
+```raku
 for <AB C D B E F> {
     say $_ if /A/ ff /B/;  # prints only "AB"
 }
@@ -1335,7 +1335,7 @@ for <AB C D B E F> {
 
 如果你想测试开始条件， 并且没有结束条件， `*` 能用作 “停止” 条件。
 
-```perl6
+```raku
 for <A B C D E> {
     say $_ if /C/ ff *; # prints C, D, and E
 }
@@ -1348,7 +1348,7 @@ for <A B C D E> {
 ### infix ^ff
 
 
-```perl6
+```raku
 sub infix:<^ff>(Mu $a, Mu $b)
 ```
 
@@ -1356,7 +1356,7 @@ sub infix:<^ff>(Mu $a, Mu $b)
 
 一个比较:
 
-```perl6
+```raku
 my @list = <A B C>;
 say $_ if /A/ ff /C/ for @list;  # prints A, B, and C
 say $_ if /A/ ^ff /C/ for @list; # prints B and C
@@ -1369,13 +1369,13 @@ sed-like 版本 可以在 ^fff 中找到.
 ### infix ff^
 
 
-```perl6
+```raku
 sub infix:<ff^>(Mu $a, Mu $b)
 ```
 
 像 ff 那样工作，除了它不会在条目匹配停止条件时返回真。（包括第一次匹配开始条件的条目）
 
-```perl6
+```raku
 my @list = <A B C>;
 say $_ if /A/ ff /C/ for @list;  # prints A, B, and C
 say $_ if /A/ ff^ /C/ for @list; # prints A and B
@@ -1388,13 +1388,13 @@ sed-like 版本 可以在 fff^ 中找到.
 ### infix ^ff^
 
 
-```perl6
+```raku
 sub infix:<^ff^>(Mu $a, Mu $b)
 ```
 
 像 ff 那样工作，除了它不会在条目匹配停止条件时返回真, 也不会在条目匹配开始时返回真。（或者两者）
 
-```perl6
+```raku
 my @list = <A B C>;
 say $_ if /A/ ff /C/ for @list;  # prints A, B, and C
 say $_ if /A/ ^ff^ /C/ for @list; # prints B
@@ -1407,7 +1407,7 @@ sed-like 版本 可以在 ^fff^ 中找到.
 ### infix fff
 
 
-```perl6
+```raku
 sub infix:<fff>(Mu $a, Mu $b)
 ```
 
@@ -1415,7 +1415,7 @@ sub infix:<fff>(Mu $a, Mu $b)
 
 像 ff 那样工作， 除了它每次调用只尝试一个参数之外。即， 如果 `$_` 和左侧的参数智能匹配， fff 随后不会尝试将同一个 `$_` 和右侧的参数进行匹配。
 
-```perl6
+```raku
 for <AB C D B E F> {
     say $_ if /A/ fff /B/;  # Prints "AB", "C", "D", and "B"
 }
@@ -1428,13 +1428,13 @@ for <AB C D B E F> {
 ### infix ^fff
 
 
-```perl6
+```raku
 sub infix:<^fff>(Mu $a, Mu $b)
 ```
 
 像 fff那样， 除了它对于左侧的匹配不返回真之外。
 
-```perl6
+```raku
 my @list = <A B C>;
 say $_ if /A/ fff /C/ for @list;  # prints A, B, and C
 say $_ if /A/ ^fff /C/ for @list; # prints B and C
@@ -1447,13 +1447,13 @@ say $_ if /A/ ^fff /C/ for @list; # prints B and C
 ### infix fff^
 
 
-```perl6
+```raku
 sub infix:<fff^>(Mu $a, Mu $b)
 ```
 
 像 fff 那样， 除了它对于右侧的匹配不返回真之外。
 
-```perl6
+```raku
 my @list = <A B C>;
 say $_ if /A/ fff /C/ for @list;  # prints A, B, and C
 say $_ if /A/ fff^ /C/ for @list; # prints A and B
@@ -1466,13 +1466,13 @@ say $_ if /A/ fff^ /C/ for @list; # prints A and B
 ### infix ^fff^
 
 
-```perl6
+```raku
 sub infix:<^fff^>(Mu $a, Mu $b)
 ```
 
 像 fff 那样， 除了它对于左侧和右侧的匹配都不返回真之外。
 
-```perl6
+```raku
 my @list = <A B C>;
 say $_ if /A/ fff /C/ for @list;  # prints A, B, and C
 say $_ if /A/ ^fff^ /C/ for @list; # prints B
@@ -1488,7 +1488,7 @@ say $_ if /A/ ^fff^ /C/ for @list; # prints B
 ### infix =
 
 
-```perl6
+```raku
 sub infix:<=>(Mu $a is rw, Mu $b)
 ```
 
@@ -1501,7 +1501,7 @@ Item 赋值.
 ### infix =>
 
 
-```perl6
+```raku
 sub infix:«=>»($key, Mu $value) returns Pair:D
 ```
 
@@ -1511,7 +1511,7 @@ Pair 构造器.
 
 注意 `=>` 操作符是语法上的特例，在这个结构中， 它允许左侧是一个未被引起的标识符。
 
-```perl6
+```raku
 my $p = a => 1;
 say $p.key;         # a
 say $p.value;       # 1
@@ -1527,7 +1527,7 @@ say $p.value;       # 1
 ### prefix not
 
 
-```perl6
+```raku
 multi sub prefix:<not>(Mu $x) returns Bool:D
 ```
 
@@ -1536,7 +1536,7 @@ multi sub prefix:<not>(Mu $x) returns Bool:D
 ### prefix so
 
 
-```perl6
+```raku
 multi sub prefix:<so>(Mu $x) returns Bool:D
 ```
 
@@ -1548,7 +1548,7 @@ multi sub prefix:<so>(Mu $x) returns Bool:D
 ### infix ,
 
 
-```perl6
+```raku
 sub infix:<,>(*@a) is assoc<list> returns Parcel:D
 ```
 
@@ -1561,7 +1561,7 @@ sub infix:<,>(*@a) is assoc<list> returns Parcel:D
 
 那会把函数调用转为方法调用。
 
-```perl6
+```raku
 substr('abc': 1);       # same as 'abc'.substr(1)
 ```
 
@@ -1575,7 +1575,7 @@ substr('abc': 1);       # same as 'abc'.substr(1)
 ### infix Z
 
 
-```perl6
+```raku
 sub infix:<Z>(**@lists) returns List:D is assoc<chain>
 ```
 
@@ -1583,13 +1583,13 @@ Zip operator.
 
 Z 像一个拉链那样把列表插入进来， 只要第一个输入列表耗尽就停止：
 
-```perl6
+```raku
 say (1, 2 Z <a b c> Z <+ ->).perl;  # ((1, "a", "+"), (2, "b", "-")).list
 ```
 
 `Z` 操作符也作为元操作符存在， 此时内部的 parcels 被应用了元操作符的列表替换：
 
-```perl6
+```raku
 say 100, 200 Z+ 42, 23;             # 142, 223
 say 1..3 Z~ <a b c> Z~ 'x' xx 3;    # 1ax 2bx 3cx
 ```
@@ -1597,13 +1597,13 @@ say 1..3 Z~ <a b c> Z~ 'x' xx 3;    # 1ax 2bx 3cx
 ### infix X
 
 
-```perl6
+```raku
 sub infix:<X>(**@lists) returns List:D is assoc<chain>
 ```
 
 从所有列表创建一个外积。最右边的元素变化得最迅速。
 
-```perl6
+```raku
 1..3 X <a b c> X 9
 
 # produces   (1, 'a', 9), (1, 'b', 9), (1, 'c', 9),
@@ -1614,7 +1614,7 @@ sub infix:<X>(**@lists) returns List:D is assoc<chain>
 
 X 操作符也可以作为元操作符， 此时内部的 parcels 被应用了元操作符的列表的值替换：
 
-```perl6
+```raku
 1..3 X~ <a b c> X~ 9
 
 # produces   '1a9', '1b9', '1c9',
@@ -1626,7 +1626,7 @@ X 操作符也可以作为元操作符， 此时内部的 parcels 被应用了�
 ### infix ...
 
 
-```perl6
+```raku
 multi sub infix:<...>(**@) is assoc<list>
 multi sub infix:<...^>(**@) is assoc<list>
 ```
@@ -1641,7 +1641,7 @@ multi sub infix:<...^>(**@) is assoc<list>
 
 默认的生成器是 `*.succ` 或 `*.pred` ， 取决于末端怎么比较：
 
-```perl6
+```raku
 say 1 ... 4;        # 1 2 3 4
 say 4 ... 1;        # 4 3 2 1
 say 'a' ... 'e';    # a b c d e
@@ -1650,13 +1650,13 @@ say 'e' ... 'a';    # e d c b a
 
 `*`  (Whatever) 末端生成一个无限序列，使用的是默认的生成器 `*.succ`。
 
-```perl6
+```raku
 say (1 ... *)[^5];  # 1 2 3 4 5
 ```
 
 自定义生成器是在 `…` 操作符之前的最后一个参数。下面这个自定义生成器接收两个参数， 生成了斐波纳契数。
 
-```perl6
+```raku
 say (1, 1, -> $a, $b { $a + $b } ... *)[^8];    # 1 1 2 3 5 8 13 21
 # same but shorter
 say (1, 1, *+* ... *)[^8];                      # 1 1 2 3 5 8 13 21
@@ -1664,7 +1664,7 @@ say (1, 1, *+* ... *)[^8];                      # 1 1 2 3 5 8 13 21
 
 当然自定义生成器也能只接收一个参数。
 
-```perl6
+```raku
 say 5, { $_ * 2 } ... 40;                       # 5 10 20 40
 ```
 
@@ -1672,7 +1672,7 @@ say 5, { $_ * 2 } ... 40;                       # 5 10 20 40
 
 如果没有生成器，并且有不止一个初始元素，所有的初始元素都是数值，那么序列操作符会尝试推导出生成器。它知道数学和几何序列。
 
-```perl6
+```raku
 say 2, 4, 6 ... 12;     # 2 4 6 8 10 12
 say 1, 2, 4 ... 32;     # 1 2 4 8 16 32
 ```
@@ -1681,7 +1681,7 @@ say 1, 2, 4 ... 32;     # 1 2 4 8 16 32
 
 这允许你这样写：
 
-```perl6
+```raku
 say 1, 1, *+* ...^ *>= 100;
 ```
 
@@ -1689,7 +1689,7 @@ say 1, 1, *+* ...^ *>= 100;
 
 `...` 操作符还会把初始值看作”已生成的元素”，所以它们也会对末端进行检查：
 
-```perl6
+```raku
 my $end = 4;
 say 1, 2, 4, 8, 16 ... $end;
 # outputs 1 2 4
@@ -1710,7 +1710,7 @@ say 1, 2, 4, 8, 16 ... $end;
 
 绑定。 而 `$x = $y` 是把 `$y` 中的值放到 `$x` 里面， `$x := $y` 会让 `$x` 和 `$y` 引用同一个值。
 
-```perl6
+```raku
 my $a = 42;
 my $b = $a;
 $b++;

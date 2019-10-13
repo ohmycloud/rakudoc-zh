@@ -1,4 +1,4 @@
-该页面是关于在 Perl 6 上下文中 link:https://en.wikipedia.org/wiki/Computer_performance[计算机性能] 的。
+该页面是关于在 Raku 上下文中 link:https://en.wikipedia.org/wiki/Computer_performance[计算机性能] 的。
 
 # 首先,剖析你的代码
 
@@ -6,16 +6,16 @@
 
 ## Time with `now - INIT now`
 
-对于 `now - INIT now` 形式的表达式, 其中 `INIT` 是一个 link:https://docs.perl6.org/language/phasers[Perl 6 程序中运行的 phase], 为计时代码片段提供了一个很好的习惯用法。
+对于 `now - INIT now` 形式的表达式, 其中 `INIT` 是一个 link:https://docs.raku.org/language/phasers[Raku 程序中运行的 phase], 为计时代码片段提供了一个很好的习惯用法。
 
-使用 `m: your code goes here` link:https://docs.perl6.org/language/glossary#camelia[perl6 频道 evalbot] 来写出这样的行:
+使用 `m: your code goes here` link:https://docs.raku.org/language/glossary#camelia[raku 频道 evalbot] 来写出这样的行:
 
-```perl6
+```raku
 m: say now - INIT now
 rakudo-moar abc1234: OUTPUT«0.0018558␤»
 ```
 
-`INIT` 左边的 `now` 比 `INIT` 右边的 `now` *晚*运行了 0.0018558 秒, 因为后者在link:https://docs.perl6.org/language/phasers#INIT[INIT phase] 期间出现。
+`INIT` 左边的 `now` 比 `INIT` 右边的 `now` *晚*运行了 0.0018558 秒, 因为后者在link:https://docs.raku.org/language/phasers#INIT[INIT phase] 期间出现。
 
 ## 本地剖析
 
@@ -37,9 +37,9 @@ rakudo-moar abc1234: OUTPUT«0.0018558␤»
 
 要处理更大的配置文件，请输出到扩展名为 `.sql` 的文件。这将把配置文件数据写成一系列SQL语句，适合在 SQLite 中打开。
 
-```perl6
+```raku
 # create a profile 
-perl6 --profile --profile-filename=demo.sql -e 'say (^20).combinations(3).elems'
+raku --profile --profile-filename=demo.sql -e 'say (^20).combinations(3).elems'
  
 # create a SQLite database 
 sqlite3 demo.sqlite
@@ -76,9 +76,9 @@ If you want to profile the time and memory it takes to compile your code, use Ra
 
 ## 创建或查看基准
 
-使用 link:https://github.com/japhb/perl6-bench[perl6-bench]。
+使用 link:https://github.com/japhb/raku-bench[raku-bench]。
 
-如果您为多个编译器（通常是 Perl 5，Perl 6 或 NQP 的版本）运行 perl6-bench，则每个编译器的结果将在视觉上覆盖在相同的图形上，以便快速轻松地进行比较。
+如果您为多个编译器（通常是 Perl 5，Raku 或 NQP 的版本）运行 raku-bench，则每个编译器的结果将在视觉上覆盖在相同的图形上，以便快速轻松地进行比较。
 
 ## Share problems
 
@@ -86,7 +86,7 @@ Once you've used the above techniques to identify the code to improve, you can t
 
 - 对于每个问题，将其提取到单行或 gist，并提供性能数字或使片段足够小，以便可以使用 `prof-m: your code or gist URL goes here` 进行分析。    
 - 考虑你需要/想要的最低速度增加（或减少或减少什么），并考虑与实现该目标相关的成本。在人们的时间和精力方面，改进的价值是什么？  
-- 让其他人知道您的 Perl 6 用例是在生产环境中还是仅仅是为了好玩。  
+- 让其他人知道您的 Raku 用例是在生产环境中还是仅仅是为了好玩。  
 
 # 解决问题
 
@@ -94,13 +94,13 @@ Once you've used the above techniques to identify the code to improve, you can t
 
 ## 逐行
 
-尝试逐行改进代码的快速，有趣和高效的方法是使用 perl6 link:https://docs.perl6.org/language/glossary#IRC[evalbot] link:https://docs.perl6.org/language/glossary#camelia[camelia] 与其他人协作。
+尝试逐行改进代码的快速，有趣和高效的方法是使用 raku link:https://docs.raku.org/language/glossary#IRC[evalbot] link:https://docs.raku.org/language/glossary#camelia[camelia] 与其他人协作。
 
 ## 逐个例程
 
 使用 multidispatch，您可以在现有的例程“旁边”添加新的例程变体：
 
-```perl6
+```raku
 # existing code generically matches a two arg foo call: 
 multi sub foo(Any $a, Any $b) { ... }
  
@@ -112,7 +112,7 @@ multi sub foo("quux", Int $b) { ... }
 
 ## 加速类型检测和调用解析
 
-大多数 link:https://docs.perl6.org/type/Signature#Type_constraints[where 子句]  - 以及大多数link:https://design.perl6.org/S12.html#Types_and_Subtypes[子集]  - 强制动态（运行时）类型检查和调用解析它可能匹配的任何调用。这比编译时更慢，或者至少晚一些。
+大多数 link:https://docs.raku.org/type/Signature#Type_constraints[where 子句]  - 以及大多数link:https://design.raku.org/S12.html#Types_and_Subtypes[子集]  - 强制动态（运行时）类型检查和调用解析它可能匹配的任何调用。这比编译时更慢，或者至少晚一些。
 
 方法调用通常尽可能晚地解析（在运行时动态），而 sub 调用通常在编译时静态解析。
 
@@ -122,28 +122,28 @@ multi sub foo("quux", Int $b) { ... }
 
 一个典型的例子是 link:https://en.wikipedia.org/wiki/Boyer–Moore_string_search_algorithm[Boyer-Moore]。要匹配大字符串中的小字符串，一个明显的方法是比较两个字符串的第一个字符然后，如果它们匹配，则比较第二个字符，或者，如果它们不匹配，则比较第一个字符大字符串中第二个字符的小字符串的字符，依此类推。相反，Boyer-Moore 算法首先将小字符串的 *last* 字符与大字符串中相应定位的字符进行比较。对于大多数字符串，Boyer-Moore 算法在算法上接近 N 倍，其中 N 是小字符串的长度。
 
-接下来的几节讨论了算法改进的两大类，这些类别在 Perl 6 中特别容易实现。有关这个一般主题的更多信息，请阅读有关link:https://en.wikipedia.org/wiki/Algorithmic_efficiency[算法效率]的维基百科页面，尤其是接近结尾的“另请参阅”部分。
+接下来的几节讨论了算法改进的两大类，这些类别在 Raku 中特别容易实现。有关这个一般主题的更多信息，请阅读有关link:https://en.wikipedia.org/wiki/Algorithmic_efficiency[算法效率]的维基百科页面，尤其是接近结尾的“另请参阅”部分。
 
 ### 将顺序/阻塞代码更改为并行/非阻塞
 
 这是另一个非常重要的算法改进类。
 
-查看幻灯片 link:https://jnthn.net/papers/2015-yapcasia-concurrency.pdf#page=17[Perl 6 中的并行、并发和异步] 和 link:https://www.youtube.com/watch?v=JpqnNCx7wVY&list=PLRuESFRW2Fa77XObvk7-BYVFwobZHdXdK&index=8[对应的视频]。
+查看幻灯片 link:https://jnthn.net/papers/2015-yapcasia-concurrency.pdf#page=17[Raku 中的并行、并发和异步] 和 link:https://www.youtube.com/watch?v=JpqnNCx7wVY&list=PLRuESFRW2Fa77XObvk7-BYVFwobZHdXdK&index=8[对应的视频]。
 
 ## 使用已有的高性能代码
 
-您可以在 Perl 6 中使用大量高性能 C 库，而 link:https://docs.perl6.org/language/nativecall[NativeCall] 可以轻松地为它们创建包装器。还有对 C++ 库的实验性支持。
+您可以在 Raku 中使用大量高性能 C 库，而 link:https://docs.raku.org/language/nativecall[NativeCall] 可以轻松地为它们创建包装器。还有对 C++ 库的实验性支持。
 
-如果要link:https://stackoverflow.com/a/27206428/1077672[在 Perl 6 中使用 Perl 5 模块]，请混合使用 Perl 6 类型和link:https://docs.perl6.org/language/mop[元对象协议]。
+如果要link:https://stackoverflow.com/a/27206428/1077672[在 Raku 中使用 Perl 5 模块]，请混合使用 Raku 类型和link:https://docs.raku.org/language/mop[元对象协议]。
 
-更一般地说，Perl 6 旨在与其他语言平滑地互操作，并且有许多模块link:https://modules.perl6.org/#q=inline[旨在促进使用来自其他语言的库]。
+更一般地说，Raku 旨在与其他语言平滑地互操作，并且有许多模块link:https://modules.raku.org/#q=inline[旨在促进使用来自其他语言的库]。
 
 ## 让 Rakudo 编译器生成更快的代码
 
-到目前为止，编译器的重点是正确性，而不是它生成代码的速度有多快，或者生成的代码运行速度有多快。但是预计会发生变化，最终......你可以在 freenode IRC 频道#perl6 和 #moarvm 上与编译器开发人员讨论预期的内容。更好的是，你可以自己贡献代码：
+到目前为止，编译器的重点是正确性，而不是它生成代码的速度有多快，或者生成的代码运行速度有多快。但是预计会发生变化，最终......你可以在 freenode IRC 频道#raku 和 #moarvm 上与编译器开发人员讨论预期的内容。更好的是，你可以自己贡献代码：
 
-- Rakudo 主要用 Perl 6 编写。因此，如果您可以编写 Perl 6，那么您可以破解编译器，包括优化任何影响代码速度的大量现有高级代码（以及其他所有代码）。  
-- 大多数编译器的其余部分都是用一种名为 link:https://github.com/perl6/nqp[NQP] 的小语言编写的，它基本上是 Perl 6 的一个子集。如果你可以编写 Perl 6，你也可以很容易地学会使用和改进中级 NQP 代码，至少从一种纯粹的语言观点。要深入了解 NQP 和 Rakudo 的内涵，请从 link:https://edumentab.github.io/rakudo-and-nqp-internals-course/[NQP 和内部课程]开始。  
+- Rakudo 主要用 Raku 编写。因此，如果您可以编写 Raku，那么您可以破解编译器，包括优化任何影响代码速度的大量现有高级代码（以及其他所有代码）。  
+- 大多数编译器的其余部分都是用一种名为 link:https://github.com/raku/nqp[NQP] 的小语言编写的，它基本上是 Raku 的一个子集。如果你可以编写 Raku，你也可以很容易地学会使用和改进中级 NQP 代码，至少从一种纯粹的语言观点。要深入了解 NQP 和 Rakudo 的内涵，请从 link:https://edumentab.github.io/rakudo-and-nqp-internals-course/[NQP 和内部课程]开始。  
 - 如果低级别的 C 黑客是你的乐趣，请查看 link:https://moarvm.org/[MoarVM] 并访问 freenode IRC 频道 #moarvm（link:https://colabti.org/irclogger/irclogger_logs/moarvm[日志]）。
 
 ## 仍然需要更多想法?
@@ -154,11 +154,11 @@ multi sub foo("quux", Int $b) { ... }
 
 # 没有得到你需要/想要的结果?
 
-如果您已尝试此页面上的所有内容无效，请考虑使用 #perl6 上的编译器开发人员进行讨论，以便我们可以从您的用例中了解到目前为止您已经发现的内容。
+如果您已尝试此页面上的所有内容无效，请考虑使用 #raku 上的编译器开发人员进行讨论，以便我们可以从您的用例中了解到目前为止您已经发现的内容。
 
 一旦开发人员知道您的困境，请留出足够的时间做出明智的回应（几天或几周，具体取决于问题的确切性质和潜在的解决方案）。
 
-如果还没有成功，请考虑在继续之前提交有关您在我们的link:https://github.com/perl6/user-experience/issues[用户体验]仓库中的体验的问题。
+如果还没有成功，请考虑在继续之前提交有关您在我们的link:https://github.com/raku/user-experience/issues[用户体验]仓库中的体验的问题。
 
 谢谢。 :)
 

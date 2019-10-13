@@ -1,12 +1,12 @@
-link:https://docs.perl6.org/language/objects[Object Orientation in Perl 6]
+link:https://docs.raku.org/language/objects[Object Orientation in Raku]
 
- Perl 6 有很多预先定义好的类型，这些类型可以归为 2 类：`普通类型`和`原生类型`。原生类型用于`底层类型`（例如 uint 64）。原生类型没有和对象同样的功能，尽管你可以在它们身上调用方法， 它们还是被包装成普通的对象。所有你能存储到变量中的东西要么是一个原生的 value， 要么是一个对象。这包括字面值、类型（类型对象）、code 和容器。
+ Raku 有很多预先定义好的类型，这些类型可以归为 2 类：`普通类型`和`原生类型`。原生类型用于`底层类型`（例如 uint 64）。原生类型没有和对象同样的功能，尽管你可以在它们身上调用方法， 它们还是被包装成普通的对象。所有你能存储到变量中的东西要么是一个原生的 value， 要么是一个对象。这包括字面值、类型（类型对象）、code 和容器。
 
 ## 使用对象
 
 方法可以有参数， 但是方法名和参数列表之间不可以有空格：
 
-```perl6
+```raku
 say "abc".uc;                   
 #        ^^^ 不带参数的方法调用
 my @words = $string.comb(/\w+/);
@@ -15,13 +15,13 @@ my @words = $string.comb(/\w+/);
 
 另外一种方法调用的语法将方法名和参数列表用一个冒号分开(冒号紧跟方法名, 中间不能有空格):
 
-```perl6
+```raku
 say @*INC.join: ':';
 ```
 
 方法能返回一个可变容器, 这种情况下 你可以赋值给方法调用的返回值.
 
-```perl6
+```raku
 $*IN.input-line-separator = "\r\n";
 ```
 
@@ -30,19 +30,19 @@ $*IN.input-line-separator = "\r\n";
 
 Types本身就是对象 ，你可以使用类型的名字获取 type object :
 
-```perl6
+```raku
 my $int-type-obj = Int;
 ```
 
 你可以通过调用 WHAT 方法查看任何对象的 type object(它实际上是一个方法形式的macro):
 
-```perl6
+```raku
 my $int-type-obj = 1.WHAT;
 ```
 
 使用 === 操作符可以比较 类型对象的相等性：
 
-```perl6
+```raku
 sub f(Int $x) {
     if $x.WHAT === Int {
         say 'you passed an Int';
@@ -55,7 +55,7 @@ sub f(Int $x) {
 
 子类型可以使用 smart-matching来检查：
 
-```perl6
+```raku
 if $type ~~ Real {
     say '$type contains Real or a subtype thereof';
 }
@@ -65,14 +65,14 @@ if $type ~~ Real {
 
 使用 class 关键字进行类的定义：
 
-```perl6
+```raku
 class Journey {
 }
 ```
 
 声明一个词法作用域的类：
 
-```perl6
+```raku
 my class Journey {
 }
 ```
@@ -81,9 +81,9 @@ my class Journey {
 
 ## 属性
 
-属性存在于每个类的实例中。属性中存储着对象的状态。在 Perl 6 中, 一切属性都是`私有的`.  它们一般使用 `has` 关键字和 `!` twigil 进行声明.
+属性存在于每个类的实例中。属性中存储着对象的状态。在 Raku 中, 一切属性都是`私有的`.  它们一般使用 `has` 关键字和 `!` twigil 进行声明.
 
-```perl6
+```raku
 class Journey {
     has $!origin;
     has $!destination;
@@ -94,7 +94,7 @@ class Journey {
 
 然而, 没有像这样的公共(甚至保护属性)属性, 不过有一种方式能`自动生成访问方法`: 使用 `. `代替 `!` twigil 。(那个 `.` 应该让你想起了**方法调用**).
 
-```perl6
+```raku
 class Journey {
     has $.origin;
     has $.destination;
@@ -105,7 +105,7 @@ class Journey {
 
 这默认提供了一种**只读**的取值方法, 为了允许更改属性, 要添加 `is rw` 特性:
 
-```perl6
+```raku
 class Journey {
     has $.origin;
     has $.destination;
@@ -116,7 +116,7 @@ class Journey {
 
 因为类默认继承于构造器 `Mu`, 我们也要求类为我们生成一些**存取方法**.
 
-```perl6
+```raku
 # 创建一个新的类的实例.
 my $vacation = Journey.new(
     origin      => 'Sweden',
@@ -135,7 +135,7 @@ $vacation.notes = 'Pack hiking gear and sunglasses!';
 
 使用 `method` 关键字定义类中的方法：
 
-```perl6
+```raku
 class Journey {
     has $.origin;
     has $.destination;
@@ -161,12 +161,12 @@ class Journey {
 
 即 `has $.attribute` 等价于:
 
-```perl6
+```raku
     has $!attribute
     method attribute() { ... }
 ```
 
-```perl6
+```raku
 class A {    
     has $.attr is rw;
 }
@@ -174,7 +174,7 @@ class A {
 
 等价于:
 
-```perl6
+```raku
 class A {    
     has $!attr;    
     method attr() is rw {
@@ -195,7 +195,7 @@ class A {
 
 私有方法的调用要使用感叹号而非点号:
 
-```perl6
+```raku
 method !do-something-private($x) {
     ...
 }
@@ -219,13 +219,13 @@ Submethods 对于对象构建和解构任务很有用。
 
 类可以有父类:
 
-```perl6
+```raku
 class Child is Parent1 is Parent2 { }
 ```
 
-如果在子类中调用一个方法, 但是子类没有提供那个方法, 就会调用父类中同名的方法, 如果父类中存在那个方法的话. 父类被询问的顺序就叫做方法解析顺序(MRO). Perl 6 使用 C3 方法解析顺序. 你可以通过调用一个类型的元类型方法得知这个类型的 MRO.
+如果在子类中调用一个方法, 但是子类没有提供那个方法, 就会调用父类中同名的方法, 如果父类中存在那个方法的话. 父类被询问的顺序就叫做方法解析顺序(MRO). Raku 使用 C3 方法解析顺序. 你可以通过调用一个类型的元类型方法得知这个类型的 MRO.
 
-```perl6
+```raku
 say Parcel.^mro;    # Parcel() Cool() Any() Mu()
 ```
 
@@ -235,7 +235,7 @@ say Parcel.^mro;    # Parcel() Cool() Any() Mu()
 
 对象通常通过方法调用创建, 或者通过类型对象或者通过同类型的其它对象创建. 类 Mu 提供了一个叫做 new 的构造器方法, 这个方法接收命名参数然后使用它们来初始化公共属性.
 
-```perl6
+```raku
 class Point {
     has $.x;
     has $.y = 2 * $!x;
@@ -248,7 +248,7 @@ my $p = Point.new( x => 1, y => 2);
 
 这种构造模式对于自定义构造器有几处暗示. 首先, 自定义 BUILD 方法应该总是子方法(submethod), 否则它们会中断子类中的属性初始化. 第二, BUILD 子方法能用于在对象构造时执行自定义代码. 它们也能用于为属性初始化**创建别名**:
 
-```perl6
+```raku
 class EncodedBuffer {
     has $.enc;
     has $.data;
@@ -265,7 +265,7 @@ my $b2 = EncodedBuffer.new( enc      => 'UTF-8', data => [64, 65] );
 
 因为传递实参给子例程把实参绑定给了形参, 如果把属性用作形参,单独绑定那一步就不需要了. 所以上面的例子可以写为:
 
-```perl6
+```raku
 submethod BUILD(:encoding(:$!enc), :$!data) {
     # nothing to do here anymore, the signature binding
     # does all the work for us.
@@ -274,7 +274,7 @@ submethod BUILD(:encoding(:$!enc), :$!data) {
 
 第三个暗示是如果你想要一个接收位置参数的构造函数, 你必须自己写 new 方法:
 
-```perl6
+```raku
 class Point {
     has $.x;
     has $.y;
@@ -290,7 +290,7 @@ class Point {
 
 Roles 在某种程度上和类相似, 它们都是属性和方法的集合. 不同之处在于,  roles 是用来描述对象行为的某**一部分**的, 和 roles 怎样应用于类中. 或怎样解析。 类用于管理对象实例, 而 roles 用于**管理行为**和**代码复用**。
 
-```perl6
+```raku
 role Serializable {
     method serialize() {
         self.perl; # 很粗超的序列化
@@ -321,7 +321,7 @@ Role 应用和类继承有重大不同。 当 role 应用到类中时, 那个 ro
 当一个 role 被应用到第二个 role上, 实际的程序被延迟直到第二个 role 被应用到类, 这时两个 roles 才都被应用到那个类中。 因此：
 
 
-```perl6
+```raku
 role R1 {
     # methods here
 }
@@ -347,7 +347,7 @@ class C does R2 does R1 { }
 
 当 role 中包含了一个 stubbed 方法, 在这个 role 被应用到类中时, 必须提供一个同名的非 stubbed 版本的方法。这允许你创建如抽象接口那样的 roles。这有点像 Swift 中的 Protocol 协议。
 
-```perl6
+```raku
 role AbstractSerializable {
     method serialize() { ... }  # 字面的三个点 ... 把方法标记为 stub
 }
@@ -376,23 +376,23 @@ TODO: 参数化的 roles
 
 ## 元对象编程和自省
 
-Perl 6 有一个元对象系统, 这意味着对象,类,roles,grammars,enums 它们自身的行为都被其它对象控制; 那些对象叫做元对象(想想元操作符, 它操作的对象是普通操作符). 元对象, 像普通对象一样,  是类的实例, 这时我们称它们为元类.
+Raku 有一个元对象系统, 这意味着对象,类,roles,grammars,enums 它们自身的行为都被其它对象控制; 那些对象叫做元对象(想想元操作符, 它操作的对象是普通操作符). 元对象, 像普通对象一样,  是类的实例, 这时我们称它们为元类.
 
 对每个对象或类, 你能通过调用 `.HOW`方法获取元对象. 注意, 尽管这看起来像是一个方法调用, 然而它实际上是编译器中的特殊案列, 所以它更像一个 macro.
 
 所以, 你能用元对象干些什么呢? 你可以通过比较元类的相等性来检查两个对象是否具有同样的元类:
 
-```perl6
+```raku
 say 1.HOW ===   2.HOW;      # True
 say 1.HOW === Int.HOW;      # True
 say 1.HOW === Num.HOW;      # False
 ```
 
-Perl 6 使用单词 `HOW`, Higher Order Workings, 来引用元对象系统. 因此, 在 Rakudo 中不必对此吃惊, 控制类行为的元类的类名叫做 `Perl6::Metamodel::ClassHow`. 每个类都有一个 `Perl6::Metamodel::ClassHOW`的实例.
+Raku 使用单词 `HOW`, Higher Order Workings, 来引用元对象系统. 因此, 在 Rakudo 中不必对此吃惊, 控制类行为的元类的类名叫做 `Raku::Metamodel::ClassHow`. 每个类都有一个 `Raku::Metamodel::ClassHOW`的实例.
 
 但是,理所当然的, 元模型为你做了很多. 例如它允许你内省对象和类.  元对象方法调用的约定是, 在元对象上调用方法, 并且传递感兴趣的对象作为对象的第一参数. 所以, 要获取对象的类名, 你可以这样写:
 
-```perl6
+```raku
 my $object = 1;
 my $metaobject = 1.HOW;
 say $metaobject.name($object);      # Int
@@ -402,7 +402,7 @@ say 1.HOW.name(1);                  # Int
 
 为了避免使用同一个对象两次, 有一个便捷写法:
 
-```perl6
+```raku
 say 1.^name;                        # Int
 # same as
 say 1.HOW.name(1);                  # Int
@@ -410,13 +410,13 @@ say 1.HOW.name(1);                  # Int
 
 ## 内省
 
-内省就是在运行时获取对象或类的信息的过程. 在 Perl 6 中,  所有的内省都会搜查原对象. 标准的基于类对象的 ClassHow 提供了这些工具:
+内省就是在运行时获取对象或类的信息的过程. 在 Raku 中,  所有的内省都会搜查原对象. 标准的基于类对象的 ClassHow 提供了这些工具:
 
 ### can
 
 给定一个方法名, 它返回一个Parcel, 这个 Parcel 里面是可用的方法名
 
-```perl6
+```raku
 class A      { method x($a) {} };
 class B is A { method x()   {} };
 say B.^can('x').elems;              # 2
@@ -432,7 +432,7 @@ for B.^can('x') {
 
 返回类中可用公共方法的列表( 这包括父类和 roles 中的方法). 默认它会停在类 Cool, Any 或 Mu 那儿; 若真要获取所有的方法, 使用副词 `:all`.
 
-```perl6
+```raku
 class A {
     method x() { };
 }
@@ -444,7 +444,7 @@ say A.^methods(:all);               # x infinite defined ...
 
 按方法解析顺序返回类自身的列表和它们的父类.  当方法被调用时, 类和它的父类按那个顺序被访问.(仅仅是概念上; 实际上方法列表在类构建是就创建了).
 
-```perl6
+```raku
 say 1.^mro;                         # (Int) (Cool) (Any) (Mu)
 ```
 
@@ -452,7 +452,7 @@ say 1.^mro;                         # (Int) (Cool) (Any) (Mu)
 
 返回类的名字:
 
-```perl6
+```raku
 say 'a string'.^name;               # Str
 ```
 
@@ -460,7 +460,7 @@ say 'a string'.^name;               # Str
 
 返回一个父类的列表. 默认它会停在 Cool, Any 或者 Mu 那儿, 但你可以提供一个副词 `:all`来压制它. 使用副词 `:tree` 会返回一个嵌套列表.
 
-```perl6
+```raku
 class D             { };
 class C1 is D       { };
 class C2 is D       { };

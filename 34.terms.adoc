@@ -1,10 +1,10 @@
-Perl 6 中的大部分句法结构能归类为项和操作符. 这儿你能找到各种不同类型的项的概览.
+Raku 中的大部分句法结构能归类为项和操作符. 这儿你能找到各种不同类型的项的概览.
 
 ## Literals
 
 ### Int
 
-```perl6
+```raku
 42
 12_300_00
 :16<DEAD_BEEF>    #十六进制
@@ -14,7 +14,7 @@ Int 字面量由数字组成, 并且能在数字之间包含下划线. 使用 `:
 
 ### Rat   有理数
 
-```perl6
+```raku
 12.34
 1_200.345_678
 ```
@@ -23,7 +23,7 @@ Rat(有理数)字面量由一个点号分割的两部分整数组成. 注意尾�
 
 ### Num  浮点数
 
-```perl6
+```raku
 12.3e-32
 3e8
 ```
@@ -32,18 +32,18 @@ Num(浮点数)字面量由 Rat 或 Int 字面量后面再跟着一个字母 e �
 
 ### Str
 
-```perl6
+```raku
 'a string''I\'m escaped!'
 "I don't need to be"
 "\"But I still can be,\" he said."
 q|Other delimiters can be used too!|
 ```
 
-字符串字面量常常使用 `'` 或 `"` 创建, 然儿, 字符串在 Perl 6 中其实是一种强大的子语言.
+字符串字面量常常使用 `'` 或 `"` 创建, 然儿, 字符串在 Raku 中其实是一种强大的子语言.
 
 ### Regex
 
-```perl6
+```raku
 / match some text /
 rx/slurp \s rest (.*) $/
 ```
@@ -52,7 +52,7 @@ rx/slurp \s rest (.*) $/
 
 ### Pair
 
-```perl6
+```raku
  a => 1
 'a' => 'b'
 :identifier
@@ -78,13 +78,13 @@ Pair 对象的创建要么使用 `infix:«=>»` (它会自动括起左边, 如�
 
 什么是 Parcel? -> Immutable sequence of values - 不可变值的序列.
 
-```perl6
+```raku
 calss Parcel is Cool does Positional { }
 ```
 
 Parcel 代表 `Parenthesis cell`, 例如, 被圆括号环绕的表达式. 除了空的 parcel 之外, 实际上是使用逗号来创建一个 Parcel.
 
-```perl6
+```raku
 (1 + 2)  # not a Parcel
 ()       # empty Parcel
 (1,)     # Parcel with one element
@@ -97,7 +97,7 @@ qw/a b c/
 
 Parcel 字面量有: 空的圆括号 (),  逗号分割的列表, 还有几种引号结构.
 
-```perl6
+```raku
 > say (1,2,3).WHAT
 (Parcel)
 > say <a b c>.WHAT
@@ -110,7 +110,7 @@ Parcel 字面量有: 空的圆括号 (),  逗号分割的列表, 还有几种引
 
 Parcels 是不可变的, 但是能包含可变容器:
 
-```perl6
+```raku
 my $x;
 my $p = (0, $x, 2); # can assign to $p[1], but not
                     # to any other element of $p
@@ -118,33 +118,33 @@ my $p = (0, $x, 2); # can assign to $p[1], but not
 
 像 `<...>` 这种 `Word-quoting` 结构也会创建 parcels:
 
-```perl6
+```raku
 <a b c> # 3-element Parcel
 ```
 
 在 flattening 列表上下文中, parcels 被展平并且会消失:
 
-```perl6
+```raku
 my @flat = <a b>, <c, d>;
 say @flat.elems;
 ```
 
 ### term *
 
-`*` 会创建一个类型为 Whatever 的对象. 详情查看 link:http://doc.perl6.org/type/Whatever[Whatever].
+`*` 会创建一个类型为 Whatever 的对象. 详情查看 link:http://doc.raku.org/type/Whatever[Whatever].
 
 ## Identifier terms
 
-Perl 6中有内建的标识符项, 列出如下. 此外, 使用该语法能添加新的标识符项.
+Raku中有内建的标识符项, 列出如下. 此外, 使用该语法能添加新的标识符项.
 
-```perl6
+```raku
 sub term:<fourty-two> { 42 };
 say fourty-two
 ```
 
 或者作为常量:
 
-```perl6
+```raku
 constant forty-two = 42;
 say fourty-two
 ```

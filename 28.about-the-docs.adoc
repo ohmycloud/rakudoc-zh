@@ -1,30 +1,30 @@
 == 关于文档
 
-本文档集代表了正在努力记录 Perl 6 编程语言的目标是：全面; 使用方便; 易于导航; 对新手和经验丰富的 Perl 6 程序员都很有用。
+本文档集代表了正在努力记录 Raku 编程语言的目标是：全面; 使用方便; 易于导航; 对新手和经验丰富的 Raku 程序员都很有用。
 
-该文档的 HTML 版本位于线上的 link:https://docs.perl6.org/[https://docs.perl6.org]。
+该文档的 HTML 版本位于线上的 link:https://docs.raku.org/[https://docs.raku.org]。
 
-该文档的官方来源位于 link:https://github.com/perl6/doc[GitHub上的perl6/doc]。
+该文档的官方来源位于 link:https://github.com/raku/doc[GitHub上的raku/doc]。
 
-本特定文档快速概述了link:https://github.com/perl6/doc/blob/master/CONTRIBUTING.md[在GitHub上的贡献]中更详细描述的过程。本文档还简要介绍了编写 Perl 6 Pod 文件，这些文件可以渲染为 HTML 和其他格式。
+本特定文档快速概述了link:https://github.com/raku/doc/blob/master/CONTRIBUTING.md[在GitHub上的贡献]中更详细描述的过程。本文档还简要介绍了编写 Raku Pod 文件，这些文件可以渲染为 HTML 和其他格式。
 
 === 结构
 
-所有文档都是用 Perl 6 Pod 编写的，并保存在 `doc/` 目录 `doc/Language/` 和 `doc/Type/` 子目录中。这些文件作为定义集合或“文档”处理，然后进行后处理并链接在一起。
+所有文档都是用 Raku Pod 编写的，并保存在 `doc/` 目录 `doc/Language/` 和 `doc/Type/` 子目录中。这些文件作为定义集合或“文档”处理，然后进行后处理并链接在一起。
 
 === 从 Pod 生成 HTML
 
 要从 Pod 文件生成 HTML，你需要：
 
-- 最新版本的 Rakudo Perl 6 编译器
-- Perl 6 模块Pod::To::HTML，Pod::To::BigPage 和 URI::Escape（可以通过link:https://github.com/ugexe/zef[zef]安装）。
-- **可选**：link:https://www.graphviz.org/[GraphViz]，用于创建 Perl 6 类型之间关系的图形
-- **可选**：link:https://github.com/atom/highlights[Atom Highlights] 和 link:https://atom.io/packages/language-perl6[language-perl6]，用于语法高亮显示
+- 最新版本的 Rakudo Raku 编译器
+- Raku 模块Pod::To::HTML，Pod::To::BigPage 和 URI::Escape（可以通过link:https://github.com/ugexe/zef[zef]安装）。
+- **可选**：link:https://www.graphviz.org/[GraphViz]，用于创建 Raku 类型之间关系的图形
+- **可选**：link:https://github.com/atom/highlights[Atom Highlights] 和 link:https://atom.io/packages/language-raku[language-raku]，用于语法高亮显示
 
 要在文件`html/`文件夹中生成文档，请运行：
 
 ```
-perl6 htmlify.p6
+raku htmlify.p6
 ```
 
 要从 Web 服务器托管文档，请安装 Perl 5 和 Mojolicious::Lite，然后运行：
@@ -35,11 +35,11 @@ perl app.pl daemon
 
 === 贡献
 
-文档是用 Perl 6 Pod 编写的。
+文档是用 Raku Pod 编写的。
 
-有关 Perl 6 Pod 的快速介绍，请参阅link:https://docs.perl6.org/language/pod[Perl 6 Pod]。
+有关 Raku Pod 的快速介绍，请参阅link:https://docs.raku.org/language/pod[Raku Pod]。
 
-有关 Perl 6 Pod 规范的完整详细信息，请参见link:https://design.perl6.org/S26.html[概要26,文档]。
+有关 Raku Pod 规范的完整详细信息，请参见link:https://design.raku.org/S26.html[概要26,文档]。
 
 ==== 添加定义
 
@@ -94,7 +94,7 @@ is always considered a definition)
 - **The þ Infix**
 - `Infix þ`
 - **Infix þ**
-- `trait is cached`（link:https://docs.perl6.org/language/functions#Traits[trait]文档的特例）
+- `trait is cached`（link:https://docs.raku.org/language/functions#Traits[trait]文档的特例）
 
 现在可以使用 HTML 文档中的搜索字段搜索这些项。
 

@@ -1,19 +1,19 @@
 == 模块包
 
-*注意* “模块”是 Perl 6 中的重载术语; 本文档重点介绍 `module` 声明符的使用。
+*注意* “模块”是 Raku 中的重载术语; 本文档重点介绍 `module` 声明符的使用。
 
 === 什么是模块?
 
-模块，如类和 grammars，是一种link:https://docs.perl6.org/language/packages[包]。模块对象是 `ModuleHOW` 元类的实例; 这提供了某些功能，可用于创建命名空间，版本控制，代理和数据封装（另请参见link:https://docs.perl6.org/syntax/class[类]和link:https://docs.perl6.org/syntax/role[角色]）。
+模块，如类和 grammars，是一种link:https://docs.raku.org/language/packages[包]。模块对象是 `ModuleHOW` 元类的实例; 这提供了某些功能，可用于创建命名空间，版本控制，代理和数据封装（另请参见link:https://docs.raku.org/syntax/class[类]和link:https://docs.raku.org/syntax/role[角色]）。
 
 要创建模块，请使用 `module` 声明符：
 
-```perl6
+```raku
 module M {}
-say M.HOW;   # OUTPUT: «Perl6::Metamodel::ModuleHOW.new» 
+say M.HOW;   # OUTPUT: «Raku::Metamodel::ModuleHOW.new» 
 ```
 
-这里我们定义一个名为 `M` 的新模块; 内省 `HOW` 确认了底层的元类 `M` 是 `Perl6::Metamodel::ModuleHOW`。
+这里我们定义一个名为 `M` 的新模块; 内省 `HOW` 确认了底层的元类 `M` 是 `Raku::Metamodel::ModuleHOW`。
 
 ==== 何时使用模块
 
@@ -23,7 +23,7 @@ say M.HOW;   # OUTPUT: «Perl6::Metamodel::ModuleHOW.new»
 
 为了说明模块作用域和导出规则，我们首先定义一个简单的模块 `M`：
 
-```perl6
+```raku
 module M {
   sub greeting ($name = 'Camelia') { "Greetings, $name!" }
   our sub loud-greeting (--> Str)  { greeting().uc       }
@@ -31,9 +31,9 @@ module M {
 }
 ```
 
-回想一下，子例程是词法作用域的，除非另有说明（声明符 link:https://docs.perl6.org/syntax/sub[`sub`] 等效于 `my sub`），因此`greeting` 在上面的示例中，词法作用域为模块并且在其外部不可访问。我们还使用 `our` 声明符定义了 `loud-greeting`，这意味着除了在词法作用域内，它还在模块的符号表中起了别名。最后，`friendly-greeting` 标记为导出; 导入模块时，它将在*调用者的*符号表中注册：
+回想一下，子例程是词法作用域的，除非另有说明（声明符 link:https://docs.raku.org/syntax/sub[`sub`] 等效于 `my sub`），因此`greeting` 在上面的示例中，词法作用域为模块并且在其外部不可访问。我们还使用 `our` 声明符定义了 `loud-greeting`，这意味着除了在词法作用域内，它还在模块的符号表中起了别名。最后，`friendly-greeting` 标记为导出; 导入模块时，它将在*调用者的*符号表中注册：
 
-```perl6
+```raku
 import M;               # import the module 
 say M::loud-greeting;   # OUTPUT: «GREETINGS, CAMELIA!» 
 say friendly-greeting;  # OUTPUT: «Greetings, friend!» 
@@ -45,7 +45,7 @@ say friendly-greeting;  # OUTPUT: «Greetings, friend!»
 
 对于我们一直使用的意义上提供模块的 `.pm6`  文件，它需要如上所述用的用 `module` 声明一个模块。例如，通过将模块 `M` 放入 `Foo.pm6` 内部，我们可以按如下方式加载和使用模块：
 
-```perl6
+```raku
 use Foo;                # find Foo.pm6, run need followed by import 
 say M::loud-greeting;   # OUTPUT: «GREETINGS, CAMELIA!» 
 say friendly-greeting;  # OUTPUT: «Greetings, friend!» 
@@ -57,7 +57,7 @@ say friendly-greeting;  # OUTPUT: «Greetings, friend!»
 
 我们通常希望 `.pm6` 文件提供*单个*模块，仅此而已。这里的常见约定是文件 basename 与模块名称匹配。回到 `Foo.pm6`，显而易见的是，它仅提供单个模块，`M`; 在这种情况下，我们可能想要重命名 `M` 为 `Foo`。修改后的文件将为：
 
-```perl6
+```raku
 module Foo {
   sub greeting ($name = 'Camelia') { "Greetings, $name!" }
   our sub loud-greeting (--> Str)  { greeting().uc       }
@@ -67,7 +67,7 @@ module Foo {
 
 可被调用者更一致地使用（注意 `use Foo` 和 `Foo::` 之间的关系）：
 
-```perl6
+```raku
 use Foo;
 say Foo::loud-greeting;  # OUTPUT: «GREETINGS, CAMELIA!» 
 say friendly-greeting;   # OUTPUT: «Greetings, friend!» 
@@ -79,7 +79,7 @@ say friendly-greeting;   # OUTPUT: «Greetings, friend!»
 
 只提供单个模块的文件可以用 `unit` 关键字更简洁地编写; `unit module` 指定编译单元的其余部分是声明的模块的一部分。这里 `Foo.pm6` 使用 `unit` 重写：
 
-```perl6
+```raku
 unit module Foo;
  
 sub greeting ($name = 'Camelia') { "Greetings, $name!" }
@@ -95,7 +95,7 @@ sub friendly-greeting is export  { greeting('friend')  }
 
 为了更好地理解在 `Foo.pm6` 中 `module` 声明符在做什么，让我们将它与变体文件 `Bar.pm6` 进行对比，它省略了声明。下面的子程序定义几乎相同（唯一的区别在于 `greeting` 的正文，为了清晰起见而修改）：
 
-```perl6
+```raku
 sub greeting ($name = 'Camelia') { "Greetings from Bar, $name!" }
 our sub loud-greeting (--> Str)  { greeting().uc                }
 sub friendly-greeting is export  { greeting('friend')           }
@@ -103,7 +103,7 @@ sub friendly-greeting is export  { greeting('friend')           }
 
 提醒一下，这是我们以前使用 `Foo.pm6` 的方式，
 
-```perl6
+```raku
 use Foo;
 say Foo::loud-greeting;  # OUTPUT: «GREETINGS, CAMELIA!» 
 say friendly-greeting;   # OUTPUT: «Greetings, friend!» 
@@ -111,7 +111,7 @@ say friendly-greeting;   # OUTPUT: «Greetings, friend!»
 
 这是我们使用 `Bar.pm6` 的方式，
 
-```perl6
+```raku
 use Bar;
 say loud-greeting;       # OUTPUT: «GREETINGS FROM BAR, CAMELIA!» 
 say friendly-greeting;   # OUTPUT: «Greetings from Bar, friend!» 
@@ -121,15 +121,15 @@ say friendly-greeting;   # OUTPUT: «Greetings from Bar, friend!»
 
 ===== 词法别名和安全
 
-值得庆幸的是，Perl 6 保护我们免受意外调用地点定义的痛击（例如内置函数）。除了 `Bar.pm6` 考虑以下内容：
+值得庆幸的是，Raku 保护我们免受意外调用地点定义的痛击（例如内置函数）。除了 `Bar.pm6` 考虑以下内容：
 
-```perl6
+```raku
 our sub say ($ignored) { print "oh dear\n" }
 ```
 
 这会创建一个词法别名，将内置 `say` 隐藏在 `Bar.pm6` *内部* 但保持调用者 `say` 不变。因此，以下 `say` 调用仍然按预期工作：
 
-```perl6
+```raku
 use Bar;
 say 'Carry on, carry on...';  # OUTPUT: «Carry on, carry on...» 
 ```

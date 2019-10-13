@@ -1,6 +1,6 @@
 通过使用 `sub` 关键字后跟 `prefix`, `infix`, `postfix`, `circumfix`, 或 `postcircumfix;` 声明运算符; 然后是冒号结构中的冒号和运算符名称。对于（后）环缀操作符，用空格分隔这两部分。
 
-```perl6
+```raku
 sub hello {
     say "Hello, world!";
 }

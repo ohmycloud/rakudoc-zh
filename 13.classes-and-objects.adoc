@@ -1,10 +1,10 @@
 == 类和对象
 
-Perl 6 有一个丰富的内置语法来定义和使用类。
+Raku 有一个丰富的内置语法来定义和使用类。
 
 默认构造函数允许为创建的对象设置属性:
 
-```perl6
+```raku
 class Point {
     has Int $.x;
     has Int $.y;
@@ -25,9 +25,9 @@ my $r = Rectangle.new(lower => Point.new(x => 0, y => 0), upper => Point.new(x =
 say $r.area(); # OUTPUT: «100␤» 
 ```
 
-您也可以提供自己的构建和构建实现。下面更详细的例子展示了 Perl 6 中依赖处理器的外观。它展示了自定义构造函数，私有属性和公共属性，方法以及签名的各个方面。它代码不多，但结果是有趣和有用的。
+您也可以提供自己的构建和构建实现。下面更详细的例子展示了 Raku 中依赖处理器的外观。它展示了自定义构造函数，私有属性和公共属性，方法以及签名的各个方面。它代码不多，但结果是有趣和有用的。
 
-```perl6
+```raku
 class Task {
     has      &!callback;
     has Task @!dependencies;
@@ -70,13 +70,13 @@ $eat.perform();
 
 === 从类开始
 
-和许多其他语言一样，Perl 6 使用 `class` 关键字来定义一个类。接下来的块可能包含任意代码，就像其他块一样，但类通常包含状态和行为声明。示例代码包括通过 `has` 关键字引入的属性(状态)以及通过 `method` 关键字引入的行为。
+和许多其他语言一样，Raku 使用 `class` 关键字来定义一个类。接下来的块可能包含任意代码，就像其他块一样，但类通常包含状态和行为声明。示例代码包括通过 `has` 关键字引入的属性(状态)以及通过 `method` 关键字引入的行为。
 
-声明一个类会创建一个新的*类型对象*，默认情况下，它将被安装到当前包中(就像使用 `our` 作用域声明的变量一样)。此类型对象是类的“空实例”。例如，`Int` 和 `Str` 等类型引用 Perl 6 内置类之一的类型对象。上面的示例使用类名称 `Task`，以便其他代码稍后可以引用它，例如通过调用 `new` 方法来创建类实例。
+声明一个类会创建一个新的*类型对象*，默认情况下，它将被安装到当前包中(就像使用 `our` 作用域声明的变量一样)。此类型对象是类的“空实例”。例如，`Int` 和 `Str` 等类型引用 Raku 内置类之一的类型对象。上面的示例使用类名称 `Task`，以便其他代码稍后可以引用它，例如通过调用 `new` 方法来创建类实例。
 
 您可以使用 `.DEFINITE` 方法来确定你拥有的是实例还是类型对象:
 
-```perl6
+```raku
 say Int.DEFINITE; # OUTPUT: «False␤» (type object) 
 say 426.DEFINITE; # OUTPUT: «True␤»  (instance) 
  
@@ -87,7 +87,7 @@ say Foo.new.DEFINITE; # OUTPUT: «True␤»  (instance)
 
 你还可以使用类型表情符号来仅接受实例或类型对象:
 
-```perl6
+```raku
 multi foo (Int:U) { "It's a type object!" }
 multi foo (Int:D) { "It's an instance!"   }
 say foo Int; # OUTPUT: «It's a type object!␤» 
@@ -100,7 +100,7 @@ say foo 42;  # OUTPUT: «It's an instance!␤»
 
 第一个声明指定回调的实例存储 - 为执行对象表示的任务而调用的一些代码:
 
-```perl6
+```raku
 has &!callback;
 ```
 
@@ -108,7 +108,7 @@ has &!callback;
 
 第二个声明也使用私有 twigil:
 
-```perl6
+```raku
 has Task @!dependencies;
 ```
 
@@ -116,13 +116,13 @@ has Task @!dependencies;
 
 第三个属性表示任务完成的状态:
 
-```perl6
+```raku
 has Bool $.done;
 ```
 
-这个标量属性(带有 `$` sigil)有一个 `Bool` 类型。而不是 `!` twigil，使用 `.` twigil。尽管 Perl 6 确实对属性进行了封装，但它也可以避免编写访问器方法。替换！与。都声明属性 $!done 和一个名为 done 的访问器方法。就好像你写了:
+这个标量属性(带有 `$` sigil)有一个 `Bool` 类型。而不是 `!` twigil，使用 `.` twigil。尽管 Raku 确实对属性进行了封装，但它也可以避免编写访问器方法。替换！与。都声明属性 $!done 和一个名为 done 的访问器方法。就好像你写了:
 
-```perl6
+```raku
 has Bool $!done;
 method done() { return $!done }
 ```
@@ -131,7 +131,7 @@ method done() { return $!done }
 
 请注意，使用。 twigil创建了一个方法，将提供对该属性的只读访问权限。如果该对象的用户应该能够重置任务的完成状态(也许再次执行)，则可以更改属性声明:
 
-```perl6
+```raku
 has Bool $.done is rw;
 ```
 
@@ -139,22 +139,22 @@ rw特征会导致生成的访问器方法返回一些外部代码可以修改的
 
 您还可以为属性提供默认值(对于有和没有访问者的情况，这些默认值同样适用):
 
-```perl6
+```raku
 has Bool $.done = False;
 ```
 
 分配是在对象构建时进行的。此时评估右侧，甚至可以引用早期的属性:
 
-```perl6
+```raku
 has Task @!dependencies;
 has $.ready = not @!dependencies;
 ```
 
 === 静态字段?
 
-Perl 6 没有静态关键字。尽管如此，任何类都可以声明模块可以做的任何事情，所以使范围变量听起来像是个好主意。
+Raku 没有静态关键字。尽管如此，任何类都可以声明模块可以做的任何事情，所以使范围变量听起来像是个好主意。
 
-```perl6
+```raku
 class Singleton {
     my Singleton $instance;
     method new {!!!}
@@ -168,7 +168,7 @@ class Singleton {
 
 由我或我们定义的类属性也可以在声明时初始化，但是我们在这里实现Singleton模式，并且必须在第一次使用时创建对象。预测执行属性初始化的时刻不是100％，因为它可以在编译，运行时或两者期间发生，尤其是在使用use关键字导入类时。
 
-```perl6
+```raku
 class HaveStaticAttr {
       my Foo $.foo = some_complicated_subroutine;
 }
@@ -180,7 +180,7 @@ class HaveStaticAttr {
 
 虽然属性赋予对象状态，但方法赋予对象行为。我们暂时忽略新方法;这是一种特殊的方法。考虑第二种方法add-dependency，它将一项新任务添加到任务的依赖列表中。
 
-```perl6
+```raku
 method add-dependency(Task $dependency) {
     push @!dependencies, $dependency;
 }
@@ -192,7 +192,7 @@ method add-dependency(Task $dependency) {
 
 执行方法包含依赖性处理程序的主要逻辑:
 
-```perl6
+```raku
 method perform() {
     unless $!done {
         .perform() for @!dependencies;
@@ -213,7 +213,7 @@ method perform() {
 
 就像属性一样，方法也可以是私有的。私有方法声明带有前缀感叹号。他们被称为 `self!`, 随后是方法的名称。要调用另一个类的私有方法，调用类必须被调用类信任。信任关系是用信任声明的，而且要信任的类必须已经声明。调用另一个类的私有方法需要该类的实例和该方法的全限定名称。信任也允许访问私有属性
 
-```perl6
+```raku
 class B {...}
  
 class C {
@@ -241,22 +241,22 @@ B.new.i-am-trusted();
 
 === 构造函数
 
-Perl 6比构造函数领域的许多语言更自由。构造函数是任何返回类实例的东西。而且，构造函数是普通的方法。您从基类 `Mu` 继承了一个名为 `new` 的默认构造函数，但您可以自由覆盖 `new`，如下例所示:
+Raku比构造函数领域的许多语言更自由。构造函数是任何返回类实例的东西。而且，构造函数是普通的方法。您从基类 `Mu` 继承了一个名为 `new` 的默认构造函数，但您可以自由覆盖 `new`，如下例所示:
 
-```perl6
+```raku
 method new(&callback, *@dependencies) {
     return self.bless(:&callback, :@dependencies);
 }
 ```
 
-Perl 6 中的构造函数和 `C#` 和 `Java` 等语言中的构造函数最大的不同之处在于，它不是以某种方式为已经神奇创建的对象设置状态，而是由 Perl 6 构造函数自己创建对象。最简单的方法是调用也是从Mu继承的祝福方法。 `bless` 方法期望一组命名参数为每个属性提供初始值。
+Raku 中的构造函数和 `C#` 和 `Java` 等语言中的构造函数最大的不同之处在于，它不是以某种方式为已经神奇创建的对象设置状态，而是由 Raku 构造函数自己创建对象。最简单的方法是调用也是从Mu继承的祝福方法。 `bless` 方法期望一组命名参数为每个属性提供初始值。
 
 该示例的构造函数将位置参数转换为命名参数，以便该类可以为其用户提供一个很好的构造函数。第一个参数是回调(将执行任务的东西)。其余参数是相关的 Task 实例。构造函数将这些捕获到 `@dependencies` slurpy 数组中，并将它们作为命名参数传递给bless(注意: `&callback` 使用变量的名称 - 减去 sigil  - 作为参数的名称)。
 
 
 私有属性确实是私有的。这意味着 `bless` 不允许直接将事物绑定到 `&!callback` 和 `@!` 依赖关系。为了做到这一点，我们重写 `BUILD` 子方法，这是通过 `bless` 在全新对象上调用的:
 
-```perl6
+```raku
 submethod BUILD(:&!callback, :@!dependencies) { }
 ```
 
@@ -264,7 +264,7 @@ submethod BUILD(:&!callback, :@!dependencies) { }
 
 BUILD方法负责初始化所有属性，还必须处理默认值:
 
-```perl6
+```raku
 has &!callback;
 has @!dependencies;
 has Bool ($.done, $.ready);
@@ -282,7 +282,7 @@ submethod BUILD(
 
 创建一个类后，您可以创建该类的实例。声明一个自定义构造函数提供了一种简单的方式来声明任务及其依赖关系。要创建没有依赖关系的单个任务，请写下:
 
-```perl6
+```raku
 my $eat = Task.new({ say 'eating dinner. NOM!' });
 ```
 
@@ -290,7 +290,7 @@ my $eat = Task.new({ say 'eating dinner. NOM!' });
 
 不幸的是，晚餐从未奇迹般地发生。它有依赖任务:
 
-```perl6
+```raku
 my $eat =
     Task.new({ say 'eating dinner. NOM!' },
         Task.new({ say 'making dinner' },
@@ -318,9 +318,9 @@ eating dinner. NOM!
 
 === 继承
 
-面向对象编程提供了继承的概念，作为代码重用的机制之一。 Perl 6 支持一个类从一个或多个类继承的能力。当一个类从另一个类继承时，它会通知方法调度器遵循继承链寻找一个派发方法。对于通过方法关键字定义的标准方法以及通过其他方式(如属性访问器)生成的方法，都会发生这种情况。
+面向对象编程提供了继承的概念，作为代码重用的机制之一。 Raku 支持一个类从一个或多个类继承的能力。当一个类从另一个类继承时，它会通知方法调度器遵循继承链寻找一个派发方法。对于通过方法关键字定义的标准方法以及通过其他方式(如属性访问器)生成的方法，都会发生这种情况。
 
-```perl6
+```raku
 class Employee {
     has $.salary;
 }
@@ -338,10 +338,10 @@ class Programmer is Employee {
 
 现在，Programmer类型的任何对象都可以使用Employee类中定义的方法和访问器，就像它们来自Programmer类一样。
 
-```perl6
+```raku
 my $programmer = Programmer.new(
     salary => 100_000,
-    known_languages => <Perl5 Perl6 Erlang C++>,
+    known_languages => <Perl5 Raku Erlang C++>,
     favorite_editor => 'vim'
 );
  
@@ -353,7 +353,7 @@ say $programmer.code_to_solve('halting problem'), " will get ", $programmer.sala
 
 当然，类可以通过定义它们自己来覆盖由父类定义的方法和属性。下面的例子演示了 Baker 类覆盖 Cook 的 `cook` 方法。
 
-```perl6
+```raku
 class Cook is Employee {
     has @.utensils  is rw;
     has @.cookbooks is rw;
@@ -400,9 +400,9 @@ say $baker.salary;           # OUTPUT: «50000␤»
 
 === 多重继承
 
-如前所述，一个类可以从多个类继承。当一个类从多个类继承时，调度员知道在查找方法时要查看这两个类。 Perl 6 使用 `C3` 算法对多个继承层次进行线性化，这比深度优先搜索更好地处理多重继承。
+如前所述，一个类可以从多个类继承。当一个类从多个类继承时，调度员知道在查找方法时要查看这两个类。 Raku 使用 `C3` 算法对多个继承层次进行线性化，这比深度优先搜索更好地处理多重继承。
 
-```perl6
+```raku
 class GeekCook is Programmer is Cook {
     method new( *%params ) {
         push( %params<cookbooks>, "Cooking for Geeks" );
@@ -411,10 +411,10 @@ class GeekCook is Programmer is Cook {
 }
  
 my $geek = GeekCook.new(
-    books           => 'Learning Perl 6',
+    books           => 'Learning Raku',
     utensils        => ('stainless steel pot', 'knife', 'calibrated oven'),
     favorite_editor => 'MacVim',
-    known_languages => <Perl6>
+    known_languages => <Raku>
 );
  
 $geek.cook('pizza');
@@ -429,7 +429,7 @@ $geek.code_to_solve('P =? NP');
 
 通过在特征前加上也可以在类声明主体中列出要继承的类。这也适用于角色组合特质。
 
-```perl6
+```raku
 class GeekCook {
     also is Programmer;
     also is Cook;
@@ -447,7 +447,7 @@ class C { also does A; also does B }
 
 给定一个对象 `$o` 和前面几节的类定义，我们可以问一些问题:
 
-```perl6
+```raku
 if $o ~~ Employee { say "It's an employee" };
 if $o ~~ GeekCook { say "It's a geeky cook" };
 say $o.WHAT;
@@ -475,7 +475,7 @@ Programmer
 
 使用 `.^` 而不是单个点调用方法的语法意味着它实际上是对其元类的一个方法调用，该类是管理 Programmer 类的属性的类 - 或者您感兴趣的任何其他类。班级也启用了其他反省方式:
 
-```perl6
+```raku
 say $o.^attributes.join(', ');
 say $o.^parents.map({ $_.^name }).join(', ');
 ```
@@ -490,7 +490,7 @@ say $o.^parents.map({ $_.^name }).join(', ');
 
 有些类可能需要它自己的版本，它会覆盖当被调用以提供类的默认表示时被打印的简洁方式。例如，异常可能只想写入有效负载而不是完整对象，以便更清楚发生了什么。但是，每个班级你都可以这样做:
 
-```perl6
+```raku
 class Cook {
     has @.utensils  is rw;
     has @.cookbooks is rw;

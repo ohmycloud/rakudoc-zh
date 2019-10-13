@@ -1,14 +1,14 @@
 ==  命令行接口 - 概述
 
-Perl 6 脚本的默认命令行界面由三部分组成：
+Raku 脚本的默认命令行界面由三部分组成：
 
 === 将命令行参数解析为捕获
 
-这将查看 link:https://docs.perl6.org/language/variables#index-entry-%40%2AARGS[@*ARGS] 中的值，根据某些策略解释这些值，并创建一个 `Capture` 对象。解析器的替代方式可以由开发者提供或使用模块安装。
+这将查看 link:https://docs.raku.org/language/variables#index-entry-%40%2AARGS[@*ARGS] 中的值，根据某些策略解释这些值，并创建一个 `Capture` 对象。解析器的替代方式可以由开发者提供或使用模块安装。
 
 === 使用该捕获调用提供的MAIN子例程
 
-标准多link:https://docs.perl6.org/language/functions#index-entry-declarator_multi-Multi-dispatch[分重分派]用于使用生成的 `Capture` 对象调用 MAIN 子例程。这意味着您的 MAIN子 例程可能是一个 `multi sub`，其中每个候选程序负责处理给定命令行参数的某些部分。
+标准多link:https://docs.raku.org/language/functions#index-entry-declarator_multi-Multi-dispatch[分重分派]用于使用生成的 `Capture` 对象调用 MAIN 子例程。这意味着您的 MAIN子 例程可能是一个 `multi sub`，其中每个候选程序负责处理给定命令行参数的某些部分。
 
 === 如果调用 MAIN 失败，则创建/显示使用信息
 
@@ -22,11 +22,11 @@ Perl 6 脚本的默认命令行界面由三部分组成：
 
 命令行参数存在于 `@*ARGS` 动态变量中，并且可以在调用 MAIN 单元之前在脚本的主线中进行更改。
 
-（多个子 MAIN 的候选者）的签名确定使用标准link:https://docs.perl6.org/language/glossary#index-entry-Multi-Dispatch[多重分派]语义实际调用哪个候选者。
+（多个子 MAIN 的候选者）的签名确定使用标准link:https://docs.raku.org/language/glossary#index-entry-Multi-Dispatch[多重分派]语义实际调用哪个候选者。
 
 一个简单的例子：
 
-```perl6
+```raku
 # inside file 'hello.p6' 
 sub MAIN($name) {
     say "Hello $name, how are you?"
@@ -36,14 +36,14 @@ sub MAIN($name) {
 如果您调用该脚本没有任何参数：
 
 ```shell
-$ perl6 hello.p6
+$ raku hello.p6
 Usage:
   hello.p6 <name>
 ```
 
 但是，如果为参数指定默认值，则无论是否指定名称，运行脚本始终有效：
 
-```perl6
+```raku
 # inside file 'hello.p6' 
 sub MAIN($name = 'bashful') {
     say "Hello $name, how are you?"
@@ -51,18 +51,18 @@ sub MAIN($name = 'bashful') {
 ```
 
 ```shell
-$ perl6 hello.p6
+$ raku hello.p6
 Hello bashful, how are you?
 ```
 
 ```shell
-$ perl6 hello.p6 Liz
+$ raku hello.p6 Liz
 Hello Liz, how are you?
 ```
 
 另一种方法是使 `sub MAIN` 成为一个 `multi sub`：
 
-```perl6
+```raku
 # inside file 'hello.p6' 
 multi sub MAIN()      { say "Hello bashful, how are you?" }
 multi sub MAIN($name) { say "Hello $name, how are you?"   }
@@ -72,7 +72,7 @@ multi sub MAIN($name) { say "Hello $name, how are you?"   }
 
 使用单个位置和多个命名参数的更复杂的示例：
 
-```perl6
+```raku
 # inside "frobnicate.p6" 
 sub MAIN(
   Str   $file where *.IO.f = 'file.dat',
@@ -88,7 +88,7 @@ sub MAIN(
 有了 `file.dat`，这将以这种方式工作：
 
 ```shell
-$ perl6 frobnicate.p6
+$ raku frobnicate.p6
 24
 file.dat
 Verbosity off
@@ -97,7 +97,7 @@ Verbosity off
 或者这样 `--verbose`：
 
 ```shell
-$ perl6 frobnicate.p6 --verbose
+$ raku frobnicate.p6 --verbose
 24
 file.dat
 Verbosity on
@@ -106,14 +106,14 @@ Verbosity on
 如果文件 `file.dat` 不存在，或者您指定了另一个不存在的文件名，您将获得从 `MAIN` 子的内省创建的标准用法消息：
 
 ```shell
-$ perl6 frobnicate.p6 doesntexist.dat
+$ raku frobnicate.p6 doesntexist.dat
 Usage:
   frobnicate.p6 [--length=<Int>] [--verbose] [<file>]
 ```
 
 虽然您不必在代码中执行任何操作，但它仍然可能被视为有点简洁。但是通过使用 pod 功能提供提示，有一种简单的方法可以更好地使用该消息：
 
-```perl6
+```raku
 # inside "frobnicate.p6" 
 sub MAIN(
   Str   $file where *.IO.f = 'file.dat',  #= an existing file to frobnicate 
@@ -129,7 +129,7 @@ sub MAIN(
 哪个会改善这样的用法消息：
 
 ```shell
-$ perl6 frobnicate.p6 doesntexist.dat
+$ raku frobnicate.p6 doesntexist.dat
 Usage:
   frobnicate.p6 [--length=<Int>] [--verbose] [<file>]
  
@@ -142,7 +142,7 @@ Usage:
 
 通过设置 `%*SUB-MAIN-OPTS` 哈希中的选项，可以在将参数传递给 `sub MAIN {}` 之前更改参数的处理方式。由于动态变量的性质，需要设置 `%*SUB-MAIN-OPTS` 哈希并使用适当的设置填充它。例如：
 
-```perl6
+```raku
 my %*SUB-MAIN-OPTS =
   :named-anywhere,    # allow named variables at any location 
   # other possible future options / custom options 
@@ -159,14 +159,14 @@ sub MAIN ($a, $b, :$c, :$d) {
 默认情况下，传递给程序的命名参数（即 `MAIN`）在任何位置参数后都不会出现。但是，如果将 `%*SUB-MAIN-OPTS<named-anywhere>` 设置为 true 值，则可以在任何位置指定命名参数，即使在位置参数之后也是如此。例如，可以使用以下命令调用上述程序：
 
 ```shell
-$ perl6 example.p6 1 --c=2 3 --d=4
+$ raku example.p6 1 --c=2 3 --d=4
 ```
 
 === is hidden-from-USAGE
 
 有时您希望排除MAIN候选者显示在任何自动生成的使用消息中。这可以通过向您不想显示的 MAIN 候选者的规范添加 `hidden-from-USAGE` 特征来实现。扩展前面的例子：
 
-```perl6
+```raku
 # inside file 'hello.p6' 
 multi sub MAIN() is hidden-from-USAGE {
     say "Hello bashful, how are you?"
@@ -178,16 +178,16 @@ multi sub MAIN($name) {  #= the name by which you would like to be called
 
 因此，如果您只使用命名变量调用此脚本，您将获得以下用法：
 
-```perl6
-$ perl6 hello.p6 --verbose
+```raku
+$ raku hello.p6 --verbose
 Usage:
   hello.p6 <name> -- the name by which you would like to be called
 ```
 
 没有第一个候选者 `hidden-from-USAGE` 特征，它看起来像这样：
 
-```perl6
-$ perl6 hello.p6 --verbose
+```raku
+$ raku hello.p6 --verbose
 Usage:
   hello.p6
   hello.p6 <name> -- the name by which you would like to be called
@@ -199,7 +199,7 @@ Usage:
 
 如果整个程序体驻留在 `MAIN` 中，则可以使用单位声明符，如下所示（调整前面的示例）：
 
-```perl6
+```raku
 unit sub MAIN(
   Str   $file where *.IO.f = 'file.dat',
   Int  :$length = 24,
@@ -218,7 +218,7 @@ say 'Verbosity ', ($verbose ?? 'on' !! 'off');
 
 如果找不到给定命令行参数的 `MAIN` 的多候选者，则调用 sub `USAGE`。如果未找到此类方法，编译器将输出默认用法消息。
 
-```perl6
+```raku
 #|(is it the answer) 
 multi MAIN(Int $i) { say $i == 42 ?? 'answer' !! 'dunno' }
 #|(divide two numbers) 
@@ -233,18 +233,18 @@ EOH
 }
 ```
 
-通过只读 `$*USAGE` 变量，sub `USAGE` 内的默认用法消息可用。它将基于可用的 `sub MAIN` 候选者及其参数生成。如前所示，您可以使用 `#|(...)` Pod 块为每个候选项指定其他扩展描述以设置 link:https://docs.perl6.org/routine/WHY[WHY]。
+通过只读 `$*USAGE` 变量，sub `USAGE` 内的默认用法消息可用。它将基于可用的 `sub MAIN` 候选者及其参数生成。如前所示，您可以使用 `#|(...)` Pod 块为每个候选项指定其他扩展描述以设置 link:https://docs.raku.org/routine/WHY[WHY]。
 
 
 === 拦截 CLI 参数解析(2018.10, v6.d and later)
 
-您可以通过自己提供 `ARGS-TO-CAPTURE` 子例程，或者从生态系统中可用的任何 link:https://modules.perl6.org/search/?q=getopt[Getopt] 模块中导入一个子例程来替换或扩充参数解析的默认方式。
+您可以通过自己提供 `ARGS-TO-CAPTURE` 子例程，或者从生态系统中可用的任何 link:https://modules.raku.org/search/?q=getopt[Getopt] 模块中导入一个子例程来替换或扩充参数解析的默认方式。
 
 === sub ARGS-TO-CAPTURE
 
-`ARGS-TO-CAPTURE` 子程序应该接受两个参数：一个 link:https://docs.perl6.org/type/Callable[Callable] 表示要执行的 `MAIN` 单元（因此可以在必要时进行内省）和一个带有来自命令行的参数的数组。它应该返回一个将用于调度 `MAIN` 单元的 link:https://docs.perl6.org/type/Capture[Capture] 对象。一个非常人为的例子，它将根据输入的某个关键字创建一个 `Capture`（在测试脚本的命令行界面时可以很方便）：
+`ARGS-TO-CAPTURE` 子程序应该接受两个参数：一个 link:https://docs.raku.org/type/Callable[Callable] 表示要执行的 `MAIN` 单元（因此可以在必要时进行内省）和一个带有来自命令行的参数的数组。它应该返回一个将用于调度 `MAIN` 单元的 link:https://docs.raku.org/type/Capture[Capture] 对象。一个非常人为的例子，它将根据输入的某个关键字创建一个 `Capture`（在测试脚本的命令行界面时可以很方便）：
 
-```perl6
+```raku
 sub ARGS-TO-CAPTURE(&main, @args --> Capture) {
     # if we only specified "frobnicate" as an argument 
     @args == 1 && @args[0] eq 'frobnicate'
@@ -255,17 +255,17 @@ sub ARGS-TO-CAPTURE(&main, @args --> Capture) {
 }
 ```
 
-请注意，动态变量 link:https://docs.perl6.org/language/variables#%26%2AARGS-TO-CAPTURE[&*ARGS-TO-CAPTURE] 可用于执行捕获处理的默认命令行参数，因此如果您不想，则不必重新发明整个轮子。
+请注意，动态变量 link:https://docs.raku.org/language/variables#%26%2AARGS-TO-CAPTURE[&*ARGS-TO-CAPTURE] 可用于执行捕获处理的默认命令行参数，因此如果您不想，则不必重新发明整个轮子。
 
 === 拦截使用消息生成（2018.10，v6.d及更高版本）
 
-您可以通过自己提供 `GENERATE-USAGE` 子例程，或者从生态系统中可用的任何 link:https://modules.perl6.org/search/?q=getopt[Getopt] 模块导入一个子例程来替换或扩充默认的使用方式消息生成方式（在向 MAIN 发送失败之后）。
+您可以通过自己提供 `GENERATE-USAGE` 子例程，或者从生态系统中可用的任何 link:https://modules.raku.org/search/?q=getopt[Getopt] 模块导入一个子例程来替换或扩充默认的使用方式消息生成方式（在向 MAIN 发送失败之后）。
 
 #### sub RUN-MAIN
 
 定义为：
 
-```perl6
+```raku
 sub RUN-MAIN(&main, $mainline, :$in-as-argsfiles)
 ```
 
@@ -273,7 +273,7 @@ sub RUN-MAIN(&main, $mainline, :$in-as-argsfiles)
 
 如果未提供 `RUN-MAIN`，将运行默认的 `RUN-MAIN` 以查找旧接口的子例程，例如 `MAIN_HELPER` 和 `USAGE`。如果找到，将执行“旧”语义。
 
-```perl6
+```raku
 class Hero {
     has @!inventory;
     has Str $.name;
@@ -296,7 +296,7 @@ RUN-MAIN( &new-main, Nil );
 
 `GENERATE-USAGE` 子例程应该接受一个 `Callable`，表示由于调度失败而未执行的 `MAIN` 子例程。这可以用于内省。所有其他参数都是设置为发送到MAIN的参数。它应该返回您想要显示给用户的使用信息的字符串。这个例子只是重新创建从处理参数创建的 `Capture`：
 
-```perl6
+```raku
 sub GENERATE-USAGE(&main, |capture) {
     capture<foo>:exists
       ?? "You're not allowed to specify a --foo"
@@ -306,7 +306,7 @@ sub GENERATE-USAGE(&main, |capture) {
 
 您还可以使用 multi 子例程来创建相同的效果：
 
-```perl6
+```raku
 multi sub GENERATE-USAGE(&main, :$foo!) {
     "You're not allowed to specify a --foo"
 }
@@ -315,7 +315,7 @@ multi sub GENERATE-USAGE(&main, |capture) {
 }
 ```
 
-请注意，动态变量 link:https://docs.perl6.org/language/variables#%26%2AGENERATE-USAGE[`&*GENERATE-USAGE`] 可用于执行默认使用消息生成，因此您不必重新发明整个轮子。
+请注意，动态变量 link:https://docs.raku.org/language/variables#%26%2AGENERATE-USAGE[`&*GENERATE-USAGE`] 可用于执行默认使用消息生成，因此您不必重新发明整个轮子。
 
 === 拦截 MAIN 调用（2018.10之前，v6.e）
 
@@ -323,6 +323,6 @@ multi sub GENERATE-USAGE(&main, |capture) {
 
 此接口从未记录过。但是，使用此未记录的界面的任何程序将继续运行，直到 `v6.e`。从 `v6.d` 开始，使用未记录的 API 将导致 `DEPRECATED` 消息。
 
-生态系统模块可以提供新旧接口，以便与旧版本的 Perl 6 兼容：如果较新的 Perl 6 识别出新的（记录的）接口，它将使用它。如果没有可用的新接口子例程，但旧的 `MAIN_HELPER` 接口是，那么它将使用旧接口。
+生态系统模块可以提供新旧接口，以便与旧版本的 Raku 兼容：如果较新的 Raku 识别出新的（记录的）接口，它将使用它。如果没有可用的新接口子例程，但旧的 `MAIN_HELPER` 接口是，那么它将使用旧接口。
 
 如果模块开发人员决定仅为 `v6.d` 或更高版本提供模块，则可以从模块中删除对旧接口的支持。

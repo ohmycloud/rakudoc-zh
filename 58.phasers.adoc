@@ -8,7 +8,7 @@ phaser 块只是包含它的闭包的 trait，并在适当的时刻自动调用�
 
 以下是摘要：
 
-```perl6
+```raku
   BEGIN {...} #  * at compile time, as soon as possible, only ever runs once 
   CHECK {...} #  * at compile time, as late as possible, only ever runs once 
    INIT {...} #  * at runtime, as soon as possible, only ever runs once 
@@ -39,14 +39,14 @@ COMPOSE {...} #  when a role is composed into a class (Not yet implemented)
 
 标记为 `*` 号的 phaser 具有运行时值，并且如果早于周围表达式进行求值，则只需保存其结果，以便在以后计算表达式的其余部分时在表达式中使用：
 
-```perl6
+```raku
 my $compiletime = BEGIN { now };
 our $random = ENTER { rand };
 ```
 
 与其他语句前缀一样，这些产生值的构造可以放在块或语句的前面：
 
-```perl6
+```raku
 my $compiletime = BEGIN now;
 our $random = ENTER rand;
 ```
@@ -55,7 +55,7 @@ our $random = ENTER rand;
 
 它们声明了与前面示例相同作用域的相同变量，但在指定时间把语句作为整体运行：
 
-```perl6
+```raku
 BEGIN my $compiletime = now;
 ENTER our $random = rand;
 ```
@@ -64,13 +64,13 @@ ENTER our $random = rand;
 
 大多数非值生成 phasers 也可能如此使用：
 
-```perl6
+```raku
 END say my $accumulator;
 ```
 
 但请注意：
 
-```perl6
+```raku
 END say my $accumulator = 0;
 ```
 
@@ -78,7 +78,7 @@ END say my $accumulator = 0;
 
 其中一些 phasers 也具有可以在变量上设置的相应 trait; 他们使用 `will` 后面跟着小写的 phaser 名称。这些优点是将讨论中的变量作为主题传递给闭包：
 
-```perl6
+```raku
 our $h will enter { .rememberit() } will undo { .forgetit() };
 ```
 
@@ -94,7 +94,7 @@ phaser 外部的块的主题作为 `OUTER::<$_>` 仍然可用。返回值是否�
 
 编译开始
 
-```perl6
+```raku
       BEGIN {...} #  at compile time, As soon as possible, only ever runs once 
       CHECK {...} #  at compile time, As late as possible, only ever runs once 
     COMPOSE {...} #  when a role is composed into a class (Not yet implemented) 
@@ -102,45 +102,45 @@ phaser 外部的块的主题作为 `OUTER::<$_>` 仍然可用。返回值是否�
 
 执行开始
 
-```perl6
+```raku
        INIT {...} #  at runtime, as soon as possible, only ever runs once 
 ```
 
 在块执行开始之前
 
-```perl6
+```raku
         PRE {...} #  assert precondition at every block entry, before ENTER 
 ```
 
 循环执行开始
 
-```perl6
+```raku
       FIRST {...} #  at loop initialization time, before any ENTER 
 ```
 
 块执行开始
 
-```perl6
+```raku
       ENTER {...} #  at every block entry time, repeats on loop blocks. 
 ```
 
 可能会发生异常
 
-```perl6
+```raku
       CATCH {...} #  catch exceptions, before LEAVE 
     CONTROL {...} #  catch control exceptions, before LEAVE 
 ```
 
 循环结束，继续或结束
 
-```perl6
+```raku
        NEXT {...} #  at loop continuation time, before any LEAVE 
        LAST {...} #  at loop termination time, after any LEAVE 
 ```
 
 块结束
 
-```perl6
+```raku
       LEAVE {...} #  at every block exit time (even stack unwinds from exceptions) 
        KEEP {...} #  at every successful block exit, part of LEAVE queue 
        UNDO {...} #  at every unsuccessful block exit, part of LEAVE queue 
@@ -148,20 +148,20 @@ phaser 外部的块的主题作为 `OUTER::<$_>` 仍然可用。返回值是否�
 
 块的后置条件
 
-```perl6
+```raku
        POST {...} #  assert postcondition at every block exit, after LEAVE 
 ```
 
 异步 whenever-block 结束
 
-```perl6
+```raku
        LAST {...} #  if ended normally with done, runs once after block 
        QUIT {...} #  catch async exceptions 
 ```
 
 程序终止
 
-```perl6
+```raku
         END {...} #  at runtime, ALAP, only ever runs once 
 ```
 
@@ -173,7 +173,7 @@ phaser 外部的块的主题作为 `OUTER::<$_>` 仍然可用。返回值是否�
 
 返回值可在以后的 phaser 中使用：
 
-```perl6
+```raku
 say "About to print 3 things";
 for ^3 {
     say ^10 .pick ~ '-' ~ BEGIN { say  "Generating BEGIN value"; ^10 .pick }
@@ -186,7 +186,7 @@ for ^3 {
 # 6-3 
 ```
 
-phaser 中的 `^10 .pick` 只产生一次，并在运行时期间由循环重用。注意怎么 `BEGIN` 块中的 link:https://docs.perl6.org/routine/say[say] 是在上述循环执行之前是怎么执行的。
+phaser 中的 `^10 .pick` 只产生一次，并在运行时期间由循环重用。注意怎么 `BEGIN` 块中的 link:https://docs.raku.org/routine/say[say] 是在上述循环执行之前是怎么执行的。
 
 ==== CHECK
 
@@ -232,7 +232,7 @@ phaser 中的 `^10 .pick` 只产生一次，并在运行时期间由循环重用
 
 ==== LEAVE
 
-在每个块退出时运行（甚至堆栈从异常中展开），除非程序突然退出（例如 link:https://docs.perl6.org/routine/exit[`exit`]）。
+在每个块退出时运行（甚至堆栈从异常中展开），除非程序突然退出（例如 link:https://docs.raku.org/routine/exit[`exit`]）。
 
 `LEAVE` 在任何 `CATCH` 和 `CONTROL` phaser 之后必须计算给定块的 phaser 。这包括 `LEAVE` 变体，`KEEP` 和 `UNDO`。`POST` 在其他一切之后对 phaser 进行计算，以保证偶数 `LEAVE` phaser 不会违反后置条件。
 
@@ -240,7 +240,7 @@ phaser 中的 `^10 .pick` 只产生一次，并在运行时期间由循环重用
 
 如果 `POST` 失败或任何类型的 `LEAVE` 块在堆栈展开时抛出异常，则展开继续并收集要处理的异常。展开完成后，将从该点抛出所有新异常。
 
-```perl6
+```raku
 sub answer() {
     LEAVE say „I say after the return value.“;
  
@@ -250,7 +250,7 @@ sub answer() {
 
 **注意:** 铭记 `LEAVE` phaser 直接在程序的块，即使用错误的参数尝试调用该例程, 他们也将得到执行：
 
-```perl6
+```raku
 sub foo (Int) {
     say "Hello!";
     LEAVE say "oh noes!"
@@ -258,7 +258,7 @@ sub foo (Int) {
 try foo rand; # OUTPUT: «oh noes!» 
 ```
 
-虽然子程序的主体没有得到执行，因为 sub 的link:https://docs.perl6.org/type/Int[Int] 和 link:https://docs.perl6.org/routine/rand[`rand`] 期望返回一个 link:https://docs.perl6.org/type/Num[Num]，其块进入和离开时（指令绑定失败），因此 `LEAVE` phaser *正*运行。
+虽然子程序的主体没有得到执行，因为 sub 的link:https://docs.raku.org/type/Int[Int] 和 link:https://docs.raku.org/routine/rand[`rand`] 期望返回一个 link:https://docs.raku.org/type/Num[Num]，其块进入和离开时（指令绑定失败），因此 `LEAVE` phaser *正*运行。
 
 ==== KEEP
 
@@ -316,7 +316,7 @@ try foo rand; # OUTPUT: «oh noes!»
 
 在 LEAVE phase 之前，当前块引发控制异常时运行。它通过 `return`，`fail`，`redo`，`next`，`last`，`emit`，`take`，`warn`，`proceed` 和 `succeed` 发生。
 
-```perl6
+```raku
 say elems gather {
     CONTROL {
         when CX::Warn { say "WARNING!!! $_"; .resume }
@@ -341,13 +341,13 @@ say elems gather {
 
 ==== LAST
 
-当link:https://docs.perl6.org/type/Supply[Supply] 完成 `done` 调用或当一个 `supply` 块正常退出时运行。它在 `whenever` 块完成后完全运行。
+当link:https://docs.raku.org/type/Supply[Supply] 完成 `done` 调用或当一个 `supply` 块正常退出时运行。它在 `whenever` 块完成后完全运行。
 
 此 phaser 重用该名称 `LAST`，但与 `LAST` 循环 phaser 的工作方式不同。此 phaser 类似于用 `tap` supply 设置例程 `done`。
 
 ==== QUIT
 
-当 link:https://docs.perl6.org/type/Supply[Supply] 以异常提前终止时运行。它在放置的  `whenever` 块完成后运行。
+当 link:https://docs.raku.org/type/Supply[Supply] 以异常提前终止时运行。它在放置的  `whenever` 块完成后运行。
 
 此 phaser 类似于 `quit` 在 `tap` supply 时设置例程 `quit`。
 
@@ -361,7 +361,7 @@ say elems gather {
 
 phaser `BEGIN`，`CHECK` 和 `INIT` 仅在文档模式时，前面带有 `DOC` 关键字。当使用 `--doc` 运行时编译器在文档中。
 
-```perl6
+```raku
 DOC INIT { say 'init'  }  # prints 'init' at initialization time when in documentation mode. 
 ```
 

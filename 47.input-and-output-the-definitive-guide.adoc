@@ -1,37 +1,37 @@
 # 基础知识
 
-绝大多数常见的 IO 工作都是由link:https://docs.perl6.org/type/IO::Path[IO::Path]类型完成的。如果您想以某种形式或形状读取或写入文件，这就是您想要的类。它抽象出文件句柄（或“文件描述符”）的细节，因此你甚至不必考虑它们。
+绝大多数常见的 IO 工作都是由link:https://docs.raku.org/type/IO::Path[IO::Path]类型完成的。如果您想以某种形式或形状读取或写入文件，这就是您想要的类。它抽象出文件句柄（或“文件描述符”）的细节，因此你甚至不必考虑它们。
 
-在幕后，link:https://docs.perl6.org/type/IO::Path[IO::Path] 与 link:https://docs.perl6.org/type/IO::Handle[IO::Handle] 一起使用 ; 一个你可以直接使用的类，如果你需要比 link:https://docs.perl6.org/type/IO::Path[IO::Path] 提供的更多控制。当与其他进程，例如通过 link:https://docs.perl6.org/type/Proc[Proc] 或 link:https://docs.perl6.org/type/Proc::Async[Proc::Async]类型，您还可以处理link:https://docs.perl6.org/type/IO::Handle[IO::Handle] 的*子类*：在link:https://docs.perl6.org/type/IO::Pipe[IO::Pipe]。
+在幕后，link:https://docs.raku.org/type/IO::Path[IO::Path] 与 link:https://docs.raku.org/type/IO::Handle[IO::Handle] 一起使用 ; 一个你可以直接使用的类，如果你需要比 link:https://docs.raku.org/type/IO::Path[IO::Path] 提供的更多控制。当与其他进程，例如通过 link:https://docs.raku.org/type/Proc[Proc] 或 link:https://docs.raku.org/type/Proc::Async[Proc::Async]类型，您还可以处理link:https://docs.raku.org/type/IO::Handle[IO::Handle] 的*子类*：在link:https://docs.raku.org/type/IO::Pipe[IO::Pipe]。
 
-最后，你有 link:https://docs.perl6.org/type/IO::CatHandle[IO::CatHandle]，以及 link:https://docs.perl6.org/type/IO::Spec[IO::Spec] 及其子类，你很少直接使用它们。这些类为您提供了高级功能，例如将多个文件作为一个句柄进行操作，或者进行低级路径操作。
+最后，你有 link:https://docs.raku.org/type/IO::CatHandle[IO::CatHandle]，以及 link:https://docs.raku.org/type/IO::Spec[IO::Spec] 及其子类，你很少直接使用它们。这些类为您提供了高级功能，例如将多个文件作为一个句柄进行操作，或者进行低级路径操作。
 
-除了所有这些类之外，Perl 6 还提供了几个子程序，可以让您间接使用这些类。如果您喜欢函数式编程风格或 Perl 6  单行程序，这些就派上用场了。
+除了所有这些类之外，Raku 还提供了几个子程序，可以让您间接使用这些类。如果您喜欢函数式编程风格或 Raku  单行程序，这些就派上用场了。
 
-虽然 link:https://docs.perl6.org/type/IO::Socket[IO::Socket] 及其子类也与输入和输出有关，但本指南并未涵盖它们。
+虽然 link:https://docs.raku.org/type/IO::Socket[IO::Socket] 及其子类也与输入和输出有关，但本指南并未涵盖它们。
 
 # 导航路径
 
 ## What's an IO::Path anyway?
 
-要将路径表示为文件或目录，请使用 link:https://docs.perl6.org/type/IO::Path[IO::Path] 类型。获取该类型对象的最简单方法是通过在它身上调用 link:https://docs.perl6.org/routine/IO[`.IO`] 方法强制将 link:https://docs.perl6.org/type/Str[Str] 类型转为路径类型：
+要将路径表示为文件或目录，请使用 link:https://docs.raku.org/type/IO::Path[IO::Path] 类型。获取该类型对象的最简单方法是通过在它身上调用 link:https://docs.raku.org/routine/IO[`.IO`] 方法强制将 link:https://docs.raku.org/type/Str[Str] 类型转为路径类型：
 
-```perl6
+```raku
 say 'my-file.txt'.IO; # OUTPUT: «"my-file.txt".IO␤» 
 ```
 
-看起来这里似乎缺少某些东西 - 没有卷或绝对路径 - 但该信息实际上存在于对象中。你可以通过使用 link:https://docs.perl6.org/routine/perl[`.perl`] 方法看到它：
+看起来这里似乎缺少某些东西 - 没有卷或绝对路径 - 但该信息实际上存在于对象中。你可以通过使用 link:https://docs.raku.org/routine/perl[`.perl`] 方法看到它：
 
-```perl6
+```raku
 say 'my-file.txt'.IO.perl;
 # OUTPUT: «IO::Path.new("my-file.txt", :SPEC(IO::Spec::Unix), :CWD("/home/camelia"))␤» 
 ```
 
 这两个额外的属性 - `SPEC` 和 - `CWD` 指定路径应该使用的操作系统语义类型以及路径的“当前工作目录”，即如果它是相对路径，则它相对于该目录。
 
-这意味着无论你如何制作一个路径，link:https://docs.perl6.org/type/IO::Path[IO::Path] 对象在技术上总是指一个绝对路径。这就是它的 link:https://docs.perl6.org/routine/absolute[`.absolute`] 和 link:https://docs.perl6.org/routine/relative[`.relative`] 方法返回 link:https://docs.perl6.org/type/Str[Str] 对象的原因，它们是字符串化路径的正确方法。
+这意味着无论你如何制作一个路径，link:https://docs.raku.org/type/IO::Path[IO::Path] 对象在技术上总是指一个绝对路径。这就是它的 link:https://docs.raku.org/routine/absolute[`.absolute`] 和 link:https://docs.raku.org/routine/relative[`.relative`] 方法返回 link:https://docs.raku.org/type/Str[Str] 对象的原因，它们是字符串化路径的正确方法。
 
-但是，不要急于将任何东西字符串化起来。将路径作为 link:https://docs.perl6.org/type/IO::Path[IO::Path] 对象传递。在路径上运行的所有例程都可以处理它们，因此不需要转换它们。
+但是，不要急于将任何东西字符串化起来。将路径作为 link:https://docs.raku.org/type/IO::Path[IO::Path] 对象传递。在路径上运行的所有例程都可以处理它们，因此不需要转换它们。
 
 ## Working with files
 
@@ -39,69 +39,69 @@ say 'my-file.txt'.IO.perl;
 
 #### Writing new content
 
-让我们制作一些文件并从中写入和读取数据！link:https://docs.perl6.org/routine/spurt[`spurt`] 和 link:https://docs.perl6.org/routine/slurp[`slurp`] 程序写和读取一块儿数据。除非您正在处理难以完全存储在内存中的非常大的文件，否则这两个例程都适合您。
+让我们制作一些文件并从中写入和读取数据！link:https://docs.raku.org/routine/spurt[`spurt`] 和 link:https://docs.raku.org/routine/slurp[`slurp`] 程序写和读取一块儿数据。除非您正在处理难以完全存储在内存中的非常大的文件，否则这两个例程都适合您。
 
-```perl6
+```raku
 "my-file.txt".IO.spurt: "I ♥ Perl!";
 ```
 
-上面的代码在当前目录中创建了一个名为 `my-file.txt` 的文件，然后将文本 `I ♥ Perl!` 写入其中。如果 Perl 6 是您的第一语言，请庆祝您任务完成了！尝试打开您使用其他程序创建的文件，以验证您使用程序编写的内容。如果您已经了解其他语言，您可能想知道本指南是否遗漏了处理编码或错误条件等问题。
+上面的代码在当前目录中创建了一个名为 `my-file.txt` 的文件，然后将文本 `I ♥ Perl!` 写入其中。如果 Raku 是您的第一语言，请庆祝您任务完成了！尝试打开您使用其他程序创建的文件，以验证您使用程序编写的内容。如果您已经了解其他语言，您可能想知道本指南是否遗漏了处理编码或错误条件等问题。
 
-但是，这就是您需要的所有代码。默认情况下，字符串将按 `utf-8` 编码进行编码，并通过 link:https://docs.perl6.org/type/Failure[Failure] 机制处理错误：这些是您可以使用常规条件处理的异常。在这种情况下，我们会让所有潜在的 link:https://docs.perl6.org/type/Failure[Failures] 在调用之后陷入沉没，因此它们包含的任何link:https://docs.perl6.org/type/Exception[异常]都将被抛出。
+但是，这就是您需要的所有代码。默认情况下，字符串将按 `utf-8` 编码进行编码，并通过 link:https://docs.raku.org/type/Failure[Failure] 机制处理错误：这些是您可以使用常规条件处理的异常。在这种情况下，我们会让所有潜在的 link:https://docs.raku.org/type/Failure[Failures] 在调用之后陷入沉没，因此它们包含的任何link:https://docs.raku.org/type/Exception[异常]都将被抛出。
 
 #### 追加内容
 
-如果您想在我们在上一节中创建的文件中添加更多内容，您可以注意 link:https://docs.perl6.org/routine/spurt[`spurt`] 文档中提到的 `:append` 参数。但是，为了更好地控制，让我们自己使用 link:https://docs.perl6.org/type/IO::Handle[IO::Handle] 来处理：
+如果您想在我们在上一节中创建的文件中添加更多内容，您可以注意 link:https://docs.raku.org/routine/spurt[`spurt`] 文档中提到的 `:append` 参数。但是，为了更好地控制，让我们自己使用 link:https://docs.raku.org/type/IO::Handle[IO::Handle] 来处理：
 
-```perl6
+```raku
 my $fh = 'my-file.txt'.IO.open: :a;
 $fh.print: "I count: ";
 $fh.print: "$_ " for ^10;
 $fh.close;
 ```
 
-link:https://docs.perl6.org/routine/open[`.open`] 方法调用打开我们的 link:https://docs.perl6.org/type/IO::Path[IO::Path]，并返回一个 link:https://docs.perl6.org/type/IO::Handle[IO::Handle]。我们把 `:a` 作为参数传递，表示我们想要以追加模式打开文件。
+link:https://docs.raku.org/routine/open[`.open`] 方法调用打开我们的 link:https://docs.raku.org/type/IO::Path[IO::Path]，并返回一个 link:https://docs.raku.org/type/IO::Handle[IO::Handle]。我们把 `:a` 作为参数传递，表示我们想要以追加模式打开文件。
 
-在接下来的两行代码中，我们使用 link:https://docs.perl6.org/type/IO::Handle[IO::Handle] 上的 link:https://docs.perl6.org/routine/print[`.print`] 常用方法打印包含 11 个文本（`'I count: '` 字符串和 10 个数字）的文本行。请注意，link:https://docs.perl6.org/type/Failure[Failure] 机制再一次负责我们的所有错误检查。如果 link:https://docs.perl6.org/routine/open[`.open`] 失败，它将返回一个 link:https://docs.perl6.org/type/Failure[Failure]，当我们尝试在其上调用 link:https://docs.perl6.org/routine/print[`.print`] 方法时将抛出异常。
+在接下来的两行代码中，我们使用 link:https://docs.raku.org/type/IO::Handle[IO::Handle] 上的 link:https://docs.raku.org/routine/print[`.print`] 常用方法打印包含 11 个文本（`'I count: '` 字符串和 10 个数字）的文本行。请注意，link:https://docs.raku.org/type/Failure[Failure] 机制再一次负责我们的所有错误检查。如果 link:https://docs.raku.org/routine/open[`.open`] 失败，它将返回一个 link:https://docs.raku.org/type/Failure[Failure]，当我们尝试在其上调用 link:https://docs.raku.org/routine/print[`.print`] 方法时将抛出异常。
 
-最后，我们通过调用它上面的 link:https://docs.perl6.org/routine/close[`.close`] 方法来关闭 link:https://docs.perl6.org/type/IO::Handle[IO::Handle]。这样*做很重要*，特别是在大型程序或处理大量文件的程序中，因为许多系统对程序可以同时打开的文件数量有限制。如果您没有关闭句柄，最终您将达到该限制并且 link:https://docs.perl6.org/routine/open[`.open`] 调用将失败。请注意，与其他一些语言不同，Perl 6 不使用引用计数，因此当离开所定义的作用域时，文件句柄**不会关闭**。只有当它们被垃圾收集并且未能关闭句柄时，它们才会被关闭，这可能会导致程序在打开的句柄有机会在垃圾回收*之前*达到文件限制。
+最后，我们通过调用它上面的 link:https://docs.raku.org/routine/close[`.close`] 方法来关闭 link:https://docs.raku.org/type/IO::Handle[IO::Handle]。这样*做很重要*，特别是在大型程序或处理大量文件的程序中，因为许多系统对程序可以同时打开的文件数量有限制。如果您没有关闭句柄，最终您将达到该限制并且 link:https://docs.raku.org/routine/open[`.open`] 调用将失败。请注意，与其他一些语言不同，Raku 不使用引用计数，因此当离开所定义的作用域时，文件句柄**不会关闭**。只有当它们被垃圾收集并且未能关闭句柄时，它们才会被关闭，这可能会导致程序在打开的句柄有机会在垃圾回收*之前*达到文件限制。
 
 ### 从文件中读取
 
 #### 使用 IO::Path
 
-我们在前面的章节中已经看到，在文件中写东西是 Perl 6 中的单行代码。从它们中读取，同样容易：
+我们在前面的章节中已经看到，在文件中写东西是 Raku 中的单行代码。从它们中读取，同样容易：
 
-```perl6
+```raku
 say 'my-file.txt'.IO.slurp;        # OUTPUT: «I ♥ Perl!␤» 
 say 'my-file.txt'.IO.slurp: :bin;  # OUTPUT: «Buf[uint8]:0x<49 20 e2 99 a5 20 50 65 72 6c 21>␤» 
 ```
 
-link:https://docs.perl6.org/routine/slurp[`.slurp`] 方法读取文件的全部内容并将其作为单个 link:https://docs.perl6.org/type/Str[Str] 对象返回，如果请求二进制模式，则通过指定 `:bin` 命名参数将其作为 link:https://docs.perl6.org/type/Buf[Buf] 对象返回。
+link:https://docs.raku.org/routine/slurp[`.slurp`] 方法读取文件的全部内容并将其作为单个 link:https://docs.raku.org/type/Str[Str] 对象返回，如果请求二进制模式，则通过指定 `:bin` 命名参数将其作为 link:https://docs.raku.org/type/Buf[Buf] 对象返回。
 
-由于 link:https://docs.perl6.org/routine/slurp[slurping] 将整个文件加载到内存中，因此它不适合处理大文件。
+由于 link:https://docs.raku.org/routine/slurp[slurping] 将整个文件加载到内存中，因此它不适合处理大文件。
 
-link:https://docs.perl6.org/type/IO::Path[IO::Path] 类型提供了另外两种方便的方法：link:https://docs.perl6.org/type/IO::Path#method_words[`.words`] 与 link:https://docs.perl6.org/type/IO::Path#method_lines[`.lines`]，这俩方法惰性地读取小块文件并返回（默认）不保留已消耗值的link:https://docs.perl6.org/type/Seq[Seq] 对象。
+link:https://docs.raku.org/type/IO::Path[IO::Path] 类型提供了另外两种方便的方法：link:https://docs.raku.org/type/IO::Path#method_words[`.words`] 与 link:https://docs.raku.org/type/IO::Path#method_lines[`.lines`]，这俩方法惰性地读取小块文件并返回（默认）不保留已消耗值的link:https://docs.raku.org/type/Seq[Seq] 对象。
 
 这是一个示例，它在文本文件中查找提及 Perl 的行并将其打印出来。尽管文件本身太大而无法容纳到可用的link:https://en.wikipedia.org/wiki/Random-access_memory[RAM] 中，但程序运行时不会出现任何问题，因为内容是以小块的形式处理的：
 
-```perl6
+```raku
 .say for '500-PetaByte-File.txt'.IO.lines.grep: *.contains: 'Perl';
 ```
 
 这是另一个打印文件中前 100 个单词的示例，没有完全加载它：
 
-```perl6
+```raku
 .say for '500-PetaByte-File.txt'.IO.words: 100
 ```
 
-请注意，我们通过传递 limit 参数给 link:https://docs.perl6.org/type/IO::Path#method_words[`.words`]而不是使用link:https://docs.perl6.org/language/operators#index-entry-array_indexing_operator-array_subscript_operator-array_indexing_operator[列表索引操作] 来完成此操作。原因是在于底层仍然使用文件句柄，并且在完全使用返回的 link:https://docs.perl6.org/type/Seq[Seq] 之前，句柄将保持打开状态。如果没有引用 link:https://docs.perl6.org/type/Seq[Seq]，最终句柄将在垃圾收集运行期间关闭，但在大型程序中使用大量文件时，最好确保所有句柄立即关闭。所以，你应该始终确保 link:https://docs.perl6.org/type/Seq[Seq] 从link:https://docs.perl6.org/type/IO::Path[IO::Path] 的 link:https://docs.perl6.org/type/IO::Path#method_words[`.words`] 和 link:https://docs.perl6.org/type/IO::Path#method_lines[`.lines`] 方法是link:https://docs.perl6.org/language/glossary#index-entry-Reify[完全具体化] ; 而 limit 参数可以帮助你。
+请注意，我们通过传递 limit 参数给 link:https://docs.raku.org/type/IO::Path#method_words[`.words`]而不是使用link:https://docs.raku.org/language/operators#index-entry-array_indexing_operator-array_subscript_operator-array_indexing_operator[列表索引操作] 来完成此操作。原因是在于底层仍然使用文件句柄，并且在完全使用返回的 link:https://docs.raku.org/type/Seq[Seq] 之前，句柄将保持打开状态。如果没有引用 link:https://docs.raku.org/type/Seq[Seq]，最终句柄将在垃圾收集运行期间关闭，但在大型程序中使用大量文件时，最好确保所有句柄立即关闭。所以，你应该始终确保 link:https://docs.raku.org/type/Seq[Seq] 从link:https://docs.raku.org/type/IO::Path[IO::Path] 的 link:https://docs.raku.org/type/IO::Path#method_words[`.words`] 和 link:https://docs.raku.org/type/IO::Path#method_lines[`.lines`] 方法是link:https://docs.raku.org/language/glossary#index-entry-Reify[完全具体化] ; 而 limit 参数可以帮助你。
 
 #### Using IO::Handle
 
-当然，您可以使用 link:https://docs.perl6.org/type/IO::Handle[IO::Handle] 类型从文件中读取，这样可以更好地控制您正在执行的操作：
+当然，您可以使用 link:https://docs.raku.org/type/IO::Handle[IO::Handle] 类型从文件中读取，这样可以更好地控制您正在执行的操作：
 
-```perl6
+```raku
 given 'some-file.txt'.IO.open {
     say .readchars: 8;  # OUTPUT: «I ♥ Perl␤» 
     .seek: 1, SeekFromCurrent;
@@ -110,25 +110,25 @@ given 'some-file.txt'.IO.open {
 }
 ```
 
-link:https://docs.perl6.org/type/IO::Handle[IO::Handle] 给你 link:https://docs.perl6.org/type/IO::Handle#method_read[.read]，link:https://docs.perl6.org/type/IO::Handle#method_readchars[.readchars]，link:https://docs.perl6.org/type/IO::Handle#routine_get[.get]，link:https://docs.perl6.org/type/IO::Handle#method_getc[.getc]，link:https://docs.perl6.org/type/IO::Handle#routine_words[.words]，link:https://docs.perl6.org/type/IO::Handle#routine_lines[.lines]，link:https://docs.perl6.org/type/IO::Handle#routine_slurp[.slurp]，link:https://docs.perl6.org/type/IO::Handle#method_comb[.comb]，link:https://docs.perl6.org/type/IO::Handle#method_split[.split] 和 link:https://docs.perl6.org/type/IO::Handle#method_Supply[.Supply] 方法从中读取数据。有很多选择; 当你读取完时，需要关闭句柄。
+link:https://docs.raku.org/type/IO::Handle[IO::Handle] 给你 link:https://docs.raku.org/type/IO::Handle#method_read[.read]，link:https://docs.raku.org/type/IO::Handle#method_readchars[.readchars]，link:https://docs.raku.org/type/IO::Handle#routine_get[.get]，link:https://docs.raku.org/type/IO::Handle#method_getc[.getc]，link:https://docs.raku.org/type/IO::Handle#routine_words[.words]，link:https://docs.raku.org/type/IO::Handle#routine_lines[.lines]，link:https://docs.raku.org/type/IO::Handle#routine_slurp[.slurp]，link:https://docs.raku.org/type/IO::Handle#method_comb[.comb]，link:https://docs.raku.org/type/IO::Handle#method_split[.split] 和 link:https://docs.raku.org/type/IO::Handle#method_Supply[.Supply] 方法从中读取数据。有很多选择; 当你读取完时，需要关闭句柄。
 
-与某些语言不同，当离开定义的作用域时，句柄不会自动关闭。相反，它将保持打开，直到被垃圾回收为止。为了使关闭更容易，一些方法允许您指定 `:close` 参数，您还可以使用 link:https://docs.perl6.org/language/phasers#index-entry-will_trait[`will leave`] trait 或 link:https://modules.perl6.org/dist/Trait::IO[`Trait::IO`] 模块提供的 `does auto-close` trait。
+与某些语言不同，当离开定义的作用域时，句柄不会自动关闭。相反，它将保持打开，直到被垃圾回收为止。为了使关闭更容易，一些方法允许您指定 `:close` 参数，您还可以使用 link:https://docs.raku.org/language/phasers#index-entry-will_trait[`will leave`] trait 或 link:https://modules.raku.org/dist/Trait::IO[`Trait::IO`] 模块提供的 `does auto-close` trait。
 
 # 错误的做事方法
 
-本节介绍如何不执行 Perl 6 IO。
+本节介绍如何不执行 Raku IO。
 
 ## 别去管 $*SPEC
 
-您可能听说过 link:https://docs.perl6.org/language/variables#Dynamic_variables[`$*SPEC`] 并看到过一些代码或书籍显示其用于拆分和连接路径片段的用法。它提供的一些例程名称甚至可能看起来与您在其他语言中使用的名称相似。
+您可能听说过 link:https://docs.raku.org/language/variables#Dynamic_variables[`$*SPEC`] 并看到过一些代码或书籍显示其用于拆分和连接路径片段的用法。它提供的一些例程名称甚至可能看起来与您在其他语言中使用的名称相似。
 
-但是，除非您正在编写自己的 IO 框架，否则几乎不需要直接使用 link:https://docs.perl6.org/language/variables#Dynamic_variables[`$*SPEC`]。link:https://docs.perl6.org/language/variables#Dynamic_variables[`$*SPEC`] 提供低级别的东西，它的使用不仅会使你的代码难以阅读，你可能会引入安全问题（例如空字符）！
+但是，除非您正在编写自己的 IO 框架，否则几乎不需要直接使用 link:https://docs.raku.org/language/variables#Dynamic_variables[`$*SPEC`]。link:https://docs.raku.org/language/variables#Dynamic_variables[`$*SPEC`] 提供低级别的东西，它的使用不仅会使你的代码难以阅读，你可能会引入安全问题（例如空字符）！
 
-link:https://docs.perl6.org/type/IO::Path[`IO::Path`] 类型是 Perl 6 世界的主力。它满足所有路径操作需求，并提供快捷例程，让您避免处理文件句柄。用它而不是 link:https://docs.perl6.org/language/variables#Dynamic_variables[`$*SPEC`] 这样的东西。
+link:https://docs.raku.org/type/IO::Path[`IO::Path`] 类型是 Raku 世界的主力。它满足所有路径操作需求，并提供快捷例程，让您避免处理文件句柄。用它而不是 link:https://docs.raku.org/language/variables#Dynamic_variables[`$*SPEC`] 这样的东西。
 
-提示：您可以使用 `/` 连接路径部分并将其提供给 link:https://docs.perl6.org/type/IO::Path[`IO::Path`] 例程; 无论操作系统如何，他们仍然可以做正确的事情。
+提示：您可以使用 `/` 连接路径部分并将其提供给 link:https://docs.raku.org/type/IO::Path[`IO::Path`] 例程; 无论操作系统如何，他们仍然可以做正确的事情。
 
-```perl6
+```raku
 # WRONG!! TOO MUCH WORK! 
 my $fh = open $*SPEC.catpath: '', 'foo/bar', $file;
 my $data = $fh.slurp;
@@ -137,9 +137,9 @@ $fh.close;
 my $data = 'foo/bar'.IO.add($file).slurp;
 ```
 
-但是，将它用于 link:https://docs.perl6.org/type/IO::Path[IO::Path] 无法提供的东西是很好的。例如，link:https://docs.perl6.org/routine/devnull[`.devnull`] 方法：
+但是，将它用于 link:https://docs.raku.org/type/IO::Path[IO::Path] 无法提供的东西是很好的。例如，link:https://docs.raku.org/routine/devnull[`.devnull`] 方法：
 
-```perl6
+```raku
 {
     temp $*OUT = open :w, $*SPEC.devnull;
     say "In space no one can hear you scream!";
@@ -149,20 +149,20 @@ say "Hello";
 
 ## 字符串化 IO::Path
 
-不要使用 `.Str` 方法对 link:https://docs.perl6.org/type/IO::Path[`IO::Path`] 对象进行字符串化，除非您只是想将它们显示在某个地方以供参考或使用。`.Str` 方法返回 link:https://docs.perl6.org/type/IO::Path[`IO::Path`] 实例化的任何基本路径字符串。它不考虑 link:https://docs.perl6.org/type/IO::Path#attribute_CWD[`$.CWD`] 属性的值。例如，此代码已损坏：
+不要使用 `.Str` 方法对 link:https://docs.raku.org/type/IO::Path[`IO::Path`] 对象进行字符串化，除非您只是想将它们显示在某个地方以供参考或使用。`.Str` 方法返回 link:https://docs.raku.org/type/IO::Path[`IO::Path`] 实例化的任何基本路径字符串。它不考虑 link:https://docs.raku.org/type/IO::Path#attribute_CWD[`$.CWD`] 属性的值。例如，此代码已损坏：
 
-```perl6
+```raku
 my $path = 'foo'.IO;
 chdir 'bar';
 # WRONG!! .Str DOES NOT USE $.CWD! 
 run <tar -cvvf archive.tar>, $path.Str;
 ```
 
-link:https://docs.perl6.org/routine/chdir[`chdir`] 调用更改了当前目录的值，但我们创建的  `$path` 是相对于该更改之前的目录。
+link:https://docs.raku.org/routine/chdir[`chdir`] 调用更改了当前目录的值，但我们创建的  `$path` 是相对于该更改之前的目录。
 
-但是，link:https://docs.perl6.org/type/IO::Path[`IO::Path`] 对象*确实*知道它相对于哪个目录。我们只需要使用 link:https://docs.perl6.org/routine/absolute[`.absolute`] 或 link:https://docs.perl6.org/routine/relative[`.relative`] 来字符串化对象。两个例程都返回一个 link:https://docs.perl6.org/type/Str[`Str`] 对象; 它们不同之处在于结果是绝对路径还是相对路径。所以，我们可以像这样修复我们的代码：
+但是，link:https://docs.raku.org/type/IO::Path[`IO::Path`] 对象*确实*知道它相对于哪个目录。我们只需要使用 link:https://docs.raku.org/routine/absolute[`.absolute`] 或 link:https://docs.raku.org/routine/relative[`.relative`] 来字符串化对象。两个例程都返回一个 link:https://docs.raku.org/type/Str[`Str`] 对象; 它们不同之处在于结果是绝对路径还是相对路径。所以，我们可以像这样修复我们的代码：
 
-```perl6
+```raku
 my $path = 'foo'.IO;
 chdir 'bar';
 # RIGHT!! .absolute does consider the value of $.CWD! 
@@ -173,23 +173,23 @@ run <tar -cvvf archive.tar>, $path.relative;
 
 ## 注意 $*CWD
 
-虽然通常不在视线范围内，但默认情况下，每个 link:https://docs.perl6.org/type/IO::Path[`IO::Path`] 对象都使用 link:https://docs.perl6.org/language/variables#Dynamic_variables[`$*CWD`] 的当前值来设置其 link:https://docs.perl6.org/type/IO::Path#attribute_CWD[`$.CWD`属性]。这意味着有两件事需要注意。
+虽然通常不在视线范围内，但默认情况下，每个 link:https://docs.raku.org/type/IO::Path[`IO::Path`] 对象都使用 link:https://docs.raku.org/language/variables#Dynamic_variables[`$*CWD`] 的当前值来设置其 link:https://docs.raku.org/type/IO::Path#attribute_CWD[`$.CWD`属性]。这意味着有两件事需要注意。
 
 ### temp the $*CWD
 
 这段代码是错误的：
 
-```perl6
+```raku
 # WRONG!! 
 my $*CWD = "foo".IO;
 ```
 
-`my $*CWD` 让 link:https://docs.perl6.org/language/variables#Dynamic_variables[`$*CWD`] 变为未定义的。然后 link:https://docs.perl6.org/routine/IO[`.IO`] coercer 继续并将其正创建的路径的link:https://docs.perl6.org/type/IO::Path#attribute_CWD[`$.CWD`] 属性设置为 undefined 的 `$*CWD` 字符串化版本 ; 一个空字符串。
+`my $*CWD` 让 link:https://docs.raku.org/language/variables#Dynamic_variables[`$*CWD`] 变为未定义的。然后 link:https://docs.raku.org/routine/IO[`.IO`] coercer 继续并将其正创建的路径的link:https://docs.raku.org/type/IO::Path#attribute_CWD[`$.CWD`] 属性设置为 undefined 的 `$*CWD` 字符串化版本 ; 一个空字符串。
 
-执行此操作的正确方法是使用 link:https://docs.perl6.org/routine/temp[`temp`] 而不是 `my`。它会将 link:https://docs.perl6.org/language/variables#Dynamic_variables[`$*CWD`] 的更改效果本地化，就像 `my` 那样，但它不会使其未定义，因此 link:https://docs.perl6.org/routine/IO[`.IO`] coercer 仍将获得正确的旧值：
+执行此操作的正确方法是使用 link:https://docs.raku.org/routine/temp[`temp`] 而不是 `my`。它会将 link:https://docs.raku.org/language/variables#Dynamic_variables[`$*CWD`] 的更改效果本地化，就像 `my` 那样，但它不会使其未定义，因此 link:https://docs.raku.org/routine/IO[`.IO`] coercer 仍将获得正确的旧值：
 
-```perl6
+```raku
 temp $*CWD = "foo".IO;
 ```
 
-更好的是，如果要在本地化的 link:https://docs.perl6.org/language/variables#Dynamic_variables[`$*CWD`] 中执行某些代码，请使用该link:https://docs.perl6.org/routine/indir[`indir`] 例程。
+更好的是，如果要在本地化的 link:https://docs.raku.org/language/variables#Dynamic_variables[`$*CWD`] 中执行某些代码，请使用该link:https://docs.raku.org/routine/indir[`indir`] 例程。

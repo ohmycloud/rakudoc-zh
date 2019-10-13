@@ -1,30 +1,30 @@
-源文件可以在 link:https://github.com/perl6/faq[github] 或 link:https://doc.perl6.org/language/faq[perl6.org]上找到.
+源文件可以在 link:https://github.com/raku/faq[github] 或 link:https://doc.raku.org/language/faq[raku.org]上找到.
 
 
 ## General
 
 
-### Rakudo 和 Perl 6 的区别是什么？
+### Rakudo 和 Raku 的区别是什么？
 
 
-Rakudo 是 Perl 6 的一个实现。目前它是完成度最好的但是过去也有其它的实现, 将来也可能会有其它实现。Perl 6 是语言的定义。很多场合
+Rakudo 是 Raku 的一个实现。目前它是完成度最好的但是过去也有其它的实现, 将来也可能会有其它实现。Raku 是语言的定义。很多场合
 
 这两个名字可以宽松地使用并互相替换。
 
 
-### 会有 Perl 6 版本 6.0.0 吗?
+### 会有 Raku 版本 6.0.0 吗?
 
 第一个稳定语言版本的版本称为 v6.c，而不是 6.0.0。 不同的命名方案使得不太可能发布具有精确版本 6.0.0 的语言。
 
 您可以使用下面的代码检查您的 Rakudo 编译器是当前至少是什么版本（注意这可能不是真正的供应商二进制文件）：
 
-```perl6
-perl6 -e 'say q[too old] if $*PERL.version before Version.new(q[6.c])'
+```raku
+raku -e 'say q[too old] if $*PERL.version before Version.new(q[6.c])'
 ```
 
-它首先由 Rakudo Perl 6 编译器版本的 2015.12 实现，并且可能通过使用 'use 6.c' 指令在可预见的未来支持后续版本。 下一个语言版本（无发布日期）为 v6.d.
+它首先由 Rakudo Raku 编译器版本的 2015.12 实现，并且可能通过使用 'use 6.c' 指令在可预见的未来支持后续版本。 下一个语言版本（无发布日期）为 v6.d.
 
-### 作为一个 Perl 6 初学者我应该安装什么？
+### 作为一个 Raku 初学者我应该安装什么？
 
 
 如果你是一个 Linux 或 Mac 用户, 你可能需要下载 link:http://rakudo.org/downloads/star/[Rakudo Star] 并通过编译 MoarVM 版本安装（一个简单的处理）
@@ -39,41 +39,41 @@ Linux 和 Mac 二进制版本稍后也可能从供应商和第三方那儿获取
 
 安装类似于 Perl 5 的 perlbrew -- link:https://github.com/tadzik/rakudobrew[rakudobrew] , 同等的 Python 还有 Ruby 工具。
 
-### 从哪里能找到关于 Perl 6 的好文档？
+### 从哪里能找到关于 Raku 的好文档？
 
-最令人信赖的信息能在 perl6.org 或那儿的直接链接。
+最令人信赖的信息能在 raku.org 或那儿的直接链接。
 
-你也可以使用 link:https://www.google.co.uk/search?q=site:irclog.perlgeek.de+inurl:perl6[Google] 搜索 Freenode #perl6 IRC 频道。
+你也可以使用 link:https://www.google.co.uk/search?q=site:irclog.perlgeek.de+inurl:raku[Google] 搜索 Freenode #raku IRC 频道。
 
-http://www.perl6.org/documentation/ 和 http://doc.perl6.org/
+http://www.raku.org/documentation/ 和 http://doc.raku.org/
 
-### 什么是 Perl 6 spec？
+### 什么是 Raku spec？
 
-"spec" 指的是 Perl 6的官方测试套件。它被称作 roast 并被托管在 link:https://github.com/perl6/roast[github] 上.
+"spec" 指的是 Raku的官方测试套件。它被称作 roast 并被托管在 link:https://github.com/raku/roast[github] 上.
 
-它被用来测量一个 Perl 6 的实现有多彻底。
+它被用来测量一个 Raku 的实现有多彻底。
 
-### 有没有 Perl 6 的术语相关的项目？
+### 有没有 Raku 的术语相关的项目？
 
-查看 link:http://design.perl6.org/S99.html[glossary]
+查看 link:http://design.raku.org/S99.html[glossary]
 
-### 我是一个 Perl 5 程序员. Perl 5 和 Perl 6 的区别在哪儿？
+### 我是一个 Perl 5 程序员. Perl 5 和 Raku 的区别在哪儿？
 
-在 link: https://docs.perl6.org/language/5to6-nutshell[ https://docs.perl6.org/language/5to6-nutshell] 下面查看 ‘5to6-nutshell’ pod 文档和相关页面。
+在 link: https://docs.raku.org/language/5to6-nutshell[ https://docs.raku.org/language/5to6-nutshell] 下面查看 ‘5to6-nutshell’ pod 文档和相关页面。
 
 ## 模块
 
-### Perl 6 有 CPAN 吗? 或者 Perl 6 会使用 Perl 5 的 CPAN 吗?
+### Raku 有 CPAN 吗? 或者 Raku 会使用 Perl 5 的 CPAN 吗?
 
-Perl 6 还没有像 CPAN 那样成熟的模块仓库. 但是 link:http://modules.perl6.org/[modules.perl6.org] 有很多已知的 Perl 6 模块, link:https://github.com/tadzik/panda/[panda] 能在 Rakudo 上安装这些模块.
+Raku 还没有像 CPAN 那样成熟的模块仓库. 但是 link:http://modules.raku.org/[modules.raku.org] 有很多已知的 Raku 模块, link:https://github.com/tadzik/panda/[panda] 能在 Rakudo 上安装这些模块.
 
-### 我能在 Perl 6 中使用 Perl 5的模块吗？
+### 我能在 Raku 中使用 Perl 5的模块吗？
 
 使用 link:https://github.com/niner/Inline-Perl5/[Inline::Perl5] 能让大部分 Perl 5 模块工作, 它甚至能很好地运行 Perl 5 的 Catalyst 和 DBI。
 
-### 我能在 Perl 6 中使用 C 和 C++ 吗？
+### 我能在 Raku 中使用 C 和 C++ 吗？
 
-link:http://docs.perl6.org/language/nativecall[Nativecall] 让这个特别容易。
+link:http://docs.raku.org/language/nativecall[Nativecall] 让这个特别容易。
 
 ### Nativecall 找不到 libfoo.so 并且我只有 libfoo.so.1.2!
 
@@ -82,7 +82,7 @@ link:http://docs.perl6.org/language/nativecall[Nativecall] 让这个特别容易
 ### 所有的传统 Unix 库函数去哪儿了？
 
 使用 Nativecall 访问它们很容易。
-link:https://github.com/cspencer/perl6-posix[POSIX] 模块也可以。
+link:https://github.com/cspencer/raku-posix[POSIX] 模块也可以。
 
 ### Rakudo 有核心标准库吗?
 
@@ -92,15 +92,15 @@ Rakudo Star 是一个带有一些有用模块的 rakudo, 并且更多的模块�
 
 ### 有像 B::Deparse 那样的东西吗?/我怎么抓住 AST?
 
-使用 `perl6 --target=ast -e 'very-short-example()'` 来抓取编译单元的抽象语法树(AST)。
+使用 `raku --target=ast -e 'very-short-example()'` 来抓取编译单元的抽象语法树(AST)。
 
 ## 语言特性
 
-### 我怎么 dump Perl 6 的数据结构(就像 Perl 5 的 Data::Dumper 和类似的)？
+### 我怎么 dump Raku 的数据结构(就像 Perl 5 的 Data::Dumper 和类似的)？
 
 examples:
 
-``` perl6
+``` raku
 
 my $foo="bar"
 dd $foo        # Str $foo = "bar"
@@ -108,9 +108,9 @@ say :$foo.perl # :foo("bar")
 say :$foo.gist # foo => bar
 ```
 
-生态系统中还有模块来做这个事情, 例如 link:https://github.com/tony-o/perl6-data-dump/[Data::Dump] 使用颜色来 Dump。
+生态系统中还有模块来做这个事情, 例如 link:https://github.com/tony-o/raku-data-dump/[Data::Dump] 使用颜色来 Dump。
 
-### 我怎么在 Perl 6 提示符（REPL）中找到历史命令行？
+### 我怎么在 Raku 提示符（REPL）中找到历史命令行？
 
 从生态系统中安装 link:https://github.com/hoelzro/p6-linenoise/[Linenoise].
 
@@ -122,7 +122,7 @@ say :$foo.gist # foo => bar
 
 Examples:
 
-```perl6
+```raku
 
 say 1/0     # Attempt to divide 1 by zero using div
 
@@ -133,57 +133,57 @@ foo(1)      # ===SORRY!=== Error while compiling ...
 
 ### 什么是 (Any)?
 
-link:http://doc.perl6.org/routine/type%2FAny[Any] 是一个用于新类的默认超类(superclass)的顶层类。
+link:http://doc.raku.org/routine/type%2FAny[Any] 是一个用于新类的默认超类(superclass)的顶层类。
 它经常在这样的上下文出现：变量被定义但没有被赋值， 这里它类似于其它语言中的 undef 或 null 值。
 
 examples:
 
-```perl6
+```raku
 my $foo;
 say $foo;       # (Any) 注意圆括号表明的类型对象
 say $foo.^name  # Any
 
 ```
 
-(Any) 不应该被用于检查 definedness。 在 Perl 6 中, definedness 可能是一个对象的属性。 通常实例是被定义的, 而类型对象是未定义的。
+(Any) 不应该被用于检查 definedness。 在 Raku 中, definedness 可能是一个对象的属性。 通常实例是被定义的, 而类型对象是未定义的。
 
-```perl6
+```raku
 say 1.defined       # True
 say (Any).defined   # False
 ```
 
 ### so 是什么?
 
-`so` 是一个松散优先级的操作符, 它强制上下文为 link:https://docs.perl6.org/type/Bool[Bool].  
+`so` 是一个松散优先级的操作符, 它强制上下文为 link:https://docs.raku.org/type/Bool[Bool].  
 
 `so` 拥有和 `?` 前缀操作符同样的语义, 就像 `and` 是 `&&` 的低优先级版本一样.
 
 用法示例:
 
-``` perl6
+``` raku
 say so 1|2 == 2;    # Bool::True
 ```
 
-在这个例子中, 比较的结果(结果是 link:https://docs.perl6.org/type/Junction[Junction])在打印之前被转换为 Bool 值了.
+在这个例子中, 比较的结果(结果是 link:https://docs.raku.org/type/Junction[Junction])在打印之前被转换为 Bool 值了.
 
 ### 签名中的那些 :D 和 :U 是什么东东？
 
-在 Perl 6 中, 类和其它类型是对象, 并且传递自身类型的类型检测。
+在 Raku 中, 类和其它类型是对象, 并且传递自身类型的类型检测。
 例如如果你声明一个变量
 
-```perl6
+```raku
 my Int $x = 42;
 ```
 
 那么, 你不仅可以给它赋值整数（即， Int 类的实例）, 还能给它赋值 Int 类型对象自身：
 
-```perl6
+```raku
 $x = Int
 ```
 
 如果你想排除类型对象, 你可以追加一个 `:D` 类型微笑符, 它代表"定义"（definite）:
 
-```perl6
+```raku
 my Int:D $x = 42;
 $x = Int;  # dies with:
            # Type check failed in assignment to $x;
@@ -199,7 +199,7 @@ $x = Int;  # dies with:
 
 类型约束的例子:
 
-```perl6
+```raku
 sub divide-to-int( Int $a, Int $b --> Int ) {
         return ($a / $b).narrow;
 }
@@ -210,7 +210,7 @@ divide-to-int(3, 2)
 
 有明确返回值的例子:
 
-```perl6
+```raku
 sub discard-random-number( --> 42 ) { rand }
 say discard-random-number
 # 42
@@ -221,7 +221,7 @@ say discard-random-number
 
 ### Any 和 Mu 的区别是什么?
 
-`Mu` 是所派生出的所有其它类型的基类型. `Any` 是从  `Mu`派生来的, 代表着任何类型的 Perl 6 值. 主要区别是, `Any` 不包含 `Junction`.
+`Mu` 是所派生出的所有其它类型的基类型. `Any` 是从  `Mu`派生来的, 代表着任何类型的 Raku 值. 主要区别是, `Any` 不包含 `Junction`.
 
 子例程参数的默认类型是 `Any`, 以至于当你声明 `sub foo ($a)` 时, 你真正表达的是 `sub foo (Any $a)` . 类似地, 类的声明被假定继承自 `Any`, 除非使用了像 `is Mu` 这样的 trait 特征.
 
@@ -229,13 +229,13 @@ say discard-random-number
 
 ### 怎么从 Junction 中提取值?
 
-如果你想从 link:https://docs.perl6.org/type/Junction[Junction] 中提取值(特征态), 那你可能正误入歧途. 应该使用 link:https://docs.perl6.org/type/Set[Set] 代替
+如果你想从 link:https://docs.raku.org/type/Junction[Junction] 中提取值(特征态), 那你可能正误入歧途. 应该使用 link:https://docs.raku.org/type/Set[Set] 代替
 
 Junctions 作为匹配器, 而不是使用它们做代数.
 
 如果你还是想那样做, 你可以滥用自动线程(autothreading):
 
-``` perl6
+``` raku
 sub eigenstates(Mu $j) {
     my @states;
     -> Any $s { @states.push: $s }.($j);
@@ -248,15 +248,15 @@ say eigenstates(1|2|3).join(', ');
 
 ### 如果 Str 是不可变的, 那么 `s///` 是怎么工作的? 如果 Int 是不可变的, `$i++` 是怎么工作的?
 
-在 Perl 6 中, 很多基本类型是不可变的, 但是保存它们的变量不是. `s///` 作用于变量上, 在这个变量中放入一个新创建的字符串对象. 同样地, `$i++` 作用于 `$i` 变量上, 而不是作用在它里面的值身上.
+在 Raku 中, 很多基本类型是不可变的, 但是保存它们的变量不是. `s///` 作用于变量上, 在这个变量中放入一个新创建的字符串对象. 同样地, `$i++` 作用于 `$i` 变量上, 而不是作用在它里面的值身上.
 
-更多详情请查看:  link:http://doc.perl6.org/language/containers[containers] 文档。
+更多详情请查看:  link:http://doc.raku.org/language/containers[containers] 文档。
 
 ### 什么是数组引用和自动解引用? 我仍然需要 @ 符号吗?
 
-在 Perl 6 中, 几乎所有的东西都是引用. 所以谈论 taking references 没有多大意义. 不像 Perl 5 那样, Perl 6 的标量变量也能直接包含数组:
+在 Raku 中, 几乎所有的东西都是引用. 所以谈论 taking references 没有多大意义. 不像 Perl 5 那样, Raku 的标量变量也能直接包含数组:
 
-``` perl6
+``` raku
 my @a = 1, 2, 3;
 say @a;                 # "1 2 3\n"
 say @a.WHAT;            # (Array)
@@ -268,7 +268,7 @@ say $scalar.WHAT;       # (Array)
 
 最大的区别是, 标量中的数组在列表上下文中是一个值, 然而数组会被愉快地迭代:
 
-``` perl6
+``` raku
 my @a = 1, 2, 3;
 my $s = @a;
 
@@ -298,23 +298,23 @@ say @nested.elems;      # 2
 
 你可能会把字符串插值和 HTML 搞混。
 
-```perl6
+```raku
 my $foo = "abc";
 say "$foo<html-tag>";
 ```
 
-Perl 6 认为 `$foo` 是一个散列而 `<html-tag>` 是一个字符串字面量的散列键。使用闭包来帮助你理解吧。
+Raku 认为 `$foo` 是一个散列而 `<html-tag>` 是一个字符串字面量的散列键。使用闭包来帮助你理解吧。
 
-```perl6
+```raku
 my $foo = "abc";
 say "{$foo}<html-tag>";
 ```
 
-### Perl 6 有协程吗? 什么是 yield ?
+### Raku 有协程吗? 什么是 yield ?
 
-Perl 6 没有 Python 那样的 `yield` 语句, 但是它通过惰性列表却能提供类似的功能. 有两种很潮的方式来写出能返回惰性列表的例程:
+Raku 没有 Python 那样的 `yield` 语句, 但是它通过惰性列表却能提供类似的功能. 有两种很潮的方式来写出能返回惰性列表的例程:
 
-``` perl6
+``` raku
 # first method, gather/take
 my @values := gather while have_data() {
     # do some computations
@@ -341,7 +341,7 @@ my @squares = (1..*).map(-> \x { x² });
 
 这样的代码:
 
-``` perl6
+``` raku
 
 class A {
     has $!x;
@@ -356,7 +356,7 @@ A.new(x => 5).show-x;
 
 如果你仍旧想让它工作, 你可以添加一个 `submethod BUILD` 来初始化它们:
 
-``` perl6
+``` raku
 class B {
     has $!x;
     submethod BUILD(:$!x) { }
@@ -367,7 +367,7 @@ class B {
 A.new(x => 5).show-x;
 ```
 
-`BUILD` 由默认的构造器使用用户传递给构造器的所有具名参数调用（间接地, 更多细节查看link:https://docs.perl6.org/language/objects#Object_Construction[Object Construction]）。 `:$!x` 是名为 `x` 的具名参数, 当使用名为 `x` 的具名参数来调用时, 它的值被绑定到属性 `$!x` 上.
+`BUILD` 由默认的构造器使用用户传递给构造器的所有具名参数调用（间接地, 更多细节查看link:https://docs.raku.org/language/objects#Object_Construction[Object Construction]）。 `:$!x` 是名为 `x` 的具名参数, 当使用名为 `x` 的具名参数来调用时, 它的值被绑定到属性 `$!x` 上.
 
 但不要这样做。如果名字是 public 的，使用 `$.x` 以那样的方式声明没有什么不好，因为默认情况下外部视图是只读的(readonly)，你仍然可以使用 `$!x` 从内部访问它。
 
@@ -382,7 +382,7 @@ A.new(x => 5).show-x;
 
 例如, 类型对象, 也是熟知的 “未定义值”, 字符串化为一个空的字符串和警告, 而 `gist` 方法返回由一对圆括号包裹的类型的名字.(用于表明除了类型之外什么也没有).
 
-``` perl6
+``` raku
 my Date $x;     # $x now contains the Date type object
 print $x;       # empty string plus warning
 say $x;         # (Date)\n
@@ -416,31 +416,31 @@ Failure 从 `defined` 检查中返回 False, 并且你可以使用 `exception` �
 
 ### 为什么 wantarray 或 want 不见了? 我能在不同的上下文中返回不同的东西吗?
 
-Perl 拥有 link:https://docs.perl6.org/language/5to6-perlfunc#wantarray[wantarray] 函数来告诉你这是在空上下文, 标量上下文,还是在列表上下文中调用的. Perl 6 没有与之等价的结构, 因为上下文不是向内流动的,  例如, 子例程不知道调用所在的上下文.
+Perl 拥有 link:https://docs.raku.org/language/5to6-perlfunc#wantarray[wantarray] 函数来告诉你这是在空上下文, 标量上下文,还是在列表上下文中调用的. Raku 没有与之等价的结构, 因为上下文不是向内流动的,  例如, 子例程不知道调用所在的上下文.
 
-一个愿意是因为 Perl 6 有多重分派, 在这样一个例子中:
+一个愿意是因为 Raku 有多重分派, 在这样一个例子中:
 
-``` perl6
+``` raku
 multi w(Int $x) { say 'Int' }
 multi w(Str $x) { say 'Str' }
 w(f());
 ```
 
-没办法决定子例程 `f` 的调用者想要一个字符串还是想要一个整数, 因为它还不知道调用者是什么. 通常这要求解决 halting 问题, 在这个问题上, 即使写 Perl 6编译器的人也会遇到麻烦.
+没办法决定子例程 `f` 的调用者想要一个字符串还是想要一个整数, 因为它还不知道调用者是什么. 通常这要求解决 halting 问题, 在这个问题上, 即使写 Raku编译器的人也会遇到麻烦.
 
-在 Perl 6 中达到上下文敏感的方式是返回一个知道怎样响应方法调用的对象.
+在 Raku 中达到上下文敏感的方式是返回一个知道怎样响应方法调用的对象.
 
-例如, regex 匹配返回 Match link:http://doc.perl6.org/type/Match[对象], 该对象知道怎样响应列表索引, 散列索引, 并能变成匹配的字符串.
+例如, regex 匹配返回 Match link:http://doc.raku.org/type/Match[对象], 该对象知道怎样响应列表索引, 散列索引, 并能变成匹配的字符串.
 
 ### Pointer 和 OpaquePointer 的区别是声明?
 
 `OpaquePointer` 被废弃了并且已经用 `Pointer` 代替了。
 
-## Perl 6 实现
+## Raku 实现
 
-### 哪个 Perl 6 的实现是可用的?
+### 哪个 Raku 的实现是可用的?
 
-当前开发最好的是 Rakudo(使用多个虚拟机后端)。历史上的实现还包括 Niecza (.NET) 和 Pugs (Haskell). 其它的列出在 link:https://www.perl6.org/compilers/[Perl 6 Compilers] 下面。
+当前开发最好的是 Rakudo(使用多个虚拟机后端)。历史上的实现还包括 Niecza (.NET) 和 Pugs (Haskell). 其它的列出在 link:https://www.raku.org/compilers/[Raku Compilers] 下面。
 
 ### Rakudo 是用什么语言写的?
 
@@ -448,37 +448,37 @@ NQP 是（1）NQP 代码，（2）底层虚拟机使用的任何语言，（3）
 
 ### 为什么我不能把所有的数值都赋值给 Num 类型的变量?
 
-``` perl6
+``` raku
 my Num $x = 42;
 # dies with
 # Type check failed in assignment to '$x'; expected 'Num' but got 'Int'
 
 ```
 
-link:http://doc.perl6.org/type/Num[Num] 是浮点类型, 与 link:http://doc.perl6.org/type/Int[ integers] 不兼容. 如果你想要一个允许任何数字值的类型约束, 使用 link:http://doc.perl6.org/type/Numeric[Numeric] (它也允许link:http://doc.perl6.org/type/Complex[复数]), 或 link:http://doc.perl6.org/type/Real[Real]如果你想排除复数.
+link:http://doc.raku.org/type/Num[Num] 是浮点类型, 与 link:http://doc.raku.org/type/Int[ integers] 不兼容. 如果你想要一个允许任何数字值的类型约束, 使用 link:http://doc.raku.org/type/Numeric[Numeric] (它也允许link:http://doc.raku.org/type/Complex[复数]), 或 link:http://doc.raku.org/type/Real[Real]如果你想排除复数.
 
 
 ## 元问题和宣传
 
 
-### Perl 6 什么时间会准备好? 就是现在吗?
+### Raku 什么时间会准备好? 就是现在吗?
 
 
 编程语言和它们的编译器的准备就绪不是一个二元决策. 因为它们(语言和实现)能进化, 它们平稳地发展变得更可用. 根据你对编程语言的要求, 它可能适合也可能不适合你.
 
-请查看 link:http://perl6.org/compilers/features[功能对比矩阵] 了解更详尽的实现了的功能.
+请查看 link:http://raku.org/compilers/features[功能对比矩阵] 了解更详尽的实现了的功能.
 
-请注意, Larry Wall 已经在 FOSDEM 2015 会议上宣布, 一个产品级的 Rakudo Perl 6 将会在 2015 圣诞节发布.
+请注意, Larry Wall 已经在 FOSDEM 2015 会议上宣布, 一个产品级的 Rakudo Raku 将会在 2015 圣诞节发布.
 
 
-### 为什么我要学习 Perl 6? 它有什么了不起的吗?
+### 为什么我要学习 Raku? 它有什么了不起的吗?
 
-Perl 6 统一了很多其它编程语言中不经常有的伟大想法. 虽然其中的几种语言提供了其中的某些功能, 但是没有提供全部.
+Raku 统一了很多其它编程语言中不经常有的伟大想法. 虽然其中的几种语言提供了其中的某些功能, 但是没有提供全部.
 
 不像大部分语言那样, 它提供了：
 
 
-- Perl 6 提供了过程式的, 面向对象的和函数式编程方法。
+- Raku 提供了过程式的, 面向对象的和函数式编程方法。
 - 易于使用的一致性语法, 数据结构中的符号不变性。
 - 完全基于字素的 Unicode 支持, 包括附件 #29
 - 足够清晰的正则表达式, 更易读, 更多功能。
@@ -495,8 +495,8 @@ Perl 6 统一了很多其它编程语言中不经常有的伟大想法. 虽然�
 - 可选的渐进类型检查，无需额外的运行时成本。 还有可选类型注解。
 - 基于对编译器/运行时状态的内省的高级错误报告。这意味着更有用，更精确的错误信息。
 - Phasers(如 BEGIN/END) 允许代码作用域 进入/退出, 首次循环/last/next 和其它更多上下文中执行。
-- 高级并发模型，用于隐式以及显式多进程处理，这超越了原始线程和锁。 Perl 6 的并发提供了一组丰富的（可组合的）工具。
-- 多核计算机越来越多地被使用，由于并行性使得 Perl 6 可以使用多核，包括隐式（例如使用>>.方法）和显式 (start {code}) 。这很重要，因为摩尔定律正在结束。
+- 高级并发模型，用于隐式以及显式多进程处理，这超越了原始线程和锁。 Raku 的并发提供了一组丰富的（可组合的）工具。
+- 多核计算机越来越多地被使用，由于并行性使得 Raku 可以使用多核，包括隐式（例如使用>>.方法）和显式 (start {code}) 。这很重要，因为摩尔定律正在结束。
 - 提供结构化语言支持以实现异步执行代码的编程。
 - Supplies 允许在发生某些事情时执行代码（如定时器，信号或文件系统事件）。
 - react/whenever/supply 关键字允许容易地构建交互式，事件驱动的应用程序。
@@ -507,8 +507,8 @@ Perl 6 统一了很多其它编程语言中不经常有的伟大想法. 虽然�
 - 可以同时安装和加载模块的多个版本。
 - 由于更简单的更新/升级策略，简化了系统管理。
 - 简单的数值计算没有损失精度，因为 Rats（有理数）。
-- 用于解析数据或代码的可扩展语法（Perl 6 用它解析自身）
-- Perl 6 是一种非常易变的语言（定义自己的函数，运算符，traits 和数据类型，为您修改解析器）。
+- 用于解析数据或代码的可扩展语法（Raku 用它解析自身）
+- Raku 是一种非常易变的语言（定义自己的函数，运算符，traits 和数据类型，为您修改解析器）。
 - 很多的数据类型选择，加上创建自己的类型的可能性。
 - 具有适当边界检查的多维成型的和/或原生数组
 - 在某个匹配出现时, 词法解析期间随时执行代码
@@ -525,36 +525,36 @@ Perl 6 统一了很多其它编程语言中不经常有的伟大想法. 虽然�
 - Perl  6 的座右铭与 Perl一直保持不变：Perl是不同的。简而言之，Perl旨在"使容易的工作变得容易，使困难的工作变得可能"。和"条条大路通罗马"。现在有更多 -Ofun 添加进来。
 
 
-请查看 link:http://perl6.org/compilers/features[功能比较矩阵] 获取更多信息.
+请查看 link:http://raku.org/compilers/features[功能比较矩阵] 获取更多信息.
 
 
 
 ### 为什么不把它叫做除了 Perl 以外的其它东西?
 
-很多人建议, Perl 6 跟之前的 Perl 版本的区别太大了, 我们应该考虑给它改名, 或者考虑到 Perl 6 伤害了 Perl 5, 仅仅拥有同样的名字却有更高的版本号.
+很多人建议, Raku 跟之前的 Perl 版本的区别太大了, 我们应该考虑给它改名, 或者考虑到 Raku 伤害了 Perl 5, 仅仅拥有同样的名字却有更高的版本号.
 
-Perl 6 仍然叫做 “Perl" 的主要原因是:
+Raku 仍然叫做 “Perl" 的主要原因是:
 
 
 
-- Perl 6 仍然是一个 perlish 风格的语言, 和之前的版本遵守相同的底层思想(用于微型命名空间的符号, 条条大路通罗马, 吸收了很多自然语言的思想..)
-- Perl 6 的代码很 perlish.
+- Raku 仍然是一个 perlish 风格的语言, 和之前的版本遵守相同的底层思想(用于微型命名空间的符号, 条条大路通罗马, 吸收了很多自然语言的思想..)
+- Raku 的代码很 perlish.
 - Perl 仍然是一个强健的品牌名, 我们不想马上抛弃它
 - 找到一个替代的名字很困难. 而且, “camelia” 和 “rakudo" 不是合适的编程语言名
-- 即使 Perl 6 更改了它的名字, Perl 5 也不大可能增加它的版本号为 6.因为 Perl 6 已经根植于人们的头脑中了
+- 即使 Raku 更改了它的名字, Perl 5 也不大可能增加它的版本号为 6.因为 Raku 已经根植于人们的头脑中了
 
-### Perl 6 对我来说足够快了吗?
+### Raku 对我来说足够快了吗?
 
-那取决于你正在做什么。Perl 6 一直奉行“做对的事情然后做的更快”的哲学进行开发。对于某些东西来说它够快了, 但是需要做的更多。
-Perl 6 大部分是由志愿者开发的, 但是 Perl 6 的性能在不久的将来有待提高, 因为 MoarVM 后端包含一个现代的即时（JIT）编译器。
-Perl 5 程序员应该意识到 Perl 6 在面向对象方面有很多内建函数并且还有更多其它的。
+那取决于你正在做什么。Raku 一直奉行“做对的事情然后做的更快”的哲学进行开发。对于某些东西来说它够快了, 但是需要做的更多。
+Raku 大部分是由志愿者开发的, 但是 Raku 的性能在不久的将来有待提高, 因为 MoarVM 后端包含一个现代的即时（JIT）编译器。
+Perl 5 程序员应该意识到 Raku 在面向对象方面有很多内建函数并且还有更多其它的。
 简单的基准测试会误导除非你在你的 Perl 5脚本中包含了诸如 Moose, 类型检测模块等。
 
-下面这个粗超的基准测试, 使用了所有诸如此类的一般说明, 能展示 Perl 6 在某些类似任务上能和 Perl 5的速度接近。
+下面这个粗超的基准测试, 使用了所有诸如此类的一般说明, 能展示 Raku 在某些类似任务上能和 Perl 5的速度接近。
 在你的系统上尝试下, 你可能会感到很惊讶!
 
-```perl6
-# Perl 6 version
+```raku
+# Raku version
 use v6;
 
 class Foo { has $.i is rw };
@@ -580,7 +580,7 @@ for my $i (1..1_000_000) {
 1;
 
 # Another Perl 5 version that offers bare-bones set of features
-# compared to Moose/Perl 6's version but those are not needed in this
+# compared to Moose/Raku's version but those are not needed in this
 # specific, simple program anyway.
 package Foo;
 use Mojo::Base -base;
@@ -595,7 +595,7 @@ for my $i (1..1_000_000) {
 1;
 
 # A perl program which works under both perl5 (with perl -Mbigint)
-# and perl6
+# and raku
 
 my ($prev, $current) = (1, 0);
 

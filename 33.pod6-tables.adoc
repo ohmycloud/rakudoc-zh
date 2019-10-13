@@ -1,6 +1,6 @@
 == Pod 6 表格
 
-Perl 6 POD 表的官方规范位于文档规范中：link:https://raw.githubusercontent.com/perl6/specs/master/S26-documentation.pod[表]。虽然 Pod 6 的规格尚未完全妥善处理，但仍有几个项目正在进行纠正。一个这样的项目是确保正确处理 Pod 6 表。
+Raku POD 表的官方规范位于文档规范中：link:https://raw.githubusercontent.com/raku/specs/master/S26-documentation.pod[表]。虽然 Pod 6 的规格尚未完全妥善处理，但仍有几个项目正在进行纠正。一个这样的项目是确保正确处理 Pod 6 表。
 
 作为该工作的一部分，本文档通过示例解释了 Pod 6 表的当前状态：有效表，无效表和丑陋表（即，由于草率构造，可能导致与用户期望的不同的有效表） 。
 
@@ -95,7 +95,7 @@ take out trash
 
 === Good tables
 
-以下是有效（好）表的示例（取自当前的link:https://github.com/perl6/roast[规范测试]）。
+以下是有效（好）表的示例（取自当前的link:https://github.com/raku/roast[规范测试]）。
 
 ```pod
 =begin table

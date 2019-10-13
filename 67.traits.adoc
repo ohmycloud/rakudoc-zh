@@ -1,6 +1,6 @@
 == Traits
 
-在 Perl 6 中，*traits*是附加到对象和类的编译器钩子，它们修改了类和对象的默认行为，功能或表示。作为这样的编译器钩子，它们是在编译时定义的，尽管它们可以用于运行时。
+在 Raku 中，*traits*是附加到对象和类的编译器钩子，它们修改了类和对象的默认行为，功能或表示。作为这样的编译器钩子，它们是在编译时定义的，尽管它们可以用于运行时。
 
 通过使用 `trait_mod` 关键字，已经将几个 traits 定义为语言或 Rakudo 编译器的一部分。接下来列出并解释它们。
 
@@ -8,7 +8,7 @@
 
 定义为
 
-```perl6
+```raku
 proto sub trait_mod:<is>(Mu $, |) {*}
 ```
 
@@ -16,7 +16,7 @@ proto sub trait_mod:<is>(Mu $, |) {*}
 
 ==== `is` 应用于类
 
-最常见的形式涉及两个类，一个正在定义，另一个现有，定义为 link:https://docs.perl6.org/syntax/is[defines parenthood]。  `A is B`, 如果两个都是类，则将 A 定义为 B 的子类。
+最常见的形式涉及两个类，一个正在定义，另一个现有，定义为 link:https://docs.raku.org/syntax/is[defines parenthood]。  `A is B`, 如果两个都是类，则将 A 定义为 B 的子类。
 
 `is DEPRECATED` 可以应用于类，属性或例程，将它们标记为已弃用并发出警告消息（如果提供了的话）。
 
@@ -24,7 +24,7 @@ proto sub trait_mod:<is>(Mu $, |) {*}
 
 不可实例化的表示 trait 与表示没有多大关系，与特定类可以做什么有关; 它有效地防止以任何可能的方式创建类的实例。
 
-```perl6
+```raku
 constant @IMM = <Innie Minnie Moe>;
  
 class don't-instantiate is repr('Uninstantiable') {
@@ -41,23 +41,23 @@ say don't-instantiate.imm for ^10;
 
 ==== `is repr` 和原生表示
 
-由于 `is` trait 通常指的是它们所应用的类或对象的性质，因此它们在link:(https://docs.perl6.org/language/nativecall[原生调用])中被广泛使用，以指定将由原生函数通过 `is repr` 后缀处理的数据结构的link:https://docs.perl6.org/language/nativecall#Specifying_the_native_representation[表示]。同时，`is native` 用于通过原生函数实际实现的例程。这些是可以使用的表示：
+由于 `is` trait 通常指的是它们所应用的类或对象的性质，因此它们在link:(https://docs.raku.org/language/nativecall[原生调用])中被广泛使用，以指定将由原生函数通过 `is repr` 后缀处理的数据结构的link:https://docs.raku.org/language/nativecall#Specifying_the_native_representation[表示]。同时，`is native` 用于通过原生函数实际实现的例程。这些是可以使用的表示：
 
-- CStruct 对应于 C 语言中的 `struct`。它是一种复合数据结构，包括不同的异构和低级数据结构;请参阅link:https://docs.perl6.org/language/nativecall#Structs[此示例]和进一步说明。  
+- CStruct 对应于 C 语言中的 `struct`。它是一种复合数据结构，包括不同的异构和低级数据结构;请参阅link:https://docs.raku.org/language/nativecall#Structs[此示例]和进一步说明。  
 - 类似地，CPPStruct 对应于 C++ 中的 `struct`。但是，这是暂时是 Rakudo 特定的。  
-- CPointer 是任何这些语言的指针。它是一个动态数据结构，必须在使用之前进行实例化，可link:https://docs.perl6.org/language/nativecall#Basic_use_of_pointers[用于]其方法也是原生的类。  
-- CUnion 将使用与 C 中的 `union` 相同的表示形式; 看一下link:https://docs.perl6.org/language/nativecall#CUnions[这个例子]。
+- CPointer 是任何这些语言的指针。它是一个动态数据结构，必须在使用之前进行实例化，可link:https://docs.raku.org/language/nativecall#Basic_use_of_pointers[用于]其方法也是原生的类。  
+- CUnion 将使用与 C 中的 `union` 相同的表示形式; 看一下link:https://docs.raku.org/language/nativecall#CUnions[这个例子]。
 
-另一方面，P6opaque 是用于 Perl 6 中所有对象的默认表示。
+另一方面，P6opaque 是用于 Raku 中所有对象的默认表示。
 
-```perl6
+```raku
 class Thar {};
 say Thar.REPR;    #OUTPUT: «P6opaque␤» 
 ```
 
-除非另有说明，否则link:https://docs.perl6.org/language/mop[元对象协议]默认对每个对象和类使用它;因此，除非您有效地使用该接口，否则通常没有必要。
+除非另有说明，否则link:https://docs.raku.org/language/mop[元对象协议]默认对每个对象和类使用它;因此，除非您有效地使用该接口，否则通常没有必要。
 
 ==== `is` 作用于例程
 
-`is` trait 可用于定义方法和例程以建立link:https://docs.perl6.org/language/functions#Precedence[优先级]和link:https://docs.perl6.org/language/functions#Associativity[关联性]。它们充当使用 link:https://docs.perl6.org/type/Sub#Traits[trait_mod] 定义的子元素，该元素将要添加的 trait 的类型和名称作为参数。在子例程的情况下，trait 将是添加跨越类和角色层次结构的功能的一种方式，或者甚至可以用于向独立定义的例程添加行为。
+`is` trait 可用于定义方法和例程以建立link:https://docs.raku.org/language/functions#Precedence[优先级]和link:https://docs.raku.org/language/functions#Associativity[关联性]。它们充当使用 link:https://docs.raku.org/type/Sub#Traits[trait_mod] 定义的子元素，该元素将要添加的 trait 的类型和名称作为参数。在子例程的情况下，trait 将是添加跨越类和角色层次结构的功能的一种方式，或者甚至可以用于向独立定义的例程添加行为。
 

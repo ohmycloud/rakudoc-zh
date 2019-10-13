@@ -1,6 +1,6 @@
 == 输入 Unicode 字符
 
-Perl 6 允许把 unicode 字符用作变量名. 很多操作符使用 unicode 符号(特别是在 set/bag 操作符中)还有一些引号结构. 因此, 知道如何把这些符号输入编辑器, Perl 6 shell 和 命令行中是极好的, 特别是现实键盘中不存在那个符号的时候.
+Raku 允许把 unicode 字符用作变量名. 很多操作符使用 unicode 符号(特别是在 set/bag 操作符中)还有一些引号结构. 因此, 知道如何把这些符号输入编辑器, Raku shell 和 命令行中是极好的, 特别是现实键盘中不存在那个符号的时候.
 
 在各种操作系统和环境下关于输入 unicode 字符的通用信息可以在 Wikipedia link:https://en.wikipedia.org/wiki/Unicode_input[unicode 输入页] 中找到.
 
@@ -36,11 +36,11 @@ Ctrl-Shift-u 2208 Enter
 
 如果在 Unix shell 中开启了 REPL, 这也是一种在 perl 6 的 REPL 中输入 unicode 字符的方式之一.
 
-## Perl 6中有用的 Unicode 字符
+## Raku中有用的 Unicode 字符
 
 ### 引号
 
-这些字符在法语和德语中是当作引号使用的. 在 Perl 6 中, 它们仍然用作引号(在 POD 中是单引号, 在普通代码中是双引号), 还可以标示超运算符. 下面是这些符号和它们的 unicode 十六进制值:
+这些字符在法语和德语中是当作引号使用的. 在 Raku 中, 它们仍然用作引号(在 POD 中是单引号, 在普通代码中是双引号), 还可以标示超运算符. 下面是这些符号和它们的 unicode 十六进制值:
 
 ```
 符号 unicode代码点 ascii equivalent
@@ -50,7 +50,7 @@ Ctrl-Shift-u 2208 Enter
 
 因此, 下面这些结构是可用的:
 
-```perl6
+```raku
 C« fixed-width POD text »
 say (1, 2) »+« (3, 4);     # 4 6 ; element-wise add
 @array »+=» 42;            # add 42 to each element of @array
@@ -60,9 +60,9 @@ my $baa = 123; say «$baa»; # 123
 
 ### Set/bag 操作符
 
-下面列出的 link:http://doc.perl6.org/language/setbagmix#Set%2FBag_Operators[set/bag 操作符] 都有与集合理论相关的符号, unicode 代码点, 和它们的 ascii 等价物. 要构成这样的一个字符, 只需键入字符组合键(例如 Vim中的 `Ctrl-V u`, Bash 中的 `Ctrl-Shift-u`), 然后输入 unicode 代码点的十六进制数.
+下面列出的 link:http://doc.raku.org/language/setbagmix#Set%2FBag_Operators[set/bag 操作符] 都有与集合理论相关的符号, unicode 代码点, 和它们的 ascii 等价物. 要构成这样的一个字符, 只需键入字符组合键(例如 Vim中的 `Ctrl-V u`, Bash 中的 `Ctrl-Shift-u`), 然后输入 unicode 代码点的十六进制数.
 
-```perl6
+```raku
 操作符	unicode代码点	ascii equivalent
 ∈	  U+2208	    (elem)
 ∉	  U+2209	    !(elem)
@@ -98,7 +98,7 @@ Wikipedia 包含了一个 link:https://en.wikipedia.org/wiki/Mathematical_operat
 
 例如, 把数值3赋值给 `π`, 在 Vim 中输入(添加的空格是为了清晰):
 
-```perl6
+```raku
 my $Ctrl-V u 03C0 = 3;  # same as: my $π = 3;
 say $Ctrl-V u 03C0;     # 3    same as: say $π;
 ```
@@ -112,7 +112,7 @@ say $Ctrl-V u 03C0;     # 3    same as: say $π;
 
 因此, 要书写泰勒级数展开, 你可以在 Vim 中输入:
 
-```perl6
+```raku
 exp(x) = 1 + x + xCtrl-V u 00B2/2! + xCtrl-V u 00B3/3! + ... + xCtrl-V u 207F/n!
 # which would appear as
 exp(x) = 1 + x + x²/2! + x³/3! + ... + xⁿ/n!
@@ -120,7 +120,7 @@ exp(x) = 1 + x + x²/2! + x³/3! + ... + xⁿ/n!
 
 或者指定列表中从1到k 的元素:
 
-```perl6
+```raku
  ACtrl-V u 2081, ACtrl-V u 2082, ..., ACtrl-V u 2096
  # which would appear as
  A₁, A₂, ..., Aₖ

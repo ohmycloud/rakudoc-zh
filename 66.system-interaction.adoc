@@ -2,24 +2,24 @@
 
 === 通过命令行获取参数
 
-最简单的方法是使用 link:https://docs.perl6.org/language/variables#%2524%252AARGS[`@*ARGS`] 变量从命令行获取参数;此数组将包含程序名称后面的字符串。 link:https://docs.perl6.org/language/variables#Runtime_environment[`%*ENV`] 将包含环境变量，因此如果您使用：
+最简单的方法是使用 link:https://docs.raku.org/language/variables#%2524%252AARGS[`@*ARGS`] 变量从命令行获取参数;此数组将包含程序名称后面的字符串。 link:https://docs.raku.org/language/variables#Runtime_environment[`%*ENV`] 将包含环境变量，因此如果您使用：
 
-```perl6
+```raku
 export API_KEY=1967196417966160761fabc1511067
 ./consume_api.p6
 ```
 
 您可以通过以下方式在程序中使用它们：
 
-```perl6
+```raku
 my $api-key = %*ENV<API_KEY> // die "Need the API key";
 ```
 
 如果先前未定义环境变量 `API_KEY`，则此操作将失败。
 
-Perl 6 有一个更好的方法来处理命令行参数，如果它们代表文件名：那么使用 link:https://docs.perl6.org/language/variables#%2524%252AARGFILES[`$*ARGFILES`] 动态变量。
+Raku 有一个更好的方法来处理命令行参数，如果它们代表文件名：那么使用 link:https://docs.raku.org/language/variables#%2524%252AARGFILES[`$*ARGFILES`] 动态变量。
 
-```perl6
+```raku
 for $*ARGFILES.lines -> $l {
     say "Long lines in {$*ARGFILES.path}"
         if $l.chars > 72 ;
@@ -32,18 +32,18 @@ for $*ARGFILES.lines -> $l {
 
 使用 `prompt` 让一个正在运行的程序向用户查询数据：
 
-```perl6
+```raku
 my UInt $num-iters = prompt "How many iterations to run: ";
 ```
 
 === 同步和异步运行程序
 
-运行外部程序有两个例程：link:https://docs.perl6.org/routine/run[`run`] 和 link:https://docs.perl6.org/routine/shell[`shell`]。两者都存在于 link:https://docs.perl6.org/type/IO[`IO`] 角色中，因此包含在混合该角色的所有类中，如 link:https://docs.perl6.org/type/IO::Path[IO::Path]。两者都返回一个 link:https://docs.perl6.org/type/Proc[Proc] 对象，但主要区别在于 `run` 会尽可能避免系统 shell，而 `shell` 会通过默认系统 shell 运行命令。
+运行外部程序有两个例程：link:https://docs.raku.org/routine/run[`run`] 和 link:https://docs.raku.org/routine/shell[`shell`]。两者都存在于 link:https://docs.raku.org/type/IO[`IO`] 角色中，因此包含在混合该角色的所有类中，如 link:https://docs.raku.org/type/IO::Path[IO::Path]。两者都返回一个 link:https://docs.raku.org/type/Proc[Proc] 对象，但主要区别在于 `run` 会尽可能避免系统 shell，而 `shell` 会通过默认系统 shell 运行命令。
 
-运行所有外部程序的关键类是 link:https://docs.perl6.org/type/Proc::Async[Proc::Async]，它以异步方式运行进程，并允许与正在运行的进程进行link:https://docs.perl6.org/language/concurrency#Proc%3A%3AAsync[并发]交互。通常，通过这些高级抽象接口与系统进行交互是一种很好的做法。但是，Perl 6 提供了通过低级接口与系统交互的其他方式。
+运行所有外部程序的关键类是 link:https://docs.raku.org/type/Proc::Async[Proc::Async]，它以异步方式运行进程，并允许与正在运行的进程进行link:https://docs.raku.org/language/concurrency#Proc%3A%3AAsync[并发]交互。通常，通过这些高级抽象接口与系统进行交互是一种很好的做法。但是，Raku 提供了通过低级接口与系统交互的其他方式。
 
 === 通过原生 API 进行操作系统调用
 
-link:https://docs.perl6.org/language/nativecall[`NativeCall`] 可用于与系统库以及任何其他可访问库进行交互。这个link:(https://docs.perl6.org/language/nativecall#Short_tutorial_on_calling_a_C_function[简短的教程])解释了，例如，如何使用该接口调用系统函数，如 `getaddrinfo`;通过使用 NativeCall 接口的声明，也可以通过这种方式访问​​其他一些函数，例如 link:https://docs.perl6.org/language/5to6-perlfunc#kill[`kill`]。
+link:https://docs.raku.org/language/nativecall[`NativeCall`] 可用于与系统库以及任何其他可访问库进行交互。这个link:(https://docs.raku.org/language/nativecall#Short_tutorial_on_calling_a_C_function[简短的教程])解释了，例如，如何使用该接口调用系统函数，如 `getaddrinfo`;通过使用 NativeCall 接口的声明，也可以通过这种方式访问​​其他一些函数，例如 link:https://docs.raku.org/language/5to6-perlfunc#kill[`kill`]。
 
-幸运的是，您不必为所有原生功能执行此操作。作为将 Perl 5 作为生态系统的一部分移植到 Perl 6 的蝴蝶项目的一部分，link:https://github.com/lizmat[Elizabeth Mattijsen] 正在将许多系统功能移植到 link:https://github.com/lizmat/P5getprotobyname[`P5getprotobyname`] 等模块中，这些功能包括 `endprotoent`，`getprotoent`，`getprotobyname` 等功能。 `getprotobynumber` 和 `setprotoent`。如果要使用p6y形式的那些功能，请搜索并安装link:https://modules.perl6.org/search/?q=p5[P5模块]。
+幸运的是，您不必为所有原生功能执行此操作。作为将 Perl 5 作为生态系统的一部分移植到 Raku 的蝴蝶项目的一部分，link:https://github.com/lizmat[Elizabeth Mattijsen] 正在将许多系统功能移植到 link:https://github.com/lizmat/P5getprotobyname[`P5getprotobyname`] 等模块中，这些功能包括 `endprotoent`，`getprotoent`，`getprotobyname` 等功能。 `getprotobynumber` 和 `setprotoent`。如果要使用p6y形式的那些功能，请搜索并安装link:https://modules.raku.org/search/?q=p5[P5模块]。

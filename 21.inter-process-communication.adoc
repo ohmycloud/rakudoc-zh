@@ -2,9 +2,9 @@
 
 === 运行程序
 
-许多程序需要能够运行其他程序，我们需要将信息传递给它们并接收它们的输出和退出状态。在 Perl 6 中运行程序非常简单：
+许多程序需要能够运行其他程序，我们需要将信息传递给它们并接收它们的输出和退出状态。在 Raku 中运行程序非常简单：
 
-```perl6
+```raku
 run 'git', 'status';
 ```
 
@@ -12,7 +12,7 @@ run 'git', 'status';
 
 如果您想通过向 shell 发送命令行来运行程序，那么也有一个工具。所有 shell 元字符都由 shell 解释，包括管道，重定向，环境变量替换等。
 
-```perl6
+```raku
 shell 'ls -lR | gzip -9 > ls-lR.gz';
 ```
 
@@ -20,9 +20,9 @@ shell 'ls -lR | gzip -9 > ls-lR.gz';
 
 === Proc 对象
 
-`run` 和 `shell` 都返回一个link:https://docs.perl6.org/type/Proc[PROC]对象，它可以使用具有更详细的进程进行通信。请注意，除非您关闭所有输出管道，否则程序通常不会终止。
+`run` 和 `shell` 都返回一个link:https://docs.raku.org/type/Proc[PROC]对象，它可以使用具有更详细的进程进行通信。请注意，除非您关闭所有输出管道，否则程序通常不会终止。
 
-```perl6
+```raku
 my $git = run 'git', 'log', '--oneline', :out;
 for $git.out.lines -> $line {
     my ($sha, $subject) = $line.split: ' ', 2;
@@ -31,15 +31,15 @@ for $git.out.lines -> $line {
 $git.out.close();
 ```
 
-如果程序失败（以非零退出码退出），它将在返回的link:https://docs.perl6.org/type/Proc[Proc]对象沉没时抛出异常。您可以将其保存为变量，甚至是匿名变量，以防止下沉：
+如果程序失败（以非零退出码退出），它将在返回的link:https://docs.raku.org/type/Proc[Proc]对象沉没时抛出异常。您可以将其保存为变量，甚至是匿名变量，以防止下沉：
 
-```perl6
+```raku
 $ = run '/bin/false'; # does not sink the Proc and so does not throw 
 ```
 
 您可以通过传递 `:out` 和 `:err` 标志来告诉 `Proc` 对象将输出捕获为文件句柄。您也可以通过 `:in` 标记传递输入。
 
-```perl6
+```raku
 my $echo = run 'echo', 'Hello, world', :out;
 my $cat  = run 'cat', '-n', :in($echo.out), :out;
 say $cat.out.get;
@@ -48,7 +48,7 @@ $cat.out.close();
 
 您还可以使用 `Proc` 捕获PID，将信号发送到应用程序，并检查 exitcode。
 
-```perl6
+```raku
 my $crontab = run 'crontab', '-l';
 if $crontab.exitcode == 0 {
     say 'crontab -l ran ok';
@@ -60,9 +60,9 @@ else {
 
 === Proc::Async 对象
 
-当您需要更多地控制与另一个进程的通信时，您将需要使用link:https://docs.perl6.org/type/Proc::Async[Proc::Async]。该类提供对与程序进行异步通信的支持，以及向该程序发送信号的能力。
+当您需要更多地控制与另一个进程的通信时，您将需要使用link:https://docs.raku.org/type/Proc::Async[Proc::Async]。该类提供对与程序进行异步通信的支持，以及向该程序发送信号的能力。
 
-```perl6
+```raku
 # Get ready to run the program 
 my $log = Proc::Async.new('tail', '-f',  '/var/log/system.log');
 $log.stdout.tap(-> $buf { print $buf });
@@ -81,9 +81,9 @@ await $done;
 
 上面的小程序使用“tail”程序每 10 秒打印出名 `system.log` 的日志内容，然后通过 QUIT 信号告诉程序停止。
 
-虽然 `Proc` 使用 `IO::Handle` 提供对输出的访问，但 `Proc::Async` 使用异步 supplies 提供访问（请参阅link:https://docs.perl6.org/type/Supply[Supply]）。
+虽然 `Proc` 使用 `IO::Handle` 提供对输出的访问，但 `Proc::Async` 使用异步 supplies 提供访问（请参阅link:https://docs.raku.org/type/Supply[Supply]）。
 
-如果要在等待原始程序完成时运行程序并执行某些工作，则 `start` 例程将返回link:https://docs.perl6.org/type/Promise[Promise]，该程序在程序退出时保留(kept)。
+如果要在等待原始程序完成时运行程序并执行某些工作，则 `start` 例程将返回link:https://docs.raku.org/type/Promise[Promise]，该程序在程序退出时保留(kept)。
 
 使用 `write` 方法将数据传递到程序中。
 

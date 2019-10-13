@@ -1,37 +1,37 @@
 == 模块开发工具
 
-以下是您可以在 Perl 6 生态系统中找到的模块列表，旨在使开发 Perl 6 模块的体验更加有趣。
+以下是您可以在 Raku 生态系统中找到的模块列表，旨在使开发 Raku 模块的体验更加有趣。
 
 === 模块构建器和创作工具
 
 一些模块和工具可帮助您生成属于模块分发的文件。
 
-- link:https://modules.perl6.org/dist/App::Assixt[App::Assixt] 模块开发者的助手  
-- link:https://modules.perl6.org/dist/App::Mi6[App::Mi6] Perl 6 的最小创作工具  
-- link:https://modules.perl6.org/dist/META6[META6] 用 Perl 6 META 文件做事   
+- link:https://modules.raku.org/dist/App::Assixt[App::Assixt] 模块开发者的助手  
+- link:https://modules.raku.org/dist/App::Mi6[App::Mi6] Raku 的最小创作工具  
+- link:https://modules.raku.org/dist/META6[META6] 用 Raku META 文件做事   
 - link:https://bitbucket.org/rightfold/module-skeleton[Module::Skeleton] 生成骨架模块  
-- link:https://modules.perl6.org/dist/p6doc[p6doc] 生成文档最终产品  
+- link:https://modules.raku.org/dist/p6doc[p6doc] 生成文档最终产品  
 
 === 测试
 
 一些模块质量测试。
 
-- link:https://modules.perl6.org/dist/Test::META[Test::META] 测试您的 META6.json 文件
-- link:https://modules.perl6.org/dist/Test::Output[Test::Output] 测试程序生成的 STDOUT 和 STDERR 的输出
-- link:https://modules.perl6.org/dist/Proc::Screen[Test::Screen] 使用**GNU screen**测试全屏VT应用程序
-- link:https://modules.perl6.org/dist/Test::When[Test::When] 控制测试运行时间（作者测试，在线测试等）
+- link:https://modules.raku.org/dist/Test::META[Test::META] 测试您的 META6.json 文件
+- link:https://modules.raku.org/dist/Test::Output[Test::Output] 测试程序生成的 STDOUT 和 STDERR 的输出
+- link:https://modules.raku.org/dist/Proc::Screen[Test::Screen] 使用**GNU screen**测试全屏VT应用程序
+- link:https://modules.raku.org/dist/Test::When[Test::When] 控制测试运行时间（作者测试，在线测试等）
 
 === NativeCall
 
 这里有一些模块可以帮助您使用 NativeCall。
 
-- link:https://modules.perl6.org/dist/NativeHelpers::Array[NativeHelpers::Array] 提供处理 CArray 的例程
-- link:https://modules.perl6.org/dist/App::GPTrixie[App::GPTrixie] 从 C 头文件生成 NativeCall 代码
-- link:https://modules.perl6.org/dist/NativeCall::TypeDiag[NativeCall::TypeDiag] 提供测试 CStruct 的例程
+- link:https://modules.raku.org/dist/NativeHelpers::Array[NativeHelpers::Array] 提供处理 CArray 的例程
+- link:https://modules.raku.org/dist/App::GPTrixie[App::GPTrixie] 从 C 头文件生成 NativeCall 代码
+- link:https://modules.raku.org/dist/NativeCall::TypeDiag[NativeCall::TypeDiag] 提供测试 CStruct 的例程
 
 === Sample modules
 
 仅作为极简主义示例，安装程序测试或骨架的模块。
 
-- link:https://modules.perl6.org/dist/Foo[Foo] 具有两个不同版本分布的模块
+- link:https://modules.raku.org/dist/Foo[Foo] 具有两个不同版本分布的模块
 

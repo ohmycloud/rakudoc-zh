@@ -7,11 +7,11 @@ Rakudo 实现包含一些您可能想要使用的模块。以下是它们的列�
 这些模块主要由分发构建工具使用，并不打算由最终用户使用（至少在版本6.c之前）。
 
 - link:https://github.com/rakudo/rakudo/blob/master/lib/CompUnit/Repository/Staging.pm6[`CompUnit::Repository::Staging`].
-- link:https://github.com/rakudo/rakudo/blob/master/src/core/CompUnit/RepositoryRegistry.pm6[`CompUnit::Repository::(FileSystem|Installation|AbsolutePath|Unknown|NQP|Perl6|RepositoryRegistry)`].
+- link:https://github.com/rakudo/rakudo/blob/master/src/core/CompUnit/RepositoryRegistry.pm6[`CompUnit::Repository::(FileSystem|Installation|AbsolutePath|Unknown|NQP|Raku|RepositoryRegistry)`].
 
 === `NativeCall` 模块
 
-- link:https://github.com/rakudo/rakudo/blob/master/lib/NativeCall.pm6[`NativeCall`] 原生调用接口 (link:https://docs.perl6.org/language/nativecall.html[docs])
+- link:https://github.com/rakudo/rakudo/blob/master/lib/NativeCall.pm6[`NativeCall`] 原生调用接口 (link:https://docs.raku.org/language/nativecall.html[docs])
 - link:https://github.com/rakudo/rakudo/blob/master/lib/NativeCall/Types.pm6[`NativeCall::Types`] 由 `NativeCall` 使用
 - link:https://github.com/rakudo/rakudo/blob/master/lib/NativeCall/Compiler/GNU.pm6[`NativeCall::Compiler::GNU`] 由 `NativeCall` 使用
 - link:https://github.com/rakudo/rakudo/blob/master/lib/NativeCall/Compiler/MSVC.pm6[`NativeCall::Compiler::MSVC`] 由 `NativeCall` 使用
@@ -19,7 +19,7 @@ Rakudo 实现包含一些您可能想要使用的模块。以下是它们的列�
 === 其它模块
 
 - link:https://github.com/rakudo/rakudo/blob/master/lib/Pod/To/Text.pm6[`Pod::To::Text`] 由多个外部模块使用
-- link:https://github.com/rakudo/rakudo/blob/master/lib/Test.pm6[`Test`] Test 子例程 (link:https://docs.perl6.org/language/testing[docs])
+- link:https://github.com/rakudo/rakudo/blob/master/lib/Test.pm6[`Test`] Test 子例程 (link:https://docs.raku.org/language/testing[docs])
 - link:https://github.com/rakudo/rakudo/blob/master/lib/experimental.pm6[`experimental`]
 - link:https://github.com/rakudo/rakudo/blob/master/lib/newline.pm6[`newline`]
 

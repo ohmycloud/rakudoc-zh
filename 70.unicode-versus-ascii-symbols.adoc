@@ -1,6 +1,6 @@
 == Unicode 和 ASCII 符号
 
-可以在 Perl 6 中使用以下 Unicode 符号，而无需加载任何其他模块。其中一些具有可以使用 ASCII 独有字符键入的等效物。这些变体通常由比 Unicode 版本更多的字符组成，因此它们看起来更大。
+可以在 Raku 中使用以下 Unicode 符号，而无需加载任何其他模块。其中一些具有可以使用 ASCII 独有字符键入的等效物。这些变体通常由比 Unicode 版本更多的字符组成，因此它们看起来更大。
 
 下面参考 unicode 码点的各种属性。最终列表可以在这里找到：<https://www.unicode.org/Public/UCD/latest/ucd/PropList.txt>.
 
@@ -12,7 +12,7 @@
 
 任何具有 `Nd`（数字，十进制数字）属性的代码点都可以用作任何数字的数字。例如：
 
-```perl6
+```raku
 my $var = １９; # U+FF11 U+FF19 
 say $var + 2;  # OUTPUT: «21␤» 
 ```
@@ -21,7 +21,7 @@ say $var + 2;  # OUTPUT: «21␤»
 
 任何具有 `No`（Number，other）或 `Nl`（Number，letter）属性的代码点都可以单独用作数值，例如 ½ 和 ⅓。 （这些不是十进制数字，因此不能组合。）例如：
 
-```perl6
+```raku
 my $var = ⅒ + 2 + Ⅻ; # here ⅒ is No and Rat and Ⅻ is Nl and Int 
 say $var;            # OUTPUT: «14.1␤» 
 ```
@@ -32,7 +32,7 @@ say $var;            # OUTPUT: «14.1␤»
 
 === 其它可接受的单代码点
 
-此列表包含 Perl 6 中具有特殊含义的单个代码点及其 ASCII 等价物。
+此列表包含 Raku 中具有特殊含义的单个代码点及其 ASCII 等价物。
 
 |===
 | Symbol | Codepoint | ASCII   | Remarks                                                      
@@ -97,7 +97,7 @@ say $var;            # OUTPUT: «14.1␤»
 
 原子运算符将 `U+269B` ⚛ ATOM SYMBOL 合并到其中。它们的 ASCII 等价物是普通的子程序，而不是运算符：
 
-```perl6
+```raku
 my atomicint $x = 42;
 $x⚛++;                # Unicode version 
 atomic-fetch-inc($x); # ASCII version 

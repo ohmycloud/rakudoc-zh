@@ -1,8 +1,8 @@
-Perl 6 包括几个处理时态信息的类：link:https://docs.perl6.org/type/Date[Date]，link:https://docs.perl6.org/type/DateTime[DateTime]，link:https://docs.perl6.org/type/Instant[Instant] 和 link:https://docs.perl6.org/type/Duration[Duration]。前三个是 dateish，所以它们混合了 link:https://docs.perl6.org/type/Dateish[Dateish] 角色，它定义了处理日期的类应该采用的所有方法和属性。它还包括以 link:https://docs.perl6.org/type/X::Temporal[X::Temporal] 为根的异常的类层次结构。
+Raku 包括几个处理时态信息的类：link:https://docs.raku.org/type/Date[Date]，link:https://docs.raku.org/type/DateTime[DateTime]，link:https://docs.raku.org/type/Instant[Instant] 和 link:https://docs.raku.org/type/Duration[Duration]。前三个是 dateish，所以它们混合了 link:https://docs.raku.org/type/Dateish[Dateish] 角色，它定义了处理日期的类应该采用的所有方法和属性。它还包括以 link:https://docs.raku.org/type/X::Temporal[X::Temporal] 为根的异常的类层次结构。
 
 我们将尝试在下一个（稍微扩展）的示例中说明这些类，这个示例可用于处理目录中的所有文件（默认情况下）。在目录中使用特定扩展名（默认为 `.p6`），根据他们的年龄对其进行排序，并计算每月创建的文件数量，以及在几个月的范围内表示的特定时期内修改的文件数量：
 
-```perl6
+```raku
 use v6;
  
 sub MAIN( $path = ".", $extension = "p6" ) {
@@ -52,25 +52,25 @@ sub MAIN( $path = ".", $extension = "p6" ) {
 
 第 6 行使用 `DateTime` 来包含现在返回的当前日期和时间。
 
-CATCH phaser 在第 11 到 15 行中声明。其主要任务是区分与 `DateTime` 相关的异常和其他类型。这种异常可能来自link:https://docs.perl6.org/type/X::Temporal::InvalidFormat[无效格式]或link:https://docs.perl6.org/type/X::DateTime::TimezoneClash[时区冲突]。除非文件属性有些损坏，否则两者都是不可能的，但无论如何它们都应该被捕获并与其他类型的异常分开。
+CATCH phaser 在第 11 到 15 行中声明。其主要任务是区分与 `DateTime` 相关的异常和其他类型。这种异常可能来自link:https://docs.raku.org/type/X::Temporal::InvalidFormat[无效格式]或link:https://docs.raku.org/type/X::DateTime::TimezoneClash[时区冲突]。除非文件属性有些损坏，否则两者都是不可能的，但无论如何它们都应该被捕获并与其他类型的异常分开。
 
-我们使用第 16-17 行中的 link:https://docs.perl6.org/type/Instant[Instants] 来表示访问和修改文件的时刻。 Instant 是以原子秒为单位测量的，是对时间事件的非常低级别的描述;但是，第 18 行中声明的持续时间代表两个不同实例之间转换的时间，我们将使用它来表示年龄。
+我们使用第 16-17 行中的 link:https://docs.raku.org/type/Instant[Instants] 来表示访问和修改文件的时刻。 Instant 是以原子秒为单位测量的，是对时间事件的非常低级别的描述;但是，第 18 行中声明的持续时间代表两个不同实例之间转换的时间，我们将使用它来表示年龄。
 
 对于某些变量，我们可能有兴趣用一些日期特征来处理它们。 `$time-of-day` 包含文件更改日期的时间; `changed` 将返回一个 Instant，但它将转换为日期（`Instant` 而不是 `Dateish`），然后从中提取时间。 `$time-of-day` 将有 `«Str+{Dateish}␤»` 类型。
 
 我们将使用此变量中的日期来查找文件更改的时间段。
 
-```perl6
+```raku
 Date.new("2018-01-01")..^Date.new("2018-04-01")
 ```
 
-创建一个日期link:https://docs.perl6.org/type/Range[范围]，`$file-changed-date` 与它进行智能匹配。日期可以这样使用;在这种情况下，它会创建一个排除其最后一个元素的 `Range`。
+创建一个日期link:https://docs.raku.org/type/Range[范围]，`$file-changed-date` 与它进行智能匹配。日期可以这样使用;在这种情况下，它会创建一个排除其最后一个元素的 `Range`。
 
-这个变量也用于计算修改文件的一年中的月份。link:https://docs.perl6.org/type/Date[日期] 显然是 Dateish，然后有月份方法从中提取该属性。
+这个变量也用于计算修改文件的一年中的月份。link:https://docs.raku.org/type/Date[日期] 显然是 Dateish，然后有月份方法从中提取该属性。
 
 可以比较持续时间对象。这用于
 
-```perl6
+```raku
      %metadata.sort({
          $^a.value<age> <=> $^b.value<age>
      });

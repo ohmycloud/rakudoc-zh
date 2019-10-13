@@ -1,11 +1,11 @@
-Perl 6 Pod 是一种易于使用的标记语言。 Pod 可用于编写语言文档，用于文档化程序和模块，以及其他类型的文档组合。
+Raku Pod 是一种易于使用的标记语言。 Pod 可用于编写语言文档，用于文档化程序和模块，以及其他类型的文档组合。
 
 每个 Pod 文档必须以 `=begin pod` 开头，以 `=end pod` 结束。这两个分隔符之间的所有内容都将被处理并用于生成文档。
 
 ```
 =begin pod
  
-A very simple Perl 6 Pod document
+A very simple Raku Pod document
  
 =end pod
 ```
@@ -16,7 +16,7 @@ Pod 文档可能包含多个 Pod 块。有四种方法可以定义块（分隔�
 
 ### 分割符块
 
-分隔块由 `=begin` 和 `=end` 标记限定，两者都后跟有效的 Perl 6 标识符，后者是块的 `typename`。完全小写的类型名称（例如 `=begin head1`）或完全大写（例如：`=begin SYNOPSIS`）保留。
+分隔块由 `=begin` 和 `=end` 标记限定，两者都后跟有效的 Raku 标识符，后者是块的 `typename`。完全小写的类型名称（例如 `=begin head1`）或完全大写（例如：`=begin SYNOPSIS`）保留。
 
 ```
 =begin head1
@@ -26,7 +26,7 @@ Top Level Heading
 
 ## 配置信息
 
-在 typename 之后， `=begin` 标记行的其余部分被视为块的配置信息。此信息由不同类型的块以不同方式使用，但始终使用 Perl6-ish 选项对指定。也就是说，任何：
+在 typename 之后， `=begin` 标记行的其余部分被视为块的配置信息。此信息由不同类型的块以不同方式使用，但始终使用 Raku-ish 选项对指定。也就是说，任何：
 
 |===
 |alue is...	     |Specify with...	        |Or with...	            |Or with... 
@@ -45,7 +45,7 @@ Top Level Heading
 
 字符串由单引号或双引号分隔。空格在字符串之外是微不足道的。散列键不需要引用分隔，除非它们包含重要的空格。
 
-当然，所有选项键和值必须是常量，因为Pod是一种规范语言，而不是编程语言。具体来说，选项值不能是闭包。有关各种Perl 6对符号的详细信息，请参见概要2。
+当然，所有选项键和值必须是常量，因为Pod是一种规范语言，而不是编程语言。具体来说，选项值不能是闭包。有关各种Raku对符号的详细信息，请参见概要2。
 
 配置部分可以通过在第一（虚拟）列中带有=后跟空白字符的那些行开始在后续行上扩展。 （注意：此功能尚未实现。当前所有配置信息必须与= begin标记行在同一行提供，或=为段落块的名称提供。）
 
@@ -78,7 +78,7 @@ Top Level Heading
 
 WHY方法可用于这些类，角色，子例程等，以返回附加的 Pod 值。
 
-```perl6
+```raku
 #| Base class for magicians 
 class Magician {
   has Int $.level;
@@ -97,7 +97,7 @@ say &duel.WHY.trailing; # OUTPUT: «Magicians only, no mortals.␤»
 
 这些声明可以扩展多个块：
 
-```perl6
+```raku
 #|( This is an example of stringification: 
     * Numbers turn into strings
     * Regexes operate on said strings
@@ -114,7 +114,7 @@ sub search-in-seq( Int $end, Int $number ) {
 »
 ```
 
-通过使用匹配的括号构造对，例如 `()` 或 `«»`，注释可以扩展多行。但是，这种格式不会转换为 `perl6 -doc` 的多行显示。
+通过使用匹配的括号构造对，例如 `()` 或 `«»`，注释可以扩展多行。但是，这种格式不会转换为 `raku -doc` 的多行显示。
 
 ## 块类型
 
@@ -332,7 +332,7 @@ In deciding whether to become an early riser, it is worth considering whether yo
 
 ## 表
 
-查看此页面以获取与link:https://docs.perl6.org/language/tables[表]相关的文档
+查看此页面以获取与link:https://docs.raku.org/language/tables[表]相关的文档
 
 ## Pod 注释
 
@@ -376,27 +376,27 @@ multi-line.
 要以粗体格式化文本，请将其括在 `B< >` 中
 
 ```
-Perl 6 is B<awesome>
+Raku is B<awesome>
 ```
 
-Perl 6 is **awesome**
+Raku is **awesome**
 
 ### 斜体
 
 要用斜体格式化文本，请将其括在 `I< >`中
 
 ```
-Perl 6 is I<awesome>
+Raku is I<awesome>
 ```
 
-Perl 6 is *awesome*
+Raku is *awesome*
 
 ### 下划线
 
 要在文本下划线将其括在 `U<>` 中
 
 ```
-Perl 6 is U<awesome>
+Raku is U<awesome>
 ```
 
 ### 代码
@@ -414,13 +414,13 @@ C<my $var = 1; say $var;>
 要创建链接，请将其括在 `L< >` 中
 
 ```
-Perl 6 homepage L<https://perl6.org>
-L<Perl 6 homepage|https://perl6.org>
+Raku homepage L<https://raku.org>
+L<Raku homepage|https://raku.org>
 ```
 
-Perl 6 homepage link:https://perl6.org/[https://perl6.org]
+Raku homepage link:https://raku.org/[https://raku.org]
 
-link:https://perl6.org/[Perl 6 homepage]
+link:https://raku.org/[Raku homepage]
 
 要创建指向同一文档中某个部分的链接：
 
@@ -428,7 +428,7 @@ link:https://perl6.org/[Perl 6 homepage]
 Comments L<#Comments>
 ```
 
-Comments link:https://docs.perl6.org/language/pod#Comments[Comments]
+Comments link:https://docs.raku.org/language/pod#Comments[Comments]
 
 ### 注释
 
@@ -437,10 +437,10 @@ Comments link:https://docs.perl6.org/language/pod#Comments[Comments]
 要创建注释，请将其括在 `Z< >` 中
 
 ```
-Perl 6 is awesome Z<Of course it is!>
+Raku is awesome Z<Of course it is!>
 ```
 
-Perl 6 is awesome
+Raku is awesome
 
 ### 笔记
 
@@ -449,7 +449,7 @@ Perl 6 is awesome
 要创建一个注释，请将其括在 `N< >` 中
 
 ```
-Perl 6 is multi-paradigmatic N<Supporting Procedural, Object Oriented, and Functional programming>
+Raku is multi-paradigmatic N<Supporting Procedural, Object Oriented, and Functional programming>
 ```
 
 ### 键盘输入
@@ -472,23 +472,23 @@ Hello T<John Doe>
 
 要在 Pod 文档中包含 Unicode 代码点或 HTML5 字符引用，请将它们包含在 `E< >`中
 
-`E< >`可以包含一个数字，该数字被视为所需代码点的十进制 Unicode 值。它还可以使用 Perl 6 表示法为显式数字括起显式二进制，八进制，十进制或十六进制数字。
+`E< >`可以包含一个数字，该数字被视为所需代码点的十进制 Unicode 值。它还可以使用 Raku 表示法为显式数字括起显式二进制，八进制，十进制或十六进制数字。
 
 ```
-Perl 6 makes considerable use of the E<171> and E<187> characters.
+Raku makes considerable use of the E<171> and E<187> characters.
  
-Perl 6 makes considerable use of the E<laquo> and E<raquo> characters.
+Raku makes considerable use of the E<laquo> and E<raquo> characters.
  
-Perl 6 makes considerable use of the E<0b10101011> and E<0b10111011> characters.
+Raku makes considerable use of the E<0b10101011> and E<0b10111011> characters.
  
-Perl 6 makes considerable use of the E<0o253> and E<0o273> characters.
+Raku makes considerable use of the E<0o253> and E<0o273> characters.
  
-Perl 6 makes considerable use of the E<0d171> and E<0d187> characters.
+Raku makes considerable use of the E<0d171> and E<0d187> characters.
  
-Perl 6 makes considerable use of the E<0xAB> and E<0xBB> characters.
+Raku makes considerable use of the E<0xAB> and E<0xBB> characters.
 ```
 
-Perl 6 makes considerable use of the « and » characters.
+Raku makes considerable use of the « and » characters.
 
 ## 渲染 Pod
 
@@ -501,7 +501,7 @@ Perl 6 makes considerable use of the « and » characters.
 使用终端运行以下命令：
 
 ```
-perl6 --doc=HTML input.pod6 > output.html
+raku --doc=HTML input.pod6 > output.html
 ```
 
 ### Markdown
@@ -513,7 +513,7 @@ perl6 --doc=HTML input.pod6 > output.html
 使用终端运行以下命令：
 
 ```
-perl6 --doc=Markdown input.pod6 > output.md
+raku --doc=Markdown input.pod6 > output.md
 ```
 
 ### Text
@@ -523,18 +523,18 @@ perl6 --doc=Markdown input.pod6 > output.md
 使用终端，运行以下命令：
 
 ```
-perl6 --doc=Text input.pod6 > output.txt
+raku --doc=Text input.pod6 > output.txt
 ```
 
 你可以省略 `=Text` 部分：
 
 ```
-perl6 --doc input.pod6 > output.txt
+raku --doc input.pod6 > output.txt
 ```
 
 你甚至可以将 Pod 直接嵌入到你的程序中，并使用 multi MAIN 子例程将传统的 Unix 命令行 "--man" 选项添加到你的程序中，如下所示：
 
-```perl6
+```raku
 multi MAIN(Bool :$man)
 {
     run $*EXECUTABLE, '--doc', $*PROGRAM;
@@ -545,9 +545,9 @@ multi MAIN(Bool :$man)
 
 ## 访问 Pod
 
-为了从 Perl 6 程序中访问 Pod 文档，需要使用特殊的 `=` twigil，如link:https://docs.perl6.org/language/variables#The_%3D_Twigil[变量部分]所述。
+为了从 Raku 程序中访问 Pod 文档，需要使用特殊的 `=` twigil，如link:https://docs.raku.org/language/variables#The_%3D_Twigil[变量部分]所述。
 
-= twigil 提供了对 Pod 结构的内省，提供了一个 link:https://docs.perl6.org/type/Pod::Block[Pod::Block] 树根，从中可以访问 Pod 文档的整个结构。
+= twigil 提供了对 Pod 结构的内省，提供了一个 link:https://docs.raku.org/type/Pod::Block[Pod::Block] 树根，从中可以访问 Pod 文档的整个结构。
 
 例如，以下代码内省了自己的Pod文档：
 

@@ -7,7 +7,7 @@
 
 名称是作为变量名称的合法部分的任何东西（不包括sigil符号）。 这包括：
 
-```perl6
+```raku
 $foo                # 简单标识符
 $Foo::Bar::baz      # 通过 :: 分割的组合标识符
 $Foo::($bar)::baz   # 执行插值的组合标识符
@@ -21,13 +21,13 @@ $!                  # 某些标点符号变量
 
 普通的包限定名像这样:
 
-```perl6
+```raku
 $Foo::Bar::baz  # 包 Foo::Bar 中的 $baz 变量
 ```
 
 有时保持sigil与变量名很清晰，所以来写这个的一个替代方式是：
 
-```perl6
+```raku
 Foo::Bar::<$baz>
 ```
 
@@ -39,7 +39,7 @@ Foo::Bar::<$baz>
 
 在名称前面保留以下伪包名称：
 
-```perl6
+```raku
 MY          # 当前词法作用域中的符号 (aka $?SCOPE)
 OUR         # 当前包中的符号 (aka $?PACKAGE)
 CORE        # 最外层词法作用域, 定义标准 Perl
@@ -50,7 +50,7 @@ COMPILING   # 正在编译的作用域中的词法符号
 
 以下相对名称也保留，但可以在名称中的任何位置使用：
 
-```perl6
+```raku
 CALLER      # Contextual symbols in the immediate caller's lexical scope
 CALLERS     # Contextual symbols in any caller's lexical scope
 DYNAMIC     # Contextual symbols in my or any caller's lexical scope
@@ -72,7 +72,7 @@ CLIENT      # The nearest CALLER that comes from a different package
 
 您可以使用 `::($expr)` 将字符串插入到包或变量名中，`$expr` 表达式中通常放置包或变量名。 该字符串允许包含额外的 `::` 实例，这将被解释为包嵌套。 您只能内插整个名称，因为结构以 `::` 开头，并且立即结束或用括号之外的另一个 `::` 继续。 大多数符号引用使用这种记法：
 
-```perl6
+```raku
 $foo = "Bar";
 $foobar = "Foo::Bar";
 $::($foo)           # lexically-scoped $Bar
@@ -96,7 +96,7 @@ $::($foobar)baz     # ILLEGAL at compile time (no operator baz)
 
 要在包的符号表中直接查找而不进行扫描，请将包名视为哈希：
 
-```perl6
+```raku
 Foo::Bar::{'&baz'}  # same as &Foo::Bar::baz
 PROCESS::<$IN>      # Same as $*IN
 Foo::<::Bar><::Baz> # same as Foo::Bar::Baz
@@ -106,7 +106,7 @@ Foo::<::Bar><::Baz> # same as Foo::Bar::Baz
 
 空伪包是与普通名称搜索有相同的搜索列表。 也就是说，以下各项在意义上是相同的：
 
-```perl6
+```raku
 $foo
 $::{'foo'}
 ::{'$foo'}
@@ -118,7 +118,7 @@ $::<foo>
 
 作为这些规则的结果，您可以把变量名写的很随意：
 
-```perl6
+```raku
 $::{'!@#$#@'}
 ::{'$!@#$#@'}
 ```
@@ -129,7 +129,7 @@ $::{'!@#$#@'}
 
 将包对象本身下标为哈希对象，其键是变量名，包括任何sigil。 包对象可以通过使用 `::` 后缀从类型名中派生：
 
-```perl6
+```raku
 MyType::<$foo>
 ```
 
@@ -139,6 +139,6 @@ MyType::<$foo>
 
 ## 版本
 
-任何包都可以有一个 link:https://docs.perl6.org/type/Version[Version] 对象。 这个对象可以通过 `$PACKAGE.^ver` 或从包 `Fully::Qualified::Name.^ver` 外部访问。
+任何包都可以有一个 link:https://docs.raku.org/type/Version[Version] 对象。 这个对象可以通过 `$PACKAGE.^ver` 或从包 `Fully::Qualified::Name.^ver` 外部访问。
 
-link:https://docs.perl6.org/language/packages[Packages]
+link:https://docs.raku.org/language/packages[Packages]

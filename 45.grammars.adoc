@@ -4,16 +4,16 @@ Grammars - 一组具名 regexes 组成正式的 grammar
 
 Grammars 是一个很强大的工具用于析构文本并通常返回数据结构。
 
-例如, Perl 6 是使用 Perl 6 风格 grammar 解析并执行的。
+例如, Raku 是使用 Raku 风格 grammar 解析并执行的。
 
-对普通 Perl 6 使用者更实用的一个例子是 link:https://github.com/moritz/json[JSON::Tiny]模块, 它能反序列化任何合法的 JSON 文件, 而反序列代码只有不到 100 行, 还能扩展。
+对普通 Raku 使用者更实用的一个例子是 link:https://github.com/moritz/json[JSON::Tiny]模块, 它能反序列化任何合法的 JSON 文件, 而反序列代码只有不到 100 行, 还能扩展。
 
 Grammars 允许你把 regexes 组织到一块儿, 就像类(class) 中组织方法那样。
 
 
 ## 具名正则 (Named Regexes)
 　
-grammars 的主要组成部分是 link:http://doc.perl6.org/language/regexes[regexes]。 而 Perl 6 的 link:http://doc.perl6.org/language/regexes[regexes]语法不在该文档的讨论范围, 具名正则(named regexes) 有它自己的特殊语法, 这跟子例程(subroutine) 的定义很像:
+grammars 的主要组成部分是 link:http://doc.raku.org/language/regexes[regexes]。 而 Raku 的 link:http://doc.raku.org/language/regexes[regexes]语法不在该文档的讨论范围, 具名正则(named regexes) 有它自己的特殊语法, 这跟子例程(subroutine) 的定义很像:
 
 ``` perl
 my regex number { \d+ [ \. \d+ ]?   }   # 普通 regex 中空格被忽略, [] 是非捕获组
@@ -89,15 +89,15 @@ say 'once upon a time' ~~ &space-y;
 
 ## 创建 Grammar
 　
-当使用 grammar 关键字而非 class 关键字声明来声明一个类时, 会自动得到以 link:https://docs.perl6.org/type/Grammar[Grammar] 的父类。Grammars 应该只用于解析文本; 如果你想提取复杂的数据, 推荐 link:http://doc.perl6.org/language/grammars#Action_Objects[action object]和 grammar 一块使用。
+当使用 grammar 关键字而非 class 关键字声明来声明一个类时, 会自动得到以 link:https://docs.raku.org/type/Grammar[Grammar] 的父类。Grammars 应该只用于解析文本; 如果你想提取复杂的数据, 推荐 link:http://doc.raku.org/language/grammars#Action_Objects[action object]和 grammar 一块使用。
 
 ### Proto regexes
 
-link:https://docs.perl6.org/type/Grammar[Grammars] 由 rules，token 和 regexes 组成; 他们实际上是方法，因为 grammars 是类。这些方法可以共享一个共同的名称和功能，因此可以使用 link:https://docs.perl6.org/syntax/proto[proto]。
+link:https://docs.raku.org/type/Grammar[Grammars] 由 rules，token 和 regexes 组成; 他们实际上是方法，因为 grammars 是类。这些方法可以共享一个共同的名称和功能，因此可以使用 link:https://docs.raku.org/syntax/proto[proto]。
 
 如果你有很多备选分支(alternations), 那么生成可读性好的代码或子类化(subclass)你的 grammar 可能会变得很困难。在下面的 `Actions` 类中, `TOP` 方法中的三元操作符并不理想, 并且当我们添加的操作越多, 它就变得越糟糕:
 
-```perl6
+```raku
 grammar Calculator {
     token TOP { [ <add> | <sub> ] }
     rule  add { <num> '+' <num> }
@@ -119,7 +119,7 @@ say Calculator.parse('2 + 3', actions => Calculations).made;
 
 为了让事情变得更好, 我们可以在 tokens 身上使用看起来像 `:sym<...>` 那样的副词来使用正则表达式原型(protoregexes):
 
-```perl6
+```raku
 grammar Calculator {
     token TOP { <calc-op> }
 
@@ -148,7 +148,7 @@ say Calculator.parse('2 + 3', actions => Calculations).made;
 
 当你子类化(subclass)那个 grammar 和 actions 类的时候才能看到这个方法的真正魅力。假设我们想为 calculator 增加一个乘法功能:
 
-```perl6
+```raku
 grammar BetterCalculator is Calculator {
     rule calc-op:sym<mult> { <num> '*' <num> }
 }
@@ -169,7 +169,7 @@ say BetterCalculator.parse('2 * 3', actions => BetterCalculations).made;
 
 ### TOP
 
-```perl6
+```raku
 grammar Foo {
     token TOP { \d+ }
 }
@@ -187,13 +187,13 @@ The TOP token is the default first token attempted to match when parsing with a 
 
 当使用 `rule` 而非 `token` 时, 原子(atom)后面的任何空白(whitespace)被转换为一个对 `ws` 的非捕获调用。即:
 
-```perl6
+```raku
 rule entry { <key> ’=’ <value> }
 ```
 
 等价于:
 
-```perl6
+```raku
 token entry { <key> <.ws> ’=’ <.ws> <value> <.ws> } # . = non-capturing
 ```
 
@@ -201,7 +201,7 @@ token entry { <key> <.ws> ’=’ <.ws> <value> <.ws> } # . = non-capturing
 
 提供你自己的 `ws` token 是极好的:
 
-```perl6
+```raku
 grammar Foo {
     rule TOP { \d \d }
 }.parse: "4   \n\n 5"; # Succeeds
@@ -218,7 +218,7 @@ grammar Bar {
 
 `<sym>` token 可以在原型正则表达式(proto regex) 中使用，以匹配那个特定正则表达式的 `:sym` 副词的字符串值：
 
-```perl6
+```raku
 grammar Foo {
     token TOP { <letter>+ }
     proto token letter {*}
@@ -241,7 +241,7 @@ grammar Foo {
 
 在 action 类中, 我们使用对 succ 方法的调用来设置(在这个例子中, 我们在 @!numbers 中准备了一个新元素)。在 `digit` 方法中, 我们把阿拉伯数字转换为梵文数字并且把它添加到 @!numbers 数组的最后一个元素中。多亏了 `succ`, 最后一个元素总是当前正被解析的 `digit` 数字的数。
 
-```perl6
+```raku
 grammar Digifier {
     rule TOP {
         [ <.succ> <digit>+ ]+
@@ -264,9 +264,9 @@ say Digifier.parse('255 435 777', actions => Devanagari.new).made;
 
 ## Grammar 中的方法
 
-在 grammar 中使用 `method` 代替 `rule` 或 `token` 也是可以的, 只要它们返回一个 link:https://docs.perl6.org/type/Cursor[Cursor] 类型:
+在 grammar 中使用 `method` 代替 `rule` 或 `token` 也是可以的, 只要它们返回一个 link:https://docs.raku.org/type/Cursor[Cursor] 类型:
 
-```perl6
+```raku
 grammar DigitMatcher {
     method TOP (:$full-unicode) {
         $full-unicode ?? self.num-full !! self.num-basic;
@@ -278,7 +278,7 @@ grammar DigitMatcher {
 
 上面的 grammar 会根据 parse 方法提供的参数尝试不同的匹配:
 
-```perl6
+```raku
 say +DigitMatcher.subparse: '12७१७९०९', args => \(:full-unicode);
 # OUTPUT:
 # 12717909

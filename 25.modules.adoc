@@ -6,7 +6,7 @@
 
 packages(包), subroutines(子例程), variables(变量), constants(常量) 和 enums(枚举) , 通过在它们的名字后面添加 `is export` 特性来导出。
 
-```perl6
+```raku
 unit module MyModule;
 our $var is export = 3;
 sub foo is export { ... };
@@ -24,13 +24,13 @@ class MyModule::MyClass {};
 
 就像所有的 traits 一样, 如果应用到子例程(routine)上, "is export" 应该出现在参数列表的后面:
 
-```perl6
+```raku
 sub foo (Str $string) is export {...}
 ```
 
 你可以给 `is export` 传递命名参数以组织要导出的符号, 然后导入程序 (importer) 可以剔除和选择导入哪一个。有 3 个预先定义好的标签： `ALL`, `DEFAULT`, `MANDATORY`（强制的）。
 
-```perl6
+```raku
 # lib/MyModule.pm
 unit module MyModule;
 sub bag        is export              { ... }
@@ -40,7 +40,7 @@ sub torch      is export(:night)      { ... }
 sub underpants is export(:ALL)        { ... }
 ```
 
-```perl6
+```raku
 # main.pl
 use lib 'lib';
 use MyModule;           #bag, pants
@@ -52,9 +52,9 @@ use MyModule :ALL;      #bag, pants, sunglasses, torch, underpants
 
 ### UNIT::EXPORT::*
 
-表象之下, 其实 `is export` 是把符号添加到 `EXPORT` 命名空间中的 `UNIT` 作用域包中。例如, `is export(:FOO)` 会把目标添加到 `UNIT::EXPORT::FOO` 包中。这正是 Perl 6 决定导入什么所做的。
+表象之下, 其实 `is export` 是把符号添加到 `EXPORT` 命名空间中的 `UNIT` 作用域包中。例如, `is export(:FOO)` 会把目标添加到 `UNIT::EXPORT::FOO` 包中。这正是 Raku 决定导入什么所做的。
 
-```perl6
+```raku
 unit module MyModule;
 
 sub foo is export         { ... }
@@ -63,7 +63,7 @@ sub bar is export(:other) { ... }
 
 等价于:
 
-```perl6
+```raku
 unit module MyModule;
 
 my package EXPORT::DEFAULT {
@@ -77,7 +77,7 @@ my package EXPORT::other {
 
 多数时候, `is export` 足够用了, 但是当你想动态生成要导出的符号时, `EXPORT` 包就很有用了。例如：
 
-```perl6
+```raku
 # lib/MyModule.pm
 unit module MuModule;
 
@@ -90,7 +90,7 @@ my package EXPORT::DEFAULT {
 }
 ```
 
-```perl6
+```raku
 # main.pl
 use MyModule;
 say sqrt-of-four; #-> 2
@@ -102,7 +102,7 @@ say log-of-zero;  #-> -Inf
 
 你可以用一个 `EXPORT` 子例程导出任意符号。 `EXPORT` 必须返回一个 `Map`, 在 map 里面键是符号名, 键值是想要的值。符号名应该包含(如果有的话)关联类型。
 
-```perl6
+```raku
 class MyModule::Class { ... }
 
 sub EXPORT {
@@ -116,7 +116,7 @@ sub EXPORT {
 }
 ```
 
-```perl6
+```raku
 # main.pl
 use lib 'lib';
 use MyModule;
@@ -131,7 +131,7 @@ say ShortName.new;  #-> MyModule::Class.new
 
 虽然 `UNIT::EXPORT` 包处理传递给 `use` 的命名参数, 而 `EXPORT` sub 处理位置参数。如果你把位置参数传递给 `use`, 那么这些参数会被传递给 `EXPORT`. 如果传递了位置参数, 那么 module 就不再需要导出默认符号了。你仍然可以伴随着你的位置参数, 通过显式地给 use 传递 `:DEFAULT` 参数来导入它们。
 
-```perl6
+```raku
 # lib/MyModule
 
 class MyModule::Class {}
@@ -148,7 +148,7 @@ sub always is export(:MANDATORY) { say "works" }
 sub shy is export { say "you found me!" }
 ```
 
-```perl6
+```raku
 # main.pl
 use lib 'lib';
 use MyModule 'foo';
@@ -159,7 +159,7 @@ shy();         #FAIL - won't be imported
 
 ## 发布模块
 
-如果你已经写了一个 Perl 6模块, 你想把它分享到社区, 我们会很高兴地把它放到 Perl 6 模块文件夹清单中。link:http://modules.perl6.org/[Perl 6 modules directory]
+如果你已经写了一个 Raku模块, 你想把它分享到社区, 我们会很高兴地把它放到 Raku 模块文件夹清单中。link:http://modules.raku.org/[Raku modules directory]
 
 现在, 你需要使用 git 对你的模块进行版本控制。
 
@@ -171,7 +171,7 @@ shy();         #FAIL - won't be imported
 
 - 让你的工程目录看起来像这样：
 
-```perl6
+```raku
 Vortex-TotalPerspective/
 |-- lib
 |   `-- Vortex
@@ -185,7 +185,7 @@ Vortex-TotalPerspective/
 
 如果你的工程包含能帮助主模块完成工作的其它模块, 它们应该被放到你的 lib 目录中像这样组织：
 
-```perl6
+```raku
 lib
 `-- Vortex
     |-- TotalPerspective.pm
@@ -196,15 +196,15 @@ lib
 
 - `README.md` 文件是一个 markdown 格式的文件, 它稍后会被 Github 自动渲染成 HTML
 
-- 关于 LICENSE 文件, 如果你没有其它选择, 就是用和 Rakudo Perl 6 一样的 LICENSE 把。仅仅把它的原始 link:https://github.com/rakudo/rakudo/blob/nom/LICENSE[license] 复制/粘贴进你自己的 LICENSE 文件中。
+- 关于 LICENSE 文件, 如果你没有其它选择, 就是用和 Rakudo Raku 一样的 LICENSE 把。仅仅把它的原始 link:https://github.com/rakudo/rakudo/blob/nom/LICENSE[license] 复制/粘贴进你自己的 LICENSE 文件中。
 
 - 如果你还没有任何测试, 现在你可以忽略 `t` 目录 和 `basic.t` 文件。关于如何写测试, 你可以看看其它模块是怎么使用 `Test` 的。它和 Perl'5 的 `Test::More` 很类似。
 
-- 如果要文档化你的模块, 在你的模块中使用 link:http://design.perl6.org/S26.html[Perl 6 Pod] 标记。欢迎给模块写文档, 并且为了浏览的方便, 一旦 Perl 6 module directory(或其它网站) 开始把 Pod 文档渲染成 HTML, 写文档尤为重要。
+- 如果要文档化你的模块, 在你的模块中使用 link:http://design.raku.org/S26.html[Raku Pod] 标记。欢迎给模块写文档, 并且为了浏览的方便, 一旦 Raku module directory(或其它网站) 开始把 Pod 文档渲染成 HTML, 写文档尤为重要。
 
 - 让你的 `META.info` 文件看起来像这样:
 
-```perl6
+```raku
  {
         "name"        : "Vortex::TotalPerspective",
         "version"     : "0.1.0",
@@ -225,15 +225,15 @@ lib
 - 把你的工程放在 git 版本控制之下, 如果你还未这样做。  
 - 一旦你对你的工程满意了, 在 Github 上为它创建一个仓库。必要的话,  查看 link:https://help.github.com/[Github's help docs]。 你的 Github 仓库的名字应该和你工程目录的名字一样。创建完 Githhub 仓库后, Github 会为你展示怎么配置你的本地仓库以获悉你的 Github 仓库。  
 - 把你的工程推送到 Github。  
-- 在 IRC 频道找个人帮你展示怎么把你的模块添加到link:https://github.com/perl6/ecosystem[ecosystem], 或者让他们是否能替你添加。  
-- pull 请求被接收之后, 等个把小时。如果你的模块没有出现在  http://modules.perl6.org/ , 请到 http://modules.perl6.org/log/update.log 翻看log 日志文件, 以查找是否有错误。  
+- 在 IRC 频道找个人帮你展示怎么把你的模块添加到link:https://github.com/raku/ecosystem[ecosystem], 或者让他们是否能替你添加。  
+- pull 请求被接收之后, 等个把小时。如果你的模块没有出现在  http://modules.raku.org/ , 请到 http://modules.raku.org/log/update.log 翻看log 日志文件, 以查找是否有错误。  
 
-就是这样啦！ 感谢为 Perl 6 社区做贡献！
+就是这样啦！ 感谢为 Raku 社区做贡献！
 
-如果你想尝试安装你的模块, 使用熊猫 panda 安装工具, 这已经包含在 Rakudo Perl 6 中了:
+如果你想尝试安装你的模块, 使用熊猫 panda 安装工具, 这已经包含在 Rakudo Raku 中了:
 
-```perl6
+```raku
 zef install Vortex::TotalPerspective
 ```
 
-这会下载你的模块到它自己的工作目录(`~/.panda`), 在那儿创建 build, 并把模块安装到 `~/.perl6`
+这会下载你的模块到它自己的工作目录(`~/.panda`), 在那儿创建 build, 并把模块安装到 `~/.raku`

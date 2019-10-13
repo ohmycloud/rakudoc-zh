@@ -1,0 +1,57 @@
+== Haskell 到 Raku - 简而言之
+
+Haskell 和 Raku 是非常不同的语言。这很明显。 但是，这并不意味着没有相似之处或共同的想法！ 此页面尝试让一个 Haskell 用户启动并运行 Raku。Haskell 用户可能会发现，在用 Raku 编写脚本时，他们不需要放弃所有 Haskelly 的想法。
+
+请注意，这不应该被误认为是初学者教程或 Raku 概述; 它旨在作为具有强大 Haskell 背景的 Raku 学习者的技术参考。
+
+=== 类型
+
+==== 类型 vs 值
+
+在 Haskell 中, 您有类型级编程, 然后进行值级编程。
+
+```haskell
+plusTwo :: Integer -> Integer   -- Types
+plusTwo x = x + 2               -- Values
+```
+
+您不要像下面那样在 Haskell 中混合类型和值。
+
+```raku
+plusTwo 2          -- This is valid
+plusTwo Integer    -- This is not valid
+```
+
+在 Raku 中, 类型(亦称为类型对象)和值处于同样的级别
+
+```raku
+sub plus-two(Int $x --> Int) { $x + 2 }
+
+plus-two(2);   # This is valid
+plus-two(Int); # This is valid
+```
+
+我将再用一个例子来说明 Raku 这个独特之处:
+
+```raku
+multi sub is-string(Str $ --> True)  {}
+multi sub is-string(Any $ --> False) {}
+ 
+is-string('hello');    #True 
+is-string(4);          #False 
+```
+
+==== Maybe
+
+在 Haskell 中，您有一个 Maybe 类型, 可以让您放弃空类型的烦恼。 假设您有一个将 String 解析为 Integer 的假设函数：
+
+```raku
+parseInt :: String -> Maybe Integer
+ 
+case parseInt myString of
+  Just x  -> x
+  Nothing -> 0
+```
+
+在 Raku 中, 由于类型对象与常规对象共存，因此我们拥有 `Defined` 和 `Undefined` 对象的概念。 平常的类型对象是 undefined 的, 而实例化后的对象是 defined 的。
+

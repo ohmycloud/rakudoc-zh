@@ -1,4 +1,4 @@
-关于怎样定义例程和使用例程, 请参阅 link:https://docs.perl6.org/type/Sub[Sub] 。
+关于怎样定义例程和使用例程, 请参阅 link:https://docs.raku.org/type/Sub[Sub] 。
 
 # 控制例程
 
@@ -8,27 +8,27 @@
 
 定义为:
 
-```perl6
+```raku
 sub exit(Int() $status = 0)
 ```
 
-使用返回码 `$status` 退出当前进程，如果未指定值，则返回码为 0。退出值 (`$status`)，当不同于零时，必须从捕获它的进程（例如，shell）进行适当的计算; 它是从link:https://docs.perl6.org/routine/MAIN[Main] 返回不同于零的退出代码的唯一方法。
+使用返回码 `$status` 退出当前进程，如果未指定值，则返回码为 0。退出值 (`$status`)，当不同于零时，必须从捕获它的进程（例如，shell）进行适当的计算; 它是从link:https://docs.raku.org/routine/MAIN[Main] 返回不同于零的退出代码的唯一方法。
 
-`exit` 防止 link:https://docs.perl6.org/language/phasers#LEAVE[LEAVE] phaser 被执行, 但是它会在 link:https://docs.perl6.org/language/variables#index-entry-%2524%2AEXIT[`&*EXIT`] 变量中运行。
+`exit` 防止 link:https://docs.raku.org/language/phasers#LEAVE[LEAVE] phaser 被执行, 但是它会在 link:https://docs.raku.org/language/variables#index-entry-%2524%2AEXIT[`&*EXIT`] 变量中运行。
 
-`exit` 应该作为最后的手段用于向父进程发出关于退出代码不等于零的信号，而不是异常地终止方法或 sub, 使用 link:https://docs.perl6.org/language/exceptions[exceptions] 代替。
+`exit` 应该作为最后的手段用于向父进程发出关于退出代码不等于零的信号，而不是异常地终止方法或 sub, 使用 link:https://docs.raku.org/language/exceptions[exceptions] 代替。
 
 ## done
 
 定义为:
 
-```perl6
+```raku
 sub done(--> Nil)
 ```
 
-如果用在任何 supply 或 react 块儿之外, 则抛出异常: `done without supply or react`。在 link:https://docs.perl6.org/type/Supply[Supply] 块儿里面, 它会指示该 supply 不会再发出任何东西. 还请参阅 link:https://docs.perl6.org/routine/done[documentation on method `done`].
+如果用在任何 supply 或 react 块儿之外, 则抛出异常: `done without supply or react`。在 link:https://docs.raku.org/type/Supply[Supply] 块儿里面, 它会指示该 supply 不会再发出任何东西. 还请参阅 link:https://docs.raku.org/routine/done[documentation on method `done`].
 
-```perl6
+```raku
 my $supply = supply {
     for 1 .. 3 {
         emit($_);
@@ -45,13 +45,13 @@ $supply.tap( -> $v { say "Second : $v" }, done => { say "No more" });
 
 定义为:
 
-```perl6
+```raku
 sub emit(\value --> Nil)
 ```
 
-如果在任何 supply 或 react 块儿外面使用 `emit`, 则抛出异常 `emit without supply or react`. 在 link:https://docs.perl6.org/type/Supply[Supply] 块儿里面, 它会添加一条消息给 stream 流。
+如果在任何 supply 或 react 块儿外面使用 `emit`, 则抛出异常 `emit without supply or react`. 在 link:https://docs.raku.org/type/Supply[Supply] 块儿里面, 它会添加一条消息给 stream 流。
 
-```perl6
+```raku
 my $supply = supply {
   for 1 .. 10 {
       emit($_);
@@ -60,16 +60,16 @@ my $supply = supply {
 $supply.tap( -> $v { say "First : $v" });
 ```
 
-还请参阅 link:https://docs.perl6.org/routine/emit[the page for `emit` methods].
+还请参阅 link:https://docs.raku.org/routine/emit[the page for `emit` methods].
 
 ## undefine
 
 定义为:
 
-```perl6
+```raku
 multi sub undefine(Mu    \x)
 multi sub undefine(Array \x)
 multi sub undefine(Hash  \x)
 ```
 
-在 6.d 中被**废弃**, 将在 6.e 中移除。 对于 link:https://docs.perl6.org/type/Array[Array] 和 link:https://docs.perl6.org/type/Hash[Hash], 它会变得和赋值为 link:https://docs.perl6.org/type/Slip#index-entry-Empty-Empty[Empty] 相等; 对于其它任何东西, 它会和赋值为 link:https://docs.perl6.org/type/Nil[Nil] 相等, 建议使用它。
+在 6.d 中被**废弃**, 将在 6.e 中移除。 对于 link:https://docs.raku.org/type/Array[Array] 和 link:https://docs.raku.org/type/Hash[Hash], 它会变得和赋值为 link:https://docs.raku.org/type/Slip#index-entry-Empty-Empty[Empty] 相等; 对于其它任何东西, 它会和赋值为 link:https://docs.raku.org/type/Nil[Nil] 相等, 建议使用它。

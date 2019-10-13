@@ -1,13 +1,13 @@
-# Perl 6类型的定义
+# Raku类型的定义
 
-类型通过创建类型对象来定义新对象，该类型对象提供用于创建对象实例或检查值的接口。任何类型对象都是 link:https://docs.perl6.org/type/Any[Any] 或 link:https://docs.perl6.org/type/Mu[Mu] 的子类。通过从这些基类和内省后缀 link:https://docs.perl6.org/language/operators#postfix_.%5E[.^] 继承来提供内省方法。在编译时由以下类型声明符之一或在运行时使用link:https://docs.perl6.org/language/mop[元对象协议]将新类型引入当前作用域。所有类型名称的作用域必须是唯一的。
+类型通过创建类型对象来定义新对象，该类型对象提供用于创建对象实例或检查值的接口。任何类型对象都是 link:https://docs.raku.org/type/Any[Any] 或 link:https://docs.raku.org/type/Mu[Mu] 的子类。通过从这些基类和内省后缀 link:https://docs.raku.org/language/operators#postfix_.%5E[.^] 继承来提供内省方法。在编译时由以下类型声明符之一或在运行时使用link:https://docs.raku.org/language/mop[元对象协议]将新类型引入当前作用域。所有类型名称的作用域必须是唯一的。
 
 ## 默认类型
 
-如果用户没有提供类型，则 Perl 6 假定类型为 `Any`。这包括link:https://docs.perl6.org/language/containers[容器]，基类，link:https://docs.perl6.org/type/Signature#Type_constraints[参数]和返回类型。
+如果用户没有提供类型，则 Raku 假定类型为 `Any`。这包括link:https://docs.raku.org/language/containers[容器]，基类，link:https://docs.raku.org/type/Signature#Type_constraints[参数]和返回类型。
 
 
-```perl6
+```raku
 my $a = 1;
 $a = Nil;
 say $a.^name;
@@ -22,9 +22,9 @@ say C.^parents(:all);
 
 ## 类型对象
 
-要测试对象是否为类型对象，请对使用类型为 link:https://docs.perl6.org/type/Signature#Constraining_defined_and_undefined_values[smiley] 或 link:https://docs.perl6.org/language/mop#index-entry-syntax_DEFINITE-DEFINITE[`.DEFINITE`] 方法约束的类型使用 link:https://docs.perl6.org/language/operators#index-entry-smartmatch_operator[smartmatch]：
+要测试对象是否为类型对象，请对使用类型为 link:https://docs.raku.org/type/Signature#Constraining_defined_and_undefined_values[smiley] 或 link:https://docs.raku.org/language/mop#index-entry-syntax_DEFINITE-DEFINITE[`.DEFINITE`] 方法约束的类型使用 link:https://docs.raku.org/language/operators#index-entry-smartmatch_operator[smartmatch]：
 
-```perl6
+```raku
 my $a = Int;
 say $a ~~ Mu:U;
 # OUTPUT: «True» 
@@ -36,25 +36,25 @@ say not $a.DEFINITE;
 
 ### Undefinedness
 
-未定义的对象在 Perl 6 中维护类型信息。类型对象用于表示未定义值和未定义值的类型。要提供一般的未定义值，请使用 link:https://docs.perl6.org/type/Any[Any]。如果要区分容器和参数的默认类型 `Any`，则需要使用 `Mu`。
+未定义的对象在 Raku 中维护类型信息。类型对象用于表示未定义值和未定义值的类型。要提供一般的未定义值，请使用 link:https://docs.raku.org/type/Any[Any]。如果要区分容器和参数的默认类型 `Any`，则需要使用 `Mu`。
 
-由 link:https://docs.perl6.org/type/Mu#method_CREATE[.CREATE] 创建的对象实例是按惯例定义的。方法 link:https://docs.perl6.org/type/Mu#routine_defined[.defined] 将返回 `Bool::True` 以指示定义。该规则的例外是 link:https://docs.perl6.org/type/Nil[Nil] 和 link:https://docs.perl6.org/type/Failure[Failure]。请注意，任何对象都可以重载 `.defined`，因此可以携带其他信息。此外，Perl 6 明确区分了定义和真假。很多值是有定义的, 即使它们具有错误或空值的含义。这些值为 `0`，link:https://docs.perl6.org/type/Bool[Bool::False], link:https://docs.perl6.org/language/operators#term_%28_%29[()] (空列表) 和 link:https://docs.perl6.org/type/Num#NaN[NaN]。
+由 link:https://docs.raku.org/type/Mu#method_CREATE[.CREATE] 创建的对象实例是按惯例定义的。方法 link:https://docs.raku.org/type/Mu#routine_defined[.defined] 将返回 `Bool::True` 以指示定义。该规则的例外是 link:https://docs.raku.org/type/Nil[Nil] 和 link:https://docs.raku.org/type/Failure[Failure]。请注意，任何对象都可以重载 `.defined`，因此可以携带其他信息。此外，Raku 明确区分了定义和真假。很多值是有定义的, 即使它们具有错误或空值的含义。这些值为 `0`，link:https://docs.raku.org/type/Bool[Bool::False], link:https://docs.raku.org/language/operators#term_%28_%29[()] (空列表) 和 link:https://docs.raku.org/type/Num#NaN[NaN]。
 
-值可以在运行时通过 link:https://docs.perl6.org/language/operators#infix_but[mixin] 变为未定义。
+值可以在运行时通过 link:https://docs.raku.org/language/operators#infix_but[mixin] 变为未定义。
 
-```perl6
+```raku
 my Int $i = 1 but role::{ method defined { False } };
 say $i // "undefined";
 # OUTPUT: «undefined» 
 ```
 
-要测试定义需调用 `.defined`，请使用 link:https://docs.perl6.org/language/operators#infix_%2F%2F[//]，link:https://docs.perl6.org/language/control#with%2C_orwith%2C_without[with/without] 和 link:https://docs.perl6.org/type/Signature#Constraining_defined_and_undefined_values[signatures]。
+要测试定义需调用 `.defined`，请使用 link:https://docs.raku.org/language/operators#infix_%2F%2F[//]，link:https://docs.raku.org/language/control#with%2C_orwith%2C_without[with/without] 和 link:https://docs.raku.org/type/Signature#Constraining_defined_and_undefined_values[signatures]。
 
 ### 强制转换
 
-将一种类型转换为另一种类型是使用与目标类型同名的强制方法完成的。link:https://docs.perl6.org/type/Signature#Coercion_type[Signatures] 强制要求此约定。源类型必须知道如何将自身转换为目标类型。要允许内置类型将自己转换为用户定义的类型，请使用 link:https://docs.perl6.org/language/variables#The_augment_declarator[augment] 或者 link:https://docs.perl6.org/language/mop[MOP]。
+将一种类型转换为另一种类型是使用与目标类型同名的强制方法完成的。link:https://docs.raku.org/type/Signature#Coercion_type[Signatures] 强制要求此约定。源类型必须知道如何将自身转换为目标类型。要允许内置类型将自己转换为用户定义的类型，请使用 link:https://docs.raku.org/language/variables#The_augment_declarator[augment] 或者 link:https://docs.raku.org/language/mop[MOP]。
 
-```perl6
+```raku
 class C {
     has $.int;
     method this-is-c { put 'oi' x $!int ~ '‽' }
@@ -71,9 +71,9 @@ $i.this-is-c();
 # OUTPUT: «oioioioioioioioioioi‽» 
 ```
 
-Perl 6 提供了在 link:https://docs.perl6.org/type/Cool[Cool] 中定义的方法，以便在应用进一步操作之前转换为目标类型。大多数内置类型都来自 `Cool`，因此可能会提供可能不需要的隐式强制。用户有责任关心这些方法的无陷阱使用。
+Raku 提供了在 link:https://docs.raku.org/type/Cool[Cool] 中定义的方法，以便在应用进一步操作之前转换为目标类型。大多数内置类型都来自 `Cool`，因此可能会提供可能不需要的隐式强制。用户有责任关心这些方法的无陷阱使用。
 
-```perl6
+```raku
 my $whatever = "123.6";
 say $whatever.round;
 # OUTPUT: «124» 
@@ -83,9 +83,9 @@ say <a b c d>.starts-with("ab");
 
 # 类型声明符
 
-类型声明符将新类型引入给定作用域。嵌套作用域可以用 `::` 分隔。如果不存在此类作用域，则会自动创建新 link:https://docs.perl6.org/language/packages[packages]。
+类型声明符将新类型引入给定作用域。嵌套作用域可以用 `::` 分隔。如果不存在此类作用域，则会自动创建新 link:https://docs.raku.org/language/packages[packages]。
 
-```perl6
+```raku
 class Foo::Bar::C {};
 put Foo::Bar::.keys;
 # OUTPUT: «C» 
@@ -93,7 +93,7 @@ put Foo::Bar::.keys;
 
 可以使用仅包含 `...` 的块来提供前置声明。如果定义了类型，编译器将在当前作用域的末尾检查。
 
-```perl6
+```raku
 class C {...}
 # many lines later 
 class C { has $.attr }
@@ -101,15 +101,15 @@ class C { has $.attr }
 
 ## `类`
 
-`class` 声明符创建一个编译为类型对象的编译时构造。后者是一个简单的 Perl 6 对象，它提供了通过执行初始化程序和子方法来构造实例的方法，以填充在类中声明的所有属性，以及任何具有值的父类。初始化程序可以提供属性声明或构造函数。 link:https://docs.perl6.org/type/Metamodel::ClassHOW[Metamodel::ClassHOW] 负责知道如何运行它们。这是在 Perl 6 中构建对象的唯一神奇部分。默认父类型是 `Any`，它继承自 `Mu`。后者提供了默认的按照惯例命名的构造函数 `.new`。除此之外，`.new` 不具有任何特殊含义，也不以任何特殊方式对待。
+`class` 声明符创建一个编译为类型对象的编译时构造。后者是一个简单的 Raku 对象，它提供了通过执行初始化程序和子方法来构造实例的方法，以填充在类中声明的所有属性，以及任何具有值的父类。初始化程序可以提供属性声明或构造函数。 link:https://docs.raku.org/type/Metamodel::ClassHOW[Metamodel::ClassHOW] 负责知道如何运行它们。这是在 Raku 中构建对象的唯一神奇部分。默认父类型是 `Any`，它继承自 `Mu`。后者提供了默认的按照惯例命名的构造函数 `.new`。除此之外，`.new` 不具有任何特殊含义，也不以任何特殊方式对待。
 
-有关如何使用类的更多信息，请参阅link:https://docs.perl6.org/language/classtut[类和对象]教程。
+有关如何使用类的更多信息，请参阅link:https://docs.raku.org/language/classtut[类和对象]教程。
 
 ### Mixins
 
-`class` 引入的类型可以在运行时使用 link:https://docs.perl6.org/language/operators#infix_but[infix:] 进行扩展。原始类型不会被修改，而是返回一个新的类型对象，并且可以存储在一个容器中，该容器对原始类型或混合的角色进行成功类型检查。
+`class` 引入的类型可以在运行时使用 link:https://docs.raku.org/language/operators#infix_but[infix:] 进行扩展。原始类型不会被修改，而是返回一个新的类型对象，并且可以存储在一个容器中，该容器对原始类型或混合的角色进行成功类型检查。
 
-```perl6
+```raku
 class A {}
 role R { method m { say 'oi‽' } }
 my R $A = A but R;
@@ -123,9 +123,9 @@ say [$A ~~ R, $a1 ~~ R];
 
 #### 元类
 
-要测试给定类型对象是否为类，请针对 link:https://docs.perl6.org/type/Metamodel::ClassHOW[Metamodel::ClassHOW] 测试元对象方法 `.HOW`。
+要测试给定类型对象是否为类，请针对 link:https://docs.raku.org/type/Metamodel::ClassHOW[Metamodel::ClassHOW] 测试元对象方法 `.HOW`。
 
-```perl6
+```raku
 class C {};
 say C.HOW ~~ Metamodel::ClassHOW;
 # OUTPUT: «True» 
@@ -133,9 +133,9 @@ say C.HOW ~~ Metamodel::ClassHOW;
 
 ### 私有属性
 
-私有link:https://docs.perl6.org/type/Attribute[属性]用任何一个 `$!`，`@!` 和 `%!` twigils 来处理。它们没有自动生成的公共访问器方法。因此，它们不能从它们所定义的类的外面进行更改。
+私有link:https://docs.raku.org/type/Attribute[属性]用任何一个 `$!`，`@!` 和 `%!` twigils 来处理。它们没有自动生成的公共访问器方法。因此，它们不能从它们所定义的类的外面进行更改。
 
-```perl6
+```raku
 class C {
     has $!priv;
     submethod BUILD { $!priv = 42 }
@@ -147,13 +147,13 @@ say (.name, .package, .has_accessor) for C.new.^attributes;
 
 ### 方法
 
-`method` 声明符定义 link:https://docs.perl6.org/type/Method[Method] 类型的对象，并将其绑定到类的作用域中提供的名称上。默认情况下，类中的方法具有 `has` 作用域。`our` 作用域的那些方法默认不会添加到方法缓存中，因此不能使用访问器符号 `$.` 来调用。使用完全限定名称和调用者作为第一个参数来调用它们。
+`method` 声明符定义 link:https://docs.raku.org/type/Method[Method] 类型的对象，并将其绑定到类的作用域中提供的名称上。默认情况下，类中的方法具有 `has` 作用域。`our` 作用域的那些方法默认不会添加到方法缓存中，因此不能使用访问器符号 `$.` 来调用。使用完全限定名称和调用者作为第一个参数来调用它们。
 
 #### 继承和 multis
 
 子类中的普通方法不与父类中的 multis 竞争。
 
-```perl6
+```raku
 class A {
     multi method m(Int $i){ say 'Int' }
     multi method m(int $i){ say 'int' }
@@ -172,7 +172,7 @@ B.new.m($i);
 
 要明确声明方法不是 multi 方法，请使用 `only` 方法声明符。
 
-```perl6
+```raku
 class C {
     only method m {};
     multi method m {};
@@ -182,9 +182,9 @@ class C {
 
 #### Submethod BUILD
 
-link:https://docs.perl6.org/type/Submethod[submethod] `BUILD` 是（间接地）由被称为 link:https://docs.perl6.org/type/Mu#method_bless[.bless] 的方法调用的。它旨在设置类的私有和公共属性，并接收传入 `.bless` 的所有名称属性。定义在 `Mu` 中的默认构造函数 link:https://docs.perl6.org/type/Mu#method_new[.new] 是调用它的方法。鉴于公共访问器方法在 `BUILD` 中不可用，您必须使用私有属性表示法。
+link:https://docs.raku.org/type/Submethod[submethod] `BUILD` 是（间接地）由被称为 link:https://docs.raku.org/type/Mu#method_bless[.bless] 的方法调用的。它旨在设置类的私有和公共属性，并接收传入 `.bless` 的所有名称属性。定义在 `Mu` 中的默认构造函数 link:https://docs.raku.org/type/Mu#method_new[.new] 是调用它的方法。鉴于公共访问器方法在 `BUILD` 中不可用，您必须使用私有属性表示法。
 
-```perl6
+```raku
 class C {
     has $.attr;
     submethod BUILD (:$attr = 42) {
@@ -202,9 +202,9 @@ C.new.say; C.new('answer').say;
 
 #### Fallback 方法 
 
-当其他解析名称的方法不产生结果时，将调用具有特殊名称的 `FALLBACK` 方法。第一个参数保存名称，所有后续参数都从原始调用转发。支持 multi 方法和link:https://docs.perl6.org/type/Signature#Destructuring_arguments[子签名]。
+当其他解析名称的方法不产生结果时，将调用具有特殊名称的 `FALLBACK` 方法。第一个参数保存名称，所有后续参数都从原始调用转发。支持 multi 方法和link:https://docs.raku.org/type/Signature#Destructuring_arguments[子签名]。
 
-```perl6
+```raku
 class Magic {
     method FALLBACK ($name, |c(Int, Str)) {
     put "$name called with parameters {c.perl}"  }
@@ -218,7 +218,7 @@ Magic.new.simsalabim(42, "answer");
 
 一些内置的内省方法实际上是由编译器提供的特殊语法, 即 `WHAT`，`WHO`，`HOW` 和 `VAR`。使用这些名称声明的方法将无声地失败。动态调用将起作用，允许从外部对象调用方法。
 
-```perl6
+```raku
 class A {
     method WHAT { "ain't gonna happen" }
 };
@@ -231,7 +231,7 @@ say A.new."WHAT"() # OUTPUT: «ain't gonna happen»
 
 任何 `our` 作用域方法都将在类的包作用域内可见。
 
-```perl6
+```raku
 class C {
     our method packaged {};
     method loose {}
@@ -244,7 +244,7 @@ say C::.keys
 
 如果您用和属性属性同名的名字设置属性的变量（或方法调用），则可以节省一些输入，例如 `attr => $attr ` 或 `:attr($attr)`：
 
-```perl6
+```raku
 class A { has $.i = 42 };
 class B {
     has $.i = "answer";
@@ -255,15 +255,15 @@ my $a = B.new.m;
 say $a.i; # OUTPUT: «answer» 
 ```
 
-由于 `$.i` 方法调用名字叫 `i` 且属性也叫 `i`，因此 Perl 6 允许我们使用快捷方式。这同样适用于 `:$var`，`:$!private-attribute`，`:&attr-with-code-in-it`，等等。
+由于 `$.i` 方法调用名字叫 `i` 且属性也叫 `i`，因此 Raku 允许我们使用快捷方式。这同样适用于 `:$var`，`:$!private-attribute`，`:&attr-with-code-in-it`，等等。
 
 ### trait `is nodal`
 
-标记一个link:https://docs.perl6.org/type/List[List]方法，指示 hyperoperator 不要进入内部 link:https://docs.perl6.org/type/Iterable[Iterables] 以调用此方法。这个特性通常不是终端用户会使用的东西，除非他们子类化或扩展核心 link:https://docs.perl6.org/type/List[List] 类型。
+标记一个link:https://docs.raku.org/type/List[List]方法，指示 hyperoperator 不要进入内部 link:https://docs.raku.org/type/Iterable[Iterables] 以调用此方法。这个特性通常不是终端用户会使用的东西，除非他们子类化或扩展核心 link:https://docs.raku.org/type/List[List] 类型。
 
 为了证明差异，请考虑以下示例，第一个使用 `is nodal` 方法（`elems`），第二个使用方法 `Int` , 它不是节点方法。
 
-```perl6
+```raku
 say ((1.0, "2", 3e0), [^4], '5')».elems; # OUTPUT: «(3, 4, 1)» 
 say ((1.0, "2", 3e0), [^4], '5')».Int    # OUTPUT: «((1 2 3) [0 1 2 3] 5)» 
 ```
@@ -272,13 +272,13 @@ say ((1.0, "2", 3e0), [^4], '5')».Int    # OUTPUT: «((1 2 3) [0 1 2 3] 5)»
 
 定义为:
 
-```perl6
+```raku
 multi sub trait_mod:<handles>(Attribute:D $target, $thunk)
 ```
 
-link:https://docs.perl6.org/type/Sub#Traits[trait] `handles` 应用于类的属性，会将对提供的方法名称的所有调用代理给和属性同名名的方法。必须初始化属性引用的对象。可以提供代理调用的对象的类型约束。
+link:https://docs.raku.org/type/Sub#Traits[trait] `handles` 应用于类的属性，会将对提供的方法名称的所有调用代理给和属性同名名的方法。必须初始化属性引用的对象。可以提供代理调用的对象的类型约束。
 
-```perl6
+```raku
 class A      { method m(){ 'A::m has been called.' } }
 class B is A { method m(){ 'B::m has been called.' } }
 class C {
@@ -290,7 +290,7 @@ say C.new(B.new).m(); # OUTPUT: «B::m has been called.»
 
 可以提供一个 `Pair`（或用于重命名）或一个 `Pair`，`Regex` 或 `Whatever` 的列表而不是一个方法名。在后一种情况下，在类本身及其继承链中的现有方法将优先。如果 `FALLBACK` 要搜索本地，请使用 `HyperWhatever`。
 
-```perl6
+```raku
 class A {
     method m1(){}
     method m2(){}
@@ -316,15 +316,15 @@ E.new.em1;
 
 定义为:
 
-```perl6
+```raku
 multi sub trait_mod:<is>(Mu:U $child, Mu:U $parent)
 ```
 
-link:https://docs.perl6.org/type/Sub#Traits[trait] `is` 接受一个类型对象，该类型对象在其定义中被添加为类的父类。为了允许多重继承，可以多次应用 `is` trait。将父类添加到类中会将其方法导入目标类。如果在多个父类中出现同名方法，则第一个添加的父类将胜出。
+link:https://docs.raku.org/type/Sub#Traits[trait] `is` 接受一个类型对象，该类型对象在其定义中被添加为类的父类。为了允许多重继承，可以多次应用 `is` trait。将父类添加到类中会将其方法导入目标类。如果在多个父类中出现同名方法，则第一个添加的父类将胜出。
 
-如果没有提供 `is` trait，则默认值 link:https://docs.perl6.org/type/Any[`Any`] 将用作父类。这迫使所有 Perl 6 对象具有相同的基本方法集，以提供内省和强制到基本类型的接口。
+如果没有提供 `is` trait，则默认值 link:https://docs.raku.org/type/Any[`Any`] 将用作父类。这迫使所有 Raku 对象具有相同的基本方法集，以提供内省和强制到基本类型的接口。
 
-```perl6
+```raku
 class A {
     multi method from-a(){ 'A::from-a' }
 }
@@ -345,13 +345,13 @@ say C.new.from-a();
 
 定义为:
 
-```perl6
+```raku
 sub trait_mod:<is>(Mu:U $type, :$rw!)
 ```
 
-类的link:https://docs.perl6.org/type/Sub#Traits[trait] `is rw` 在该类的所有公共属性上创建可写的访问器方法。
+类的link:https://docs.raku.org/type/Sub#Traits[trait] `is rw` 在该类的所有公共属性上创建可写的访问器方法。
 
-```perl6
+```raku
 class C is rw {
     has $.a;
 };
@@ -363,14 +363,14 @@ say $c; # OUTPUT: «42»
 
 定义为:
 
-```perl6
+```raku
 multi sub trait_mod:<is>(Attribute $attr, :$required!)
 multi sub trait_mod:<is>(Parameter:D $param, :$required!)
 ```
 
-将类或角色属性标记为必要的。如果在对象构造时未初始化该属性，则抛出 link:https://docs.perl6.org/type/X::Attribute::Required[X::Attribute::Required]。
+将类或角色属性标记为必要的。如果在对象构造时未初始化该属性，则抛出 link:https://docs.raku.org/type/X::Attribute::Required[X::Attribute::Required]。
 
-```perl6
+```raku
 class Correct {
     has $.attr is required;
     submethod BUILD (:$attr) { $!attr = $attr }
@@ -388,7 +388,7 @@ CATCH { default { say .^name => .Str } }
 
 你可以为 `is required` 提供一个理由作为参数，说明它为什么是必须的。
 
-```perl6
+```raku
 class Correct {
     has $.attr is required("it's so cool")
 };
@@ -398,9 +398,9 @@ say Correct.new();
 
 ### trait `hides`
 
-trait `hides` 提供继承而不需要link:https://docs.perl6.org/language/functions#Re-dispatching[重新分派]。
+trait `hides` 提供继承而不需要link:https://docs.raku.org/language/functions#Re-dispatching[重新分派]。
 
-```perl6
+```raku
 class A {
     method m { say 'i am hidden' }
 }
@@ -414,9 +414,9 @@ B.new.n;
 # OUTPUT: «i am hidden» 
 ```
 
-trait `is hidden` 允许类从 link:https://docs.perl6.org/language/functions#Re-dispatching[重新分派] 中隐藏自己。
+trait `is hidden` 允许类从 link:https://docs.raku.org/language/functions#Re-dispatching[重新分派] 中隐藏自己。
 
-```perl6
+```raku
 class A is hidden {
     method m { say 'i am hidden' }
 }
@@ -434,7 +434,7 @@ B.new.n;
 
 要允许一个类访问另一个类的私有方法，请使用该 trait `trusts`。可能需要可信类的前置声明。
 
-```perl6
+```raku
 class B {...};
 class A {
     trusts B;
@@ -454,7 +454,7 @@ say B.new.change;
 
 要在编译时向类添加方法和属性，请在类定义片段前面使用 `augment`。编译器将要求编译指令 `use MONKEY-TYPING` 或 `use MONKEY` 早一点出现在同一作用域中。请注意，可能会对性能产生影响，因此可能会出现问题。
 
-```perl6
+```raku
 use MONKEY; augment class Str {
     method mark(Any :$set){
         state $mark //= $set; $mark
@@ -470,9 +470,9 @@ say $s.mark
 
 ### 版本和作者
 
-版权和作者身份可以通过副词 `:ver<>` 和 `:auth<>` 应用。两者都以字符串作为参数，对于 `:ver`, 字符串被转换为 link:https://docs.perl6.org/type/Version[Version] 对象。查询类版本和作者请使用 `.^ver` 和 `^.auth`。
+版权和作者身份可以通过副词 `:ver<>` 和 `:auth<>` 应用。两者都以字符串作为参数，对于 `:ver`, 字符串被转换为 link:https://docs.raku.org/type/Version[Version] 对象。查询类版本和作者请使用 `.^ver` 和 `^.auth`。
 
-```perl6
+```raku
 class C:ver<4.2.3>:auth<me@here.local> {}
 say [C.^ver, C.^auth];
 # OUTPUT: «[v4.2.3 me@here.local]» 
@@ -482,7 +482,7 @@ say [C.^ver, C.^auth];
 
 角色是类片段，它允许定义类共享的接口。`role` 声明符还引入了可用于类型检查的类型对象。角色可以在运行时和编译时混合到类和对象中。`role` 声明符返回创建的类型对象因而允许匿名角色和就地混入定义。
 
-```perl6
+```raku
 role Serialize {
     method to-string { self.Str }
     method to-number { self.Num }
@@ -501,7 +501,7 @@ say @list».to-string;
 
 使用 `...` 作为方法体的唯一元素声明一个要抽象的方法。任何混合使用这种方法的类都必须重载它。如果在编译单元结束之前该方法没有被重载，则抛出 `X::Comp::AdHoc`。
 
-```perl6
+```raku
 EVAL 'role R { method overload-this(){...} }; class A does R {}; ';
 CATCH { default { say .^name, ' ', .Str } }
 # OUTPUT: «X::Comp::AdHoc Method 'overload-this' must be implemented by A because it is required by roles: R.» 
@@ -511,12 +511,12 @@ CATCH { default { say .^name, ' ', .Str } }
 
 可以使用角色而不是类来创建对象。由于角色在运行时不能存在，因此会创建一个同名的类，该类将对角色类型检查成功。
 
-```perl6
+```raku
 role R { method m { say 'oi‽' } };
 R.new.^mro.say;
 # OUTPUT: «((R) (Any) (Mu))» 
 say R.new.^mro[0].HOW.^name;
-# OUTPUT: «Perl6::Metamodel::ClassHOW» 
+# OUTPUT: «Raku::Metamodel::ClassHOW» 
 say R.new ~~ R;
 # OUTPUT: «True» 
 ```
@@ -525,7 +525,7 @@ say R.new ~~ R;
 
 trait `does` 可以应用于提供编译时混合的角色和类。要引用尚未定义的角色，请使用前置声明。混合角色的类的类型名称不反射 mixin，类型检查反射。如果在多个混合角色中提供方法，则首先定义的方法优先。可以提供以逗号分隔的角色列表。在这种情况下，将在编译时报告冲突。
 
-```perl6
+```raku
 role R2 {...};
 role R1 does R2 {};
 role R2 {};
@@ -535,13 +535,13 @@ say [C ~~ R1, C ~~ R2];
 # OUTPUT: «[True True]» 
 ```
 
-对于运行时混入请参阅link:https://docs.perl6.org/language/operators#infix_but[but] 和 link:https://docs.perl6.org/language/operators#infix_does[does]。
+对于运行时混入请参阅link:https://docs.raku.org/language/operators#infix_but[but] 和 link:https://docs.raku.org/language/operators#infix_does[does]。
 
 ### 参数化
 
-可以在角色名称后面的 `link:https://docs.perl6.org/type/Signature#Type_captures[]` 之间提供角色的参数。支持[类型捕获]。
+可以在角色名称后面的 `link:https://docs.raku.org/type/Signature#Type_captures[]` 之间提供角色的参数。支持[类型捕获]。
 
-```perl6
+```raku
 role R[$d] { has $.a = $d };
 class C does R["default"] { };
  
@@ -552,7 +552,7 @@ say $c;
 
 参数可以有类型约束，类型不支持 `where` 子句，但可以通过 `subset` 实现。
 
-```perl6
+```raku
 class A {};
 class B {};
 subset A-or-B where * ~~ A|B;
@@ -562,7 +562,7 @@ R[A.new].new;
 
 可以提供默认参数。
 
-```perl6
+```raku
 role R[$p = fail("Please provide a parameter to role R")] {};
 my $i = 1 does R;
 CATCH { default { say .^name, ': ', .Str} }
@@ -573,7 +573,7 @@ CATCH { default { say .^name, ': ', .Str} }
 
 在期望类型的任何地方，角色都可以用作类型约束。如果使用 `does` 或 `but` 混合角色，则其 type-object 将添加到相关对象的 type-object 列表中。如果使用角色而不是类（使用自动生成），则自动生成的类与角色同名的类型对象将添加到继承链中。
 
-```perl6
+```raku
 role Unitish[$unit = fail('Please provide a SI unit quantifier as a parameter to the role Unitish')] {
     has $.SI-unit-symbol = $unit;
     method gist {
@@ -611,11 +611,11 @@ say [(75kg).^name, N(75kg).^name];
 
 ## `enum`
 
-枚举提供具有关联类型的常量键-值对。任何键都属于该类型，并作为符号注入当前作用域。如果使用该符号，则将其视为常量表达式，并将该符号替换为枚举对的值。任何枚举都从角色 link:https://docs.perl6.org/type/Enumeration[`Enumeration`] 继承方法。不支持用于生成键值对的复杂表达式。通常，`enum` 是一个 link:https://docs.perl6.org/type/Map[Map] 其元素具有混合的`Enumeration` 角色; 对于每个元素，此角色包括在 map 上创建顺序的索引。
+枚举提供具有关联类型的常量键-值对。任何键都属于该类型，并作为符号注入当前作用域。如果使用该符号，则将其视为常量表达式，并将该符号替换为枚举对的值。任何枚举都从角色 link:https://docs.raku.org/type/Enumeration[`Enumeration`] 继承方法。不支持用于生成键值对的复杂表达式。通常，`enum` 是一个 link:https://docs.raku.org/type/Map[Map] 其元素具有混合的`Enumeration` 角色; 对于每个元素，此角色包括在 map 上创建顺序的索引。
 
 符号的字符串化，在字符串上下文中自动完成，并且与其名称完全相同，这也是枚举对的键。
 
-```perl6
+```raku
 enum Names ( name1 => 1, name2 => 2 );
 say name1, ' ', name2; # OUTPUT: «name1 name2» 
 say name1.value, ' ', name2.value; # OUTPUT: «1 2» 
@@ -623,7 +623,7 @@ say name1.value, ' ', name2.value; # OUTPUT: «1 2»
 
 比较符号将使用类型信息和枚举对的值。支持 `Num` 类型和 `Str` 类型。
 
-```perl6
+```raku
 enum Names ( name1 => 1, name2 => 2 );
 sub same(Names $a, Names $b){
    $a eqv $b
@@ -638,7 +638,7 @@ say $a.^name;    # OUTPUT: «Names»
 
 所有键必须属于同一类型。
 
-```perl6
+```raku
 enum Mass ( mg => 1/1000, g => 1/1, kg => 1000/1 );
  
 say Mass.enums;
@@ -647,7 +647,7 @@ say Mass.enums;
 
 如果没有给出值，则 `Int` 将假定为值类型，并且每个键从零开始递增 1。作为枚举键类型 `Int`，`Num`，`Rat` 和 `Str` 都被支持。
 
-```perl6
+```raku
 enum Numbers <one two three four>;
  
 say Numbers.enums;
@@ -656,7 +656,7 @@ say Numbers.enums;
 
 可以提供不同的起始值。
 
-```perl6
+```raku
 enum Numbers «:one(1) two three four»;
  
 say Numbers.enums;
@@ -665,7 +665,7 @@ say Numbers.enums;
 
 枚举也可以是匿名的，和具名 `enum` 的唯一的区别在于您不能在签名中使用它或用它声明变量。
 
-```perl6
+```raku
 my $e = enum <one two three>;
 say two;       # OUTPUT: «two» 
 say one.^name; # OUTPUT: «» 
@@ -674,7 +674,7 @@ say $e.^name;  # OUTPUT: «Map»
 
 有多种方法可以访问已定义的符号的键和值。所有这些都将值转换为 `Str`，这可能是不可取的。通过将枚举视为包，我们可以获得键的类型列表。
 
-```perl6
+```raku
 enum E(<one two>);
 my @keys = E::.values;
 say @keys.map: *.enums;
@@ -683,9 +683,9 @@ say @keys.map: *.enums;
 
 ### 元类
 
-要测试给定类型对象是否为 `enum`，请 `.HOW` 针对 link:https://docs.perl6.org/type/Metamodel::EnumHOW[Metamodel::EnumHOW] 测试元对象方法，或者仅针对该 `Enumeration` 角色进行测试。
+要测试给定类型对象是否为 `enum`，请 `.HOW` 针对 link:https://docs.raku.org/type/Metamodel::EnumHOW[Metamodel::EnumHOW] 测试元对象方法，或者仅针对该 `Enumeration` 角色进行测试。
 
-```perl6
+```raku
 enum E(<a b c>);
 say E.HOW ~~ Metamodel::EnumHOW; # OUTPUT: «True» 
 say E ~~ Enumeration;            # OUTPUT: «True» 
@@ -697,13 +697,13 @@ say E ~~ Enumeration;            # OUTPUT: «True»
 
 定义为:
 
-```perl6
+```raku
 method enums()
 ```
 
 返回枚举对列表。
 
-```perl6
+```raku
 enum Mass ( mg => 1/1000, g => 1/1, kg => 1000/1 );
 say Mass.enums; # OUTPUT: «{g => 1, kg => 1000, mg => 0.001}» 
 ```
@@ -712,7 +712,7 @@ say Mass.enums; # OUTPUT: «{g => 1, kg => 1000, mg => 0.001}»
 
 如果要将枚举元素的值强制转换为其合适的枚举对象，请使用带有枚举名称的 coercer：
 
-```perl6
+```raku
 my enum A (sun => 42, mon => 72);
 A(72).pair.say;   # OUTPUT: «mon => 72» 
 A(1000).say; # OUTPUT: «(A)» 
@@ -722,31 +722,31 @@ A(1000).say; # OUTPUT: «(A)»
 
 ## `module`
 
-模块通常是一个或多个公开 Perl 6 结构的源文件，例如类，角色，grammars，子例程和变量。模块通常用于将 Perl 6 代码分发为可在另一个 Perl 6 程序中使用的库。
+模块通常是一个或多个公开 Raku 结构的源文件，例如类，角色，grammars，子例程和变量。模块通常用于将 Raku 代码分发为可在另一个 Raku 程序中使用的库。
 
-有关完整说明，请参阅link:https://docs.perl6.org/language/modules[模块]。
+有关完整说明，请参阅link:https://docs.raku.org/language/modules[模块]。
 
 ## `package`
 
 Packages are nested namespaces of named program elements. Modules, classes and grammars are all types of package.
 
-For a full explanation see link:https://docs.perl6.org/language/packages[Packages].
+For a full explanation see link:https://docs.raku.org/language/packages[Packages].
 
 包是命名程序元素的嵌套命名空间。模块，类和语法都是所有类型的包。
 
-有关完整说明，请参阅link:https://docs.perl6.org/language/packages[包]。
+有关完整说明，请参阅link:https://docs.raku.org/language/packages[包]。
 
 ## `grammar`
 
 Grammar 是用于解析文本的特定类型。Grammars 由 rule，token 和 regex 组成，它们实际上是方法，因为 grammars 是类。
 
-有关完整说明，请参阅link:https://docs.perl6.org/language/grammars[Grammars]。
+有关完整说明，请参阅link:https://docs.raku.org/language/grammars[Grammars]。
 
 ### 版本和作者
 
-版权和作者身份可以通过副词 `:ver<>` 和 `:auth<>` 应用。两者都以字符串作为参数，对于 `:ver`, 字符串被转换为 link:https://docs.perl6.org/type/Version[Version]对象。查询语法版本和作者使用 `.^ver` 和 `^.auth`。
+版权和作者身份可以通过副词 `:ver<>` 和 `:auth<>` 应用。两者都以字符串作为参数，对于 `:ver`, 字符串被转换为 link:https://docs.raku.org/type/Version[Version]对象。查询语法版本和作者使用 `.^ver` 和 `^.auth`。
 
-```perl6
+```raku
 grammar G:ver<4.2.3>:auth<me@here.local> {}
 say [G.^ver, G.^auth];
 # OUTPUT: «[v4.2.3 me@here.local]» 
@@ -754,9 +754,9 @@ say [G.^ver, G.^auth];
 
 ## `subset`
 
-`subset` 声明一个会重新分配到其基类型的新类型。如果提供了 link:https://docs.perl6.org/type/Signature#where[`where`] 子句，则将针对给定的代码对象检查任何赋值。
+`subset` 声明一个会重新分配到其基类型的新类型。如果提供了 link:https://docs.raku.org/type/Signature#where[`where`] 子句，则将针对给定的代码对象检查任何赋值。
 
-```perl6
+```raku
 subset Positive of Int where * > -1;
 my Positive $i = 1;
 $i = -42;
@@ -766,7 +766,7 @@ CATCH { default { put .^name,': ', .Str } }
 
 Subsets 可用于签名，例如通过键入下面的输出：
 
-```perl6
+```raku
 subset Foo of List where (Int,Str);
 sub a($a, $b, --> Foo) { $a, $b }
 # Only a List with the first element being an Int and the second a Str will pass the type check. 
@@ -776,7 +776,7 @@ a("foo", 1);  # fails
 
 Subsets 可以是匿名的，允许在需要 subset 的情况下进行内联放置，但名字既不需要也不值得。
 
-```perl6
+```raku
 my enum E1 <A B>;
 my enum E2 <C D>;
 sub g(@a where { .all ~~ subset::where E1|E2 } ) {
@@ -786,9 +786,9 @@ g([A, C]);
 # OUTPUT: «[A C]» 
 ```
 
-Subsets 可用于动态检查类型，这可以与 link:https://docs.perl6.org/language/modules#require[require] 结合使用。
+Subsets 可用于动态检查类型，这可以与 link:https://docs.raku.org/language/modules#require[require] 结合使用。
 
-```perl6
+```raku
 require ::('YourModule');
 subset C where ::('YourModule::C');
 ```

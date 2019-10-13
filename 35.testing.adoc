@@ -2,17 +2,17 @@
 
 测试代码是软件开发不可或缺的一部分。测试提供代码行为的自动，可重复的验证，并确保您的代码按预期工作。
 
-在 Perl 6 中，link:https://docs.perl6.org/type/Test[Test] 模块提供了一个测试框架，也被 Perl 6 的官方 spectest 套件使用。
+在 Raku 中，link:https://docs.raku.org/type/Test[Test] 模块提供了一个测试框架，也被 Raku 的官方 spectest 套件使用。
 
 测试函数发出符合 link:https://testanything.org/[Test Anything Protocol] 的输出。通常，它们用于 sink 上下文中：
 
-```perl6
+```raku
 ok check-name($meta, :$relaxed-name), "name has a hyphen rather than '::'"
 ```
 
 但是不论测试成功与否，所有函数都会返回布尔值，如果测试失败，可以使用它来打印消息：
 
-```perl6
+```raku
 ok check-name($meta, :$relaxed-name), "name has a hyphen rather than '::'" \
   or diag "\nTo use hyphen in name, pass :relaxed-name to meta-ok\n";
 ```
@@ -23,7 +23,7 @@ ok check-name($meta, :$relaxed-name), "name has a hyphen rather than '::'" \
 
 典型的测试文件看起来像这样：
 
-```perl6
+```raku
 use v6.c;
 use Test;      # a Standard module included with Rakudo 
 use lib 'lib';
@@ -35,32 +35,32 @@ plan $num-tests;
 done-testing;  # optional with 'plan' 
 ```
 
-我们确保通过 `use v6.c` 编译指令使用 Perl 6，然后加载 `Test` 模块并指定库的位置。然后我们指定我们*计划*运行多少个测试（这样测试框架可以告诉我们运行的测试是否比我们预期的要多），并且在完成测试后，我们使用*完成测试*来告诉框架我们已经完成。
+我们确保通过 `use v6.c` 编译指令使用 Raku，然后加载 `Test` 模块并指定库的位置。然后我们指定我们*计划*运行多少个测试（这样测试框架可以告诉我们运行的测试是否比我们预期的要多），并且在完成测试后，我们使用*完成测试*来告诉框架我们已经完成。
 
 ==== 线程安全
 
 请注意，`Test` 模块中的例程*不是*线程安全的。这意味着您不应该同时尝试在多个线程中使用测试例程，因为 link:https://testanything.org/[TAP] 输出可能会出现乱序并且会使解释它的程序迷惑。
 
-目前没有计划使其线程安全。如果线程测试对您至关重要，您可能会发现一些合适的link:https://modules.perl6.org/search/?q=Test[生态系统模块]，代替 `Test` 来满足您的测试需求。
+目前没有计划使其线程安全。如果线程测试对您至关重要，您可能会发现一些合适的link:https://modules.raku.org/search/?q=Test[生态系统模块]，代替 `Test` 来满足您的测试需求。
 
 === 运行测试
 
 可以通过在命令行上指定测试文件名来单独运行测试：
 
 ```shell
-$ perl6 t/test-filename.t
+$ raku t/test-filename.t
 ```
 
 或者通过 Perl 5 中的 link:https://perldoc.perl.org/prove.html[prove] 命令，其中 `--exec` 用于指定运行测试的可执行文件：
 
 ```shell
-$ prove --exec perl6 -r t
+$ prove --exec raku -r t
 ```
 
 要在第一次失败时中止测试套件，请设置 `PERL6_TEST_DIE_ON_FAIL` 环境变量：
 
 ```shell
-$ PERL6_TEST_DIE_ON_FAIL=1 perl6 t/test-filename.t
+$ PERL6_TEST_DIE_ON_FAIL=1 raku t/test-filename.t
 ```
 
 可以在测试文件中使用相同的变量。在加载 `Test` 模块之前设置它：
@@ -73,65 +73,65 @@ use Test;
 
 === 测试计划
 
-测试计划用 link:https://docs.perl6.org/type/Test#plan[`plan`] 声明将要完成的计划数量，或者可能会跳过的计划数量。如果没有声明计划，link:https://docs.perl6.org/type/Test#done-testing[`done-testing`] 则用于声明测试结束。
+测试计划用 link:https://docs.raku.org/type/Test#plan[`plan`] 声明将要完成的计划数量，或者可能会跳过的计划数量。如果没有声明计划，link:https://docs.raku.org/type/Test#done-testing[`done-testing`] 则用于声明测试结束。
 
 === 测试返回值
 
 `Test` 模块导出各种函数，用于检查给定表达式的返回值并生成标准化测试输出。
 
-在实践中，表达式通常是对要进行单元测试的函数或方法的调用。link:https://docs.perl6.org/type/Test#ok[`ok`] 和 link:https://docs.perl6.org/type/Test#nok[`nok`] 将匹配 `True` 和 `False`。但是，在可能的情况下，最好使用下面的一个专门的比较测试函数，因为它们可以在比较失败时打印更有用的诊断输出。
+在实践中，表达式通常是对要进行单元测试的函数或方法的调用。link:https://docs.raku.org/type/Test#ok[`ok`] 和 link:https://docs.raku.org/type/Test#nok[`nok`] 将匹配 `True` 和 `False`。但是，在可能的情况下，最好使用下面的一个专门的比较测试函数，因为它们可以在比较失败时打印更有用的诊断输出。
 
 ==== 通过字符串比较
 
-link:https://docs.perl6.org/type/Test#is[`is`] 和 link:https://docs.perl6.org/type/Test#isnt[`nok`] 使用适当的运算符测试相等性，具体取决于它所处理的对象（或类）。
+link:https://docs.raku.org/type/Test#is[`is`] 和 link:https://docs.raku.org/type/Test#isnt[`nok`] 使用适当的运算符测试相等性，具体取决于它所处理的对象（或类）。
 
 ==== 通过近似数字比较
 
-link:https://docs.perl6.org/type/Test#is-approx[`is-approx`] 比较具有一定精度的数字，可以是绝对的或相对的。它对于精度取决于内部表示的数值非常有用。
+link:https://docs.raku.org/type/Test#is-approx[`is-approx`] 比较具有一定精度的数字，可以是绝对的或相对的。它对于精度取决于内部表示的数值非常有用。
 
 ==== 通过结构比较
 
-也可以使用 link:https://docs.perl6.org/type/Test#is-deeply[`is-deeply`] 比较结构，这将检查所比较的对象的内部结构是否相同。
+也可以使用 link:https://docs.raku.org/type/Test#is-deeply[`is-deeply`] 比较结构，这将检查所比较的对象的内部结构是否相同。
 
 ==== 任意比较
 
-您可以使用 link:https://docs.perl6.org/type/Test#cmp-ok[`cmp-ok`] 进行任何类型的比较，它将您想要用于比较的函数或运算符作为参数。
+您可以使用 link:https://docs.raku.org/type/Test#cmp-ok[`cmp-ok`] 进行任何类型的比较，它将您想要用于比较的函数或运算符作为参数。
 
 ==== 通过对象类型比较
 
-link:https://docs.perl6.org/type/Test#isa-ok[`isa-ok`] 测试对象是否属于某种类型。
+link:https://docs.raku.org/type/Test#isa-ok[`isa-ok`] 测试对象是否属于某种类型。
 
 ==== 通过方法名比较
 
-link:https://docs.perl6.org/type/Test#can-ok[`can-ok`] 用于对象以检查它们是否具有该特定方法。
+link:https://docs.raku.org/type/Test#can-ok[`can-ok`] 用于对象以检查它们是否具有该特定方法。
 
 ==== 通过角色比较
 
 - does-ok($variable, $role, $description?)
 
-link:https://docs.perl6.org/type/Test#does-ok[`does-ok`] 检查给定变量是否可以执行某个link:https://docs.perl6.org/language/objects#Roles[角色]。
+link:https://docs.raku.org/type/Test#does-ok[`does-ok`] 检查给定变量是否可以执行某个link:https://docs.raku.org/language/objects#Roles[角色]。
 
 ==== 通过正则表达式比较
 
-link:https://docs.perl6.org/type/Test#like[`like`] 和 link:https://docs.perl6.org/type/Test#unlike[`unlike`] 使用正则表达式检查; 在第一种情况下，如果存在匹配则通过，在第二种情况下则不通过。
+link:https://docs.raku.org/type/Test#like[`like`] 和 link:https://docs.raku.org/type/Test#unlike[`unlike`] 使用正则表达式检查; 在第一种情况下，如果存在匹配则通过，在第二种情况下则不通过。
 
 === 测试模块
 
-用 link:https://docs.perl6.org/type/Test#use-ok[`use-ok`] 实验性地加载模块，如果加载失败则会失败。
+用 link:https://docs.raku.org/type/Test#use-ok[`use-ok`] 实验性地加载模块，如果加载失败则会失败。
 
 === 测试异常
 
-link:https://docs.perl6.org/type/Test#dies-ok[`dies-ok`] 和 link:https://docs.perl6.org/type/Test#lives-ok[`lives-ok`] 是相反的测试代码的方法; 第一个检查是它抛出异常，第二个检查它不抛出异常; link:https://docs.perl6.org/type/Test#throws-like[`throws-like`] 检查代码是否抛出了作为参数传递的特定异常; link:https://docs.perl6.org/type/Test#fails-like[`fails-like`] 同样，检查代码是否返回特定类型的 link:https://docs.perl6.org/type/Failure[Failure]。link:https://docs.perl6.org/type/Test#eval-dies-ok[`eval-dies-ok`] 和 link:https://docs.perl6.org/type/Test#eval-lives-ok[`eval-lives-ok`] 在测试之前计算的字符串上工作类似。
+link:https://docs.raku.org/type/Test#dies-ok[`dies-ok`] 和 link:https://docs.raku.org/type/Test#lives-ok[`lives-ok`] 是相反的测试代码的方法; 第一个检查是它抛出异常，第二个检查它不抛出异常; link:https://docs.raku.org/type/Test#throws-like[`throws-like`] 检查代码是否抛出了作为参数传递的特定异常; link:https://docs.raku.org/type/Test#fails-like[`fails-like`] 同样，检查代码是否返回特定类型的 link:https://docs.raku.org/type/Failure[Failure]。link:https://docs.raku.org/type/Test#eval-dies-ok[`eval-dies-ok`] 和 link:https://docs.raku.org/type/Test#eval-lives-ok[`eval-lives-ok`] 在测试之前计算的字符串上工作类似。
 
 === Grouping tests
 
-只有在所有子测试都是 `ok` 的时候, 这组子测试的结果才是 `ok` 的; 他们按使用 link:https://docs.perl6.org/type/Test#subtest[`subtest`] 分组。
+只有在所有子测试都是 `ok` 的时候, 这组子测试的结果才是 `ok` 的; 他们按使用 link:https://docs.raku.org/type/Test#subtest[`subtest`] 分组。
 
 === 跳过测试
 
-有时测试还没准备好运行，例如某个功能可能尚未实现，在这种情况下，测试可以标记为 link:https://docs.perl6.org/type/Test#todo[`todo`]。或者可能是某个特定功能仅适用于特定平台的情况 - 在这种情况下，可以在其他平台上 link:https://docs.perl6.org/type/Test#skip[`skip`] 这个测试; link:https://docs.perl6.org/type/Test#skip-rest[`skip-rest`] 将跳过剩余的测试，而不是跳过作为参数给出的特定数字的测试; link:https://docs.perl6.org/type/Test#bail-out[`bail-out`] 将简单地带着一条消息退出测试。
+有时测试还没准备好运行，例如某个功能可能尚未实现，在这种情况下，测试可以标记为 link:https://docs.raku.org/type/Test#todo[`todo`]。或者可能是某个特定功能仅适用于特定平台的情况 - 在这种情况下，可以在其他平台上 link:https://docs.raku.org/type/Test#skip[`skip`] 这个测试; link:https://docs.raku.org/type/Test#skip-rest[`skip-rest`] 将跳过剩余的测试，而不是跳过作为参数给出的特定数字的测试; link:https://docs.raku.org/type/Test#bail-out[`bail-out`] 将简单地带着一条消息退出测试。
 
 === 手动控制
 
-如果上面记录的便利功能不符合您的需要，您可以使用以下函数手动指导测试套输出; link:https://docs.perl6.org/type/Test#pass[`pass`] 将打印测试已经通过，link:https://docs.perl6.org/type/Test#diag[`diag`] 将打印（可能）信息性消息。
+如果上面记录的便利功能不符合您的需要，您可以使用以下函数手动指导测试套输出; link:https://docs.raku.org/type/Test#pass[`pass`] 将打印测试已经通过，link:https://docs.raku.org/type/Test#diag[`diag`] 将打印（可能）信息性消息。
 

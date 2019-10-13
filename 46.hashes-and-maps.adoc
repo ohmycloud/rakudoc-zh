@@ -1,16 +1,16 @@
 ## 关联角色和关联类
 
-link:https://docs.perl6.org/type/Associative[关联]角色是 Hash 和 Map 以及 link:https://docs.perl6.org/type/MixHash[MixHash] 等其他类的基础。它定义了将在关联类中使用的两种类型; 默认情况下，您可以使用任何内容（字面意思，因为任何 link:https://docs.perl6.org/type/Any[Any] 子类的类都可以使用）link:https://docs.perl6.org/language/hashmap#Non-string_keys_%28object_hash%29%2C_although_it_will_be_coerced_to_a_string%2C_and_any_object_as_value._You_can_access_these_types_using_the_C%3Cof[作为键]和 `keyof` 方法。
+link:https://docs.raku.org/type/Associative[关联]角色是 Hash 和 Map 以及 link:https://docs.raku.org/type/MixHash[MixHash] 等其他类的基础。它定义了将在关联类中使用的两种类型; 默认情况下，您可以使用任何内容（字面意思，因为任何 link:https://docs.raku.org/type/Any[Any] 子类的类都可以使用）link:https://docs.raku.org/language/hashmap#Non-string_keys_%28object_hash%29%2C_although_it_will_be_coerced_to_a_string%2C_and_any_object_as_value._You_can_access_these_types_using_the_C%3Cof[作为键]和 `keyof` 方法。
 
 默认情况下，使用 `%` sigil 声明的任何对象都将获得 Associative 角色，默认情况下将表现为散列，但此角色仅提供上述两种方法，以及默认的 Hash 行为。
 
-```perl6
+```raku
 say (%).^name ; # 输出 Hash
 ```
 
-相反，如果未混入 `Associative` 角色，则不能使用 `%` sigil，但由于此角色没有任何关联属性，因此你必须重新定义link:https://docs.perl6.org/language/operators#postcircumfix_%7B_%7D[散列下标操作符]的行为。为此，你必须重写几个函数：
+相反，如果未混入 `Associative` 角色，则不能使用 `%` sigil，但由于此角色没有任何关联属性，因此你必须重新定义link:https://docs.raku.org/language/operators#postcircumfix_%7B_%7D[散列下标操作符]的行为。为此，你必须重写几个函数：
 
-```perl6
+```raku
 class Logger does Associative[Cool,DateTime] {
     has %.store;
  
@@ -60,20 +60,20 @@ say %logger<2018-04-22>:exists;  # OUTPUT: «False»
 
 ## 可变哈希和不可变映射
 
-Hash 是从键到值的可变映射（在其他编程语言中称为字典，哈希表或映射）。这些值都是标量容器，这意味着你可以给它们赋值。另一方面，link:https://docs.perl6.org/type/Map[Map]s是不可变的。键与值配对后，此配对无法更改。
+Hash 是从键到值的可变映射（在其他编程语言中称为字典，哈希表或映射）。这些值都是标量容器，这意味着你可以给它们赋值。另一方面，link:https://docs.raku.org/type/Map[Map]s是不可变的。键与值配对后，此配对无法更改。
 
 Maps 和 hashes 通常存储在百分号 `%` 变量中，用于表示它们是关联的(Associative)。
 
 通过 `{}` postcircumfix 运算符使用键访问 Hash 和 map 元素：
 
-```perl6
+```raku
 say %*ENV{'HOME', 'PATH'}.perl;
 # OUTPUT: «("/home/camelia", "/usr/bin:/sbin:/bin")␤» 
 ```
 
-一般的link:https://docs.perl6.org/language/subscripts[下标]规则适用于提供字符串字面量列表的快捷方式，包括插值和不插值。
+一般的link:https://docs.raku.org/language/subscripts[下标]规则适用于提供字符串字面量列表的快捷方式，包括插值和不插值。
 
-```perl6
+```raku
 my %h = oranges => 'round', bananas => 'bendy';
 say %h<oranges bananas>;
 # OUTPUT: «(round bendy)␤» 
@@ -85,60 +85,60 @@ say %h«oranges "$fruit"»;
 
 您只需分配一个未使用的键即可添加新对：
 
-```perl6
+```raku
 my %h;
 %h{'new key'} = 'new value';
 ```
 
 ## Hash 赋值
 
-将一个元素列表赋值给一个哈希变量首先清空该变量，然后迭代右侧的元素。如果元素是 link:https://docs.perl6.org/type/Pair[Pair]，则将其键作为新的哈希键，并将其值作为该键的新哈希值。否则，该值被强制转换为 link:https://docs.perl6.org/type/Str[Str] 并用作散列键，而列表的下一个元素则被视为相应的值。
+将一个元素列表赋值给一个哈希变量首先清空该变量，然后迭代右侧的元素。如果元素是 link:https://docs.raku.org/type/Pair[Pair]，则将其键作为新的哈希键，并将其值作为该键的新哈希值。否则，该值被强制转换为 link:https://docs.raku.org/type/Str[Str] 并用作散列键，而列表的下一个元素则被视为相应的值。
 
-```perl6
+```raku
 my %h = 'a', 'b', c => 'd', 'e', 'f';
 ```
 
 等价于
 
-```perl6
+```raku
 my %h = a => 'b', c => 'd', e => 'f';
 ```
 
 或者
 
-```perl6
+```raku
 my %h = <a b c d e f>;
 ```
 
 甚至
 
-```perl6
+```raku
 my %h = %( a => 'b', c => 'd', e => 'f')
 ```
 
 或者
 
-```perl6
+```raku
 my $h = { a => 'b', c => 'd', e => 'f'};
 ```
 
 请注意，花括号仅在我们未将其分配给 %-sigilled 变量的情况下使用;如果我们将它用于 %-sigilled 变量，我们将遇到 `Potential difficulties:␤ Useless use of hash composer on right side of hash assignment; did you mean := instead?` 的错误。但是，正如此错误所示，只要我们使用绑定，我们就可以使用花括号：
 
-```perl6
+```raku
 my %h := { a => 'b', c => 'd', e => 'f'};
 say %h; # OUTPUT: «{a => b, c => d, e => f}␤» 
 ```
 
 嵌套哈希也可以使用相同的语法定义：
 
-```perl6
+```raku
 my %h =  e => f => 'g';
 say %h<e><f>; # OUTPUT: «g␤» 
 ```
 
-但是，你在这里定义的是一个指向 link:https://docs.perl6.org/type/Pair[Pair] 的键，如果你想要的话，这很好，如果你的嵌套哈希有一个键。但是 `%h <e>` 将指向 `Pair` 会产生这些后果：
+但是，你在这里定义的是一个指向 link:https://docs.raku.org/type/Pair[Pair] 的键，如果你想要的话，这很好，如果你的嵌套哈希有一个键。但是 `%h <e>` 将指向 `Pair` 会产生这些后果：
 
-```perl6
+```raku
 my %h =  e => f => 'g';
 %h<e><q> = 'k';
 # OUTPUT: «(exit code 1) Pair␤Cannot modify an immutable Str (Nil)␤  in block <unit>»
@@ -146,15 +146,15 @@ my %h =  e => f => 'g';
 
 但是，这将有效地定义嵌套哈希：
 
-```perl6
+```raku
 my %h =  e => { f => 'g'};
 say %h<e>.^name;  # OUTPUT: «Hash␤» 
 say %h<e><f>;     # OUTPUT: «g␤» 
 ```
 
-如果遇到期望值的 link:https://docs.perl6.org/type/Pair[Pair]，则将其用作哈希值：
+如果遇到期望值的 link:https://docs.raku.org/type/Pair[Pair]，则将其用作哈希值：
 
-```perl6
+```raku
 my %h = 'a', 'b' => 'c';
 say %h<a>.^name;            # OUTPUT: «Pair␤» 
 say %h<a>.key;              # OUTPUT: «b␤» 
@@ -162,22 +162,22 @@ say %h<a>.key;              # OUTPUT: «b␤»
 
 如果同一个键出现多次，则与其最后一次出现的值存储在哈希中：
 
-```perl6
+```raku
 my %h = a => 1, a => 2;
 say %h<a>;                  # OUTPUT: «2␤» 
 ```
 
 要将哈希值分配给不具有％sigil的变量，可以使用％（）哈希构造函数：
 
-```perl6
+```raku
 my $h = %( a => 1, b => 2 );
 say $h.^name;               # OUTPUT: «Hash␤» 
 say $h<a>;                  # OUTPUT: «1␤» 
 ```
 
-如果一个或多个值引用主题变量$ _，则赋值的右侧将被解释为link:https://docs.perl6.org/type/Block[块]，而不是哈希：
+如果一个或多个值引用主题变量$ _，则赋值的右侧将被解释为link:https://docs.raku.org/type/Block[块]，而不是哈希：
 
-```perl6
+```raku
 my @people = [
     %( id => "1A", firstName => "Andy", lastName => "Adams" ),
     %( id => "2B", firstName => "Beth", lastName => "Burke" ),
@@ -208,7 +208,7 @@ my @names = map {
 
 您可以使用切片同时分配多个键。
 
-```perl6
+```raku
 my %h; %h<a b c> = 2 xx *; %h.perl.say;  # OUTPUT: «{:a(2), :b(2), :c(2)}␤» 
 my %h; %h<a b c> = ^3;     %h.perl.say;  # OUTPUT: «{:a(0), :b(1), :c(2)}␤» 
 ```
@@ -217,13 +217,13 @@ my %h; %h<a b c> = ^3;     %h.perl.say;  # OUTPUT: «{:a(0), :b(1), :c(2)}␤»
 
 默认情况下，{} 中的键被强制为字符串。要使用非字符串键组合散列，请使用冒号前缀：
 
-```perl6
+```raku
 my $when = :{ (now) => "Instant", (DateTime.now) => "DateTime" };
 ```
 
 请注意，将对象作为键，您通常无法使用<...>构造进行键查找，因为它只创建字符串和同形异义。请改用{...}：
 
-```perl6
+```raku
 :{  0  => 42 }<0>.say;   # Int    as key, IntStr in lookup; OUTPUT: «(Any)␤» 
 :{  0  => 42 }{0}.say;   # Int    as key, Int    in lookup; OUTPUT: «42␤» 
 :{ '0' => 42 }<0>.say;   # Str    as key, IntStr in lookup; OUTPUT: «(Any)␤» 
@@ -233,7 +233,7 @@ my $when = :{ (now) => "Instant", (DateTime.now) => "DateTime" };
 
 注意：Rakudo实现目前错误地对{}应用与{}相同的规则，并且可以在某些情况下构造块。为避免这种情况，您可以直接实例化参数化哈希。还支持％-sigiled变量的参数化：
 
-```perl6
+```raku
 my Num %foo1      = "0" => 0e0; # Str keys and Num values 
 my     %foo2{Int} =  0  => "x"; # Int keys and Any values 
 my Num %foo3{Int} =  0  => 0e0; # Int keys and Num values 
@@ -242,7 +242,7 @@ Hash[Num,Int].new: 0, 0e0;      # Int keys and Num values
 
 现在，如果您要定义一个哈希来保存您正在使用的对象作为您提供给哈希用作键的确切对象的键，那么对象哈希就是您要查找的内容。
 
-```perl6
+```raku
 my %intervals{Instant};
 my $first-instant = now;
 %intervals{ $first-instant } = "Our first milestone.";
@@ -260,7 +260,7 @@ for %intervals.sort -> (:$key, :$value) {
 
 对象哈希的整个要点是将密钥保持为对象本身。当前对象散列利用对象的WHICH方法，该方法返回每个可变对象的唯一标识符。这是对象标识运算符（===）所依赖的基石。顺序和容器在这里真的很重要，因为.keys的顺序是未定义的，一个匿名列表永远不会===到另一个。
 
-```perl6
+```raku
 my %intervals{Instant};
 my $first-instant = now;
 %intervals{ $first-instant } = "Our first milestone.";
@@ -277,7 +277,7 @@ say $first-instant === %intervals.keys.sort[0];                 # OUTPUT: «True
 
 如果您想接受哈希中的任何对象，可以使用Any！
 
-```perl6
+```raku
 my %h{Any};
 %h{(now)} = "This is an Instant";
 %h{(DateTime.now)} = "This is a DateTime, which is not an Instant";
@@ -286,7 +286,7 @@ my %h{Any};
 
 有一种更简洁的语法，它使用绑定。
 
-```perl6
+```raku
 my %h := :{ (now) => "Instant", (DateTime.now) => "DateTime" };
 ```
 
@@ -296,7 +296,7 @@ my %h := :{ (now) => "Instant", (DateTime.now) => "DateTime" };
 
 在声明符和名称之间放置一个类型对象，以约束哈希值的所有值的类型。使用具有where子句的约束的子集。
 
-```perl6
+```raku
 subset Powerful of Int where * > 9000;
 my Powerful %h{Str};
 put %h<Goku>   = 9001;
@@ -314,7 +314,7 @@ try {
 
 处理散列中元素的常用习惯是循环键和值，例如，
 
-```perl6
+```raku
 my %vowels = 'a' => 1, 'e' => 2, 'i' => 3, 'o' => 4, 'u' => 5;
 for %vowels.kv -> $vowel, $index {
   "$vowel: $index".say;
@@ -335,7 +335,7 @@ i: 3
 
 请注意，不能依赖打印的键和值的顺序;对于同一程序的不同运行，散列的元素并不总是以相同的方式存储在内存中。事实上，从版本2018.05开始，订单在每次调用时都保证不同。有时人们希望处理排序的元素，例如哈希的键。如果有人希望按字母顺序打印元音列表，那么就会写一个
 
-```perl6
+```raku
 my %vowels = 'a' => 1, 'e' => 2, 'i' => 3, 'o' => 4, 'u' => 5;
 for %vowels.sort(*.key)>>.kv -> ($vowel, $index) {
   "$vowel: $index".say;
@@ -356,7 +356,7 @@ u: 5
 
 另一种解决方案是展平结果列表。然后可以使用与.kv相同的方式访问键/值对：
 
-```perl6
+```raku
 my %vowels = 'a' => 1, 'e' => 2, 'i' => 3, 'o' => 4, 'u' => 5;
 for %vowels.sort(*.key)>>.kv.flat -> $vowel, $index {
   "$vowel: $index".say;
@@ -369,7 +369,7 @@ for %vowels.sort(*.key)>>.kv.flat -> $vowel, $index {
 
 有时您可能希望在迭代时修改哈希值。
 
-```perl6
+```raku
 my %answers = illuminatus => 23, hitchhikers => 42;
 # OUTPUT: «hitchhikers => 42, illuminatus => 23» 
 for %answers.values -> $v { $v += 10 }; # Fails 
@@ -379,14 +379,14 @@ CATCH { default { put .^name, ': ', .Str } };
 
 传统上，这是通过发送密钥和值来完成的，如下所示。
 
-```perl6
+```raku
 my %answers = illuminatus => 23, hitchhikers => 42;
 for %answers.kv -> $k,$v { %answers{$k} = $v + 10 };
 ```
 
 但是，可以利用块的签名来指定您希望对值进行读写访问。
 
-```perl6
+```raku
 my %answers = illuminatus => 23, hitchhikers => 42;
 for %answers.values -> $v is rw { $v += 10 };
 ```

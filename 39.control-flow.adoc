@@ -2,49 +2,49 @@
 
 === 语句
 
-Perl 6 程序由一个或多个语句组成。简单语句由分号分隔。以下程序将打印 “Hello”，然后在下一行打印“World”。
+Raku 程序由一个或多个语句组成。简单语句由分号分隔。以下程序将打印 “Hello”，然后在下一行打印“World”。
 
-```perl6
+```raku
 say "Hello";
 say "World";
 ```
 
 在语句中出现空白的大多数地方，且在分号之前，语句可能会分成许多行。此外，多个语句可能出现在同一行。这会很尴尬，但上面的内容也可以写成：
 
-```perl6
+```raku
 say
 "Hello"; say "World";
 ```
 
 === 块儿
 
-与许多语言一样，Perl 6 使用 `{` 和 `}` 将 `blocks`括起来以将多个语句转换为单个语句。可以省略块中最后一个语句和闭合 `}`之间的分号。
+与许多语言一样，Raku 使用 `{` 和 `}` 将 `blocks`括起来以将多个语句转换为单个语句。可以省略块中最后一个语句和闭合 `}`之间的分号。
 
-```perl6
+```raku
 { say "Hello"; say "World" }
 ```
 
 当块单独作为一个语句存在时，它将在前一个语句完成后立即进入，并且其中的语句将被执行。
 
-```perl6
+```raku
 say 1;                    # OUTPUT: «1» 
 { say 2; say 3 };         # OUTPUT: «23» 
 say 4;                    # OUTPUT: «4» 
 ```
 
-除非它作为一个语句单独存在，否则一个块只会创建一个闭包。内部的语句不会立即执行。闭包是另一个主题，如何使用它们在link:https://docs.perl6.org/language/functions#Blocks_and_lambdas[别处]有解释。现在，了解块何时运行以及何时不运行是非常重要的：
+除非它作为一个语句单独存在，否则一个块只会创建一个闭包。内部的语句不会立即执行。闭包是另一个主题，如何使用它们在link:https://docs.raku.org/language/functions#Blocks_and_lambdas[别处]有解释。现在，了解块何时运行以及何时不运行是非常重要的：
 
-```perl6
+```raku
 say "We get here"; { say "then here." }; { say "not here"; 0; } or die;
 ```
 
 在上面的示例中，在运行第一个语句之后，第一个块独立作为第二个语句，因此我们运行里面的语句。第二个块不是单独作为一个语句，所以相反，它创建了一个 `Block` 类型的对象，但不运行它。对象实例通常被认为是 true，因此代码不会死掉，即使该块被计算为 0，它是否被执行。该示例没有说明如何处理`Block`对象，因此它会被丢弃。
 
-下面介绍的大多数流控制结构只是告诉 Perl 6 何时，如何以及多少次进入像第二个块那样的块。
+下面介绍的大多数流控制结构只是告诉 Raku 何时，如何以及多少次进入像第二个块那样的块。
 
 在我们深入这些之前，关于语法的一个重要的注意事项：如果在通常放置分号的结束大括号之后的行上没有任何内容（或者只有注释），则不需要分号：
 
-```perl6
+```raku
 # All three of these lines can appear as a group, as is, in a program 
 { 42.say }                # OUTPUT: «42» 
 { 43.say }                # OUTPUT: «43» 
@@ -53,14 +53,14 @@ say "We get here"; { say "then here." }; { say "not here"; 0; } or die;
 
 ...但是:
 
-```perl6
+```raku
 { 42.say }  { 43.say }    # Syntax error 
 { 42.say; } { 43.say }    # Also a syntax error, of course 
 ```
 
 因此，在换行编辑器中退格时要小心：
 
-```perl6
+```raku
 { "Without semicolons line-wrapping can be a bit treacherous.".say } \
 { 43.say } # Syntax error 
 ```
@@ -69,7 +69,7 @@ say "We get here"; { say "then here." }; { say "not here"; 0; } or die;
 
 对于任何顶级表达式，类主体的行为类似于简单的块;  这同样适用于角色和其他包，如语法（实际上是类）或模块。
 
-```perl6
+```raku
 class C {
     say "I live";
     die "I will never live!"
@@ -82,13 +82,13 @@ my $c = C.new;                              │
 
 === Phasers
 
-块可能有*phasers*：即将他们的执行分解成特别阶段运行阶段的特殊标记块。有关详细信息，请参阅页面link:https://docs.perl6.org/language/phasers[phasers]。
+块可能有*phasers*：即将他们的执行分解成特别阶段运行阶段的特殊标记块。有关详细信息，请参阅页面link:https://docs.raku.org/language/phasers[phasers]。
 
 === do
 
 块不能是独立的语句, 运行这样一个块的最简单方法是在它前面写上一个 `do`：
 
-```perl6
+```raku
 # This dies half of the time 
 do { say "Heads I win, tails I die."; Bool.pick } or die; say "I win.";
 ```
@@ -97,13 +97,13 @@ do { say "Heads I win, tails I die."; Bool.pick } or die; say "I win.";
 
 整个 `do {...}` 计算为块儿的最终值。当需要该值时，将运行该块以计算表达式的剩余部分。所以：
 
-```perl6
+```raku
 False and do { 42.say };
 ```
 
 ...不会打印 42。但是，每次计算包含它的表达式时，只会计算一次：
 
-```perl6
+```raku
 # This says "(..1 ..2 ..3)" not "(..1 ...2 ....3)" 
 my $f = "."; say do { $f ~= "." } X~ 1, 2, 3;
 ```
@@ -114,7 +114,7 @@ my $f = "."; say do { $f ~= "." } X~ 1, 2, 3;
 
 `do` 也可以用在一个裸语句上（没有花括号）但这主要是为了避免需要用圆括号扩住语句的语法，如果它是表达式中的最后一个：
 
-```perl6
+```raku
 3, do if 1 { 2 }  ; # OUTPUT: «(3, 2)» 
 3,   (if 1 { 2 }) ; # OUTPUT: «(3, 2)» 
 3,    if 1 { 2 }  ; # Syntax error 
@@ -124,7 +124,7 @@ my $f = "."; say do { $f ~= "." } X~ 1, 2, 3;
 
 **异步**运行块的最简单方法是在它之前写上一个 `start`：
 
-```perl6
+```raku
 start { sleep 1; say "done" }
 say "working";
 # working, done 
@@ -132,7 +132,7 @@ say "working";
 
 请注意，您需要在 `start` 和块儿之间留一个空格。在上面的示例中，`start` 块处于 sink 上下文中，因为它未赋值给变量。从版本 6.d 开始，这种块儿附加了一个异常处理程序：
 
-```perl6
+```raku
 start { die "We're dead"; }
 say "working";
 sleep 10;
@@ -142,7 +142,7 @@ sleep 10;
 
 如果你对块儿的结果不感兴趣, `start {...}` 会立即返回一个可被安全忽略的 `Promise`。如果你对块儿的最终值**感**兴趣，你可以调用返回的 promise 上的 `.result` 方法。所以：
 
-```perl6
+```raku
 my $promise = start { sleep 10; 42 }
 # ... do other stuff 
 say "The result is $promise.result()";
@@ -156,7 +156,7 @@ say "The result is $promise.result()";
 
 要有条件地运行代码块，请使用 `if` 后跟条件。条件，表达式，将在 `if` 完成之前的语句之后立即进行计算。只有在条件被强转为 `Bool` 为真时, 才会计算附加到条件的块。与某些语言不同，条件不必用圆括号括起来，而块周围的 `{` 和 `}` 是必需的：
 
-```perl6
+```raku
 if 1 { "1 is true".say }  ; # says "1 is true" 
 if 1   "1 is true".say    ; # syntax error, missing block 
 if 0 { "0 is true".say }  ; # does not say anything, because 0 is false 
@@ -165,7 +165,7 @@ if 42.say and 0 { 43.say }; # says "42" but does not say "43"
 
 还有一种“语句修饰符”的形式的 `if`。在这种情况下，if 和 then 条件在您想要有条件地运行的代码之后。请注意，仍然始终首先计算条件：
 
-```perl6
+```raku
 43.say if 42.say and 0;     # says "42" but does not say "43" 
 43.say if 42.say and 1;     # says "42" and then says "43" 
 say "It is easier to read code when 'if's are kept on left of screen"
@@ -175,9 +175,9 @@ say "It is easier to read code when 'if's are kept on left of screen"
 
 语句修饰符形式最好谨慎使用。
 
-`if` 语句本身要么 link:https://docs.perl6.org/type/Slip[slip]我们一个空列表，如果它不运行块，否则就会返回该块产生的值：
+`if` 语句本身要么 link:https://docs.raku.org/type/Slip[slip]我们一个空列表，如果它不运行块，否则就会返回该块产生的值：
 
-```perl6
+```raku
 my $d = 0; say (1, (if 0 { $d += 42; 2; }), 3, $d); # says "(1 3 0)" 
 my $c = 0; say (1, (if 1 { $c += 42; 2; }), 3, $c); # says "(1 2 3 42)" 
 say (1, (if 1 { 2, 2 }), 3);         # does not slip, says "(1 (2 2) 3)" 
@@ -185,7 +185,7 @@ say (1, (if 1 { 2, 2 }), 3);         # does not slip, says "(1 (2 2) 3)"
 
 对于语句修饰符，是一样的，除非你有语句的值而不是块：
 
-```perl6
+```raku
 say (1, (42 if True) , 2); # says "(1 42 2)" 
 say (1, (42 if False), 2); # says "(1 2)" 
 say (1,  42 if False , 2); # says "(1 42)" because "if False, 2" is true 
@@ -193,7 +193,7 @@ say (1,  42 if False , 2); # says "(1 42)" because "if False, 2" is true
 
 `if` 默认不改变主题变量（`$_`）。为了访问条件表达式生成的值，您必须更强烈地要求它：
 
-```perl6
+```raku
 $_ = 1; if 42 { $_.say }                ; # says "1" 
 $_ = 1; if 42 -> $_ { $_.say }          ; # says "42" 
 $_ = 1; if 42 -> $a { $_.say;  $a.say } ; # says "1" then says "42" 
@@ -204,14 +204,14 @@ $_ = 1; if 42       { $_.say; $^a.say } ; # says "1" then says "42"
 
 组合条件可以通过用 `else` 跟在 `if` 条件后面来产生, 以提供一个备选块，当条件表达式为假来运行：
 
-```perl6
+```raku
 if 0 { say "no" } else { say "yes" }   ; # says "yes" 
 if 0 { say "no" } else{ say "yes" }    ; # says "yes", space is not required 
 ```
 
 `else` 不能用分号将条件语句分开，但作为一个特例，换行符是可行的。
 
-```perl6
+```raku
 if 0 { say "no" }; else { say "yes" }  ; # syntax error 
 if 0 { say "no" }
 else { say "yes" }                     ; # says "yes" 
@@ -219,7 +219,7 @@ else { say "yes" }                     ; # says "yes"
 
 使用 `elsif`, 额外的条件可以被夹在 `if` 和 `else` 之间。只有在前面的所有条件都为假的情况下才会计算额外条件，并且只运行第一个真实条件旁边的块。如果你愿意，你可以以一个 `elsif` 而不是一个 `else` 结束。
 
-```perl6
+```raku
 if 0 { say "no" } elsif False { say "NO" } else { say "yes" } # says "yes" 
 if 0 { say "no" } elsif True { say "YES" } else { say "yes" } # says "YES" 
  
@@ -233,13 +233,13 @@ if wrong() { say "no" } elsif right() { say "yes" } else { say "maybe" }
 
 您不能将语句修饰符形式用于 `else` 或 `elsif`：
 
-```perl6
+```raku
 42.say if 0 else { 43.say }            # syntax error 
 ```
 
 对于分号和换行, 所有相同的规则都适用，始终如一。
 
-```perl6
+```raku
 if 0 { say 0 }; elsif 1 { say 1 }  else { say "how?" } ; # syntax error 
 if 0 { say 0 }  elsif 1 { say 1 }; else { say "how?" } ; # syntax error 
 if 0 { say 0 }  elsif 1 { say 1 }  else { say "how?" } ; # says "1" 
@@ -254,9 +254,9 @@ elsif False { say "NO" }
 else        { say "yes" }                              ; # says "yes" 
 ```
 
-整个东西要么link:https://docs.perl6.org/type/Slip[slips]我们一个空列表（如果没有运行块）或者返回由运行的块产生的值：
+整个东西要么link:https://docs.raku.org/type/Slip[slips]我们一个空列表（如果没有运行块）或者返回由运行的块产生的值：
 
-```perl6
+```raku
 my $d = 0; say (1,
                 (if 0 { $d += 42; "two"; } elsif False { $d += 43; 2; }),
                 3, $d); # says "(1 3 0)" 
@@ -267,7 +267,7 @@ my $c = 0; say (1,
 
 可以在 `else` 中获取前一个表达式的值，它可以来自 `if` 或者最后一个 `elsif`,  如果存在的话：
 
-```perl6
+```raku
 $_ = 1; if 0     { } else -> $a { "$_ $a".say } ; # says "1 0" 
 $_ = 1; if False { } else -> $a { "$_ $a".say } ; # says "1 False" 
  
@@ -276,9 +276,9 @@ if False { } elsif 0 { } else -> $a { $a.say }  ; # says "0"
 
 ==== unless
 
-当你厌倦了输入 “if not (X)” 时，你可能会用 `unless` 来反转条件语句的意义。你不能使用把 `else` 或 `elsif` 与 `unless` 用在一起。因为那最终会让人感到困惑。除了这两个不同,  `unless` 的工作方式和 link:https://docs.perl6.org/language/control#if[if] 相同：
+当你厌倦了输入 “if not (X)” 时，你可能会用 `unless` 来反转条件语句的意义。你不能使用把 `else` 或 `elsif` 与 `unless` 用在一起。因为那最终会让人感到困惑。除了这两个不同,  `unless` 的工作方式和 link:https://docs.raku.org/language/control#if[if] 相同：
 
-```perl6
+```raku
 unless 1 { "1 is false".say }  ; # does not say anything, since 1 is true 
 unless 1   "1 is false".say    ; # syntax error, missing block 
 unless 0 { "0 is false".say }  ; # says "0 is false" 
@@ -298,13 +298,13 @@ my $d = 0; say (1, (unless 1 { $d += 42; 2; }), 3, $d); # says "(1 3 0)"
 
 `with` 语句像 `if` 一样，但它测试 definedness 而不是真假。此外，它在条件上主题化，很像 `given`：
 
-```perl6
+```raku
 with "abc".index("a") { .say }      # prints 0 
 ```
 
 代替 `elsif`，`orwith` 可用于链定义性测试：
 
-```perl6
+```raku
 # The below code says "Found a at 0" 
 my $s = "abc";
 with   $s.index("a") { say "Found a at $_" }
@@ -315,21 +315,21 @@ else                 { say "Didn't find a, b or c" }
 
 您可以混合基于 `if` 和基于 `with` 的子句。
 
-```perl6
+```raku
 # This says "Yes" 
 if 0 { say "No" } orwith Nil { say "No" } orwith 0 { say "Yes" };
 ```
 
 与 `unless` 一样，您可以使用 `without` 检查 undefinedness，但是您可能不会添加一个 `else` 子句：
 
-```perl6
+```raku
 my $answer = Any;
 without $answer { warn "Got: {$_.perl}" }
 ```
 
 也有 `with` 和 `without` 语句修饰符：
 
-```perl6
+```raku
 my $answer = (Any, True).roll;
 say 42 with $answer;
 warn "undefined answer" without $answer;
@@ -337,9 +337,9 @@ warn "undefined answer" without $answer;
 
 === when
 
-`when` 块类似于 `if` 块，它们中的一个或两个都可以用在外部块中; 他们也都有一个“语句修饰符”形式。但是如何处理外部块中的相同代码是有区别的：当 `when` 块执行时，控制被传递到封闭块并忽略后面的语句; 但是当 `if` 块执行时，后面的语句会被执行。link:https://docs.perl6.org/language/control#fn-1[[1\]]以下例子应说明 `if` 或 `when` 块的默认行为，假设没有特殊出口或其他副作用的语句被包括在 `if` 或 `when` 块中：
+`when` 块类似于 `if` 块，它们中的一个或两个都可以用在外部块中; 他们也都有一个“语句修饰符”形式。但是如何处理外部块中的相同代码是有区别的：当 `when` 块执行时，控制被传递到封闭块并忽略后面的语句; 但是当 `if` 块执行时，后面的语句会被执行。link:https://docs.raku.org/language/control#fn-1[[1\]]以下例子应说明 `if` 或 `when` 块的默认行为，假设没有特殊出口或其他副作用的语句被包括在 `if` 或 `when` 块中：
 
-```perl6
+```raku
 {
     if X {...} # if X is true in boolean context, block is executed 
     # following statements are executed regardless 
@@ -355,7 +355,7 @@ warn "undefined answer" without $answer;
 
 还有另外一个功能，`when` 有而 `if` 没有的：`when` 的布尔上下文测试默认为 `$_ ~~`，而 `if` 的不是。这会影响如何在没有 `$_` (在这种情况下是 `Any`。 并且 `Any` 智能匹配`True`：`Any ~~ True` 产生 `True`)值的 `when` 块儿中使用X。请看以下代码：
 
-```perl6
+```raku
 {
     my $a = 1;
     my $b = True;
@@ -368,14 +368,14 @@ warn "undefined answer" without $answer;
 
 最后，`when` 语句修饰符形式不影响在另一个块内部或外部执行以下语句：
 
-```perl6
+```raku
 say "foo" when X; # if X is true statement is executed 
                   # following statements are not affected 
 ```
 
 由于成功匹配将退出块，这段代码的行为：
 
-```perl6
+```raku
 $_ = True;
 my $a;
 {
@@ -386,7 +386,7 @@ say $a; # OUTPUT: «(Any)»
 
 解释了，因为在存储或处理任何值之前放弃了 `do` 块。但是，在这种情况下：
 
-```perl6
+```raku
 $_ = False;
 my $a;
 {
@@ -399,18 +399,18 @@ say $a; # OUTPUT: «False»
 
 === for
 
-`for` 循环迭代一个列表，每次迭代, 运行link:https://docs.perl6.org/type/Block[块]中的语句一次，。如果块接受参数，则列表元素作为参数提供。
+`for` 循环迭代一个列表，每次迭代, 运行link:https://docs.raku.org/type/Block[块]中的语句一次，。如果块接受参数，则列表元素作为参数提供。
 
-```perl6
+```raku
 my @foo = 1..3;
 for @foo { $_.print } # prints each value contained in @foo 
 for @foo { .print }   # same thing, because .print implies a $_ argument 
 for @foo { 42.print } # prints 42 as many times as @foo has elements 
 ```
 
-当然，尖括号语法或link:https://docs.perl6.org/language/variables#The_%5E_twigil[占位符]可用于命名参数。
+当然，尖括号语法或link:https://docs.raku.org/language/variables#The_%5E_twigil[占位符]可用于命名参数。
 
-```perl6
+```raku
 my @foo = 1..3;
 for @foo -> $item { print $item }
 for @foo { print $^item }            # same thing 
@@ -418,7 +418,7 @@ for @foo { print $^item }            # same thing
 
 可以声明多个参数，在这种情况下，迭代器在运行块之前根据需要从列表中获取尽可能多的元素。
 
-```perl6
+```raku
 my @foo = 1..3;
 for @foo.kv -> $idx, $val { say "$idx: $val" }
 my %hash = <a b c> Z=> 1,2,3;
@@ -428,7 +428,7 @@ for 1, 1.1, 2, 2.1 { say "$^x < $^y" }  # says "1 < 1.1" then says "2 < 2.1"
 
 尖块的参数可以具有默认值，允许处理缺少元素的列表。
 
-```perl6
+```raku
 my @list = 1,2,3,4;
 for @list -> $a, $b = 'N/A', $c = 'N/A' {
     say "$a $b $c"
@@ -441,7 +441,7 @@ If the postfix form of `for` is used a block is not required and the topic is se
 
 如果使用 `for` 的后缀形式，则不需要块，并且为语句列表设置主题。
 
-```perl6
+```raku
 say „I $_ butterflies!“ for <♥ ♥ ♥>;
 # OUTPUT«I ♥ butterflies!
 I ♥ butterflies!
@@ -450,20 +450,20 @@ I ♥ butterflies!»
 
 `for` 可以在惰性列表上使用 - 只在需要时从列表中取元素，因此要逐行读取文件，您可以使用：
 
-```perl6
+```raku
 for $*IN.lines -> $line { .say }
 ```
 
 迭代变量总是有词法的，因此您无需使用 `my` 来为它们提供适当的作用域。此外，它们是只读别名。如果您需要它们进行读写，请使用 `<->` 而不是 `->`。如果需要 `$_` 在 for 循环中进行读写，请明确执行此操作。
 
-```perl6
+```raku
 my @foo = 1..3;
 for @foo <-> $_ { $_++ }
 ```
 
 for 循环可以生成每个附加块运行产生的值的 `List`。要捕获这些值，请将 for 循环放在括号中或将它们赋值给数组：
 
-```perl6
+```raku
 (for 1, 2, 3 { $_ * 2 }).say;              # OUTPUT «(2 4 6)» 
 my @a = do for 1, 2, 3 { $_ * 2 }; @a.say; # OUTPUT «[2 4 6]» 
 my @b = (for 1, 2, 3 { $_ * 2 }); @b.say;  # OUTPUT: «[2 4 6]» 
@@ -471,9 +471,9 @@ my @b = (for 1, 2, 3 { $_ * 2 }); @b.say;  # OUTPUT: «[2 4 6]»
 
 === gather/take
 
-`gather` 是一个返回值的link:https://docs.perl6.org/type/Seq[序列]的语句或块前缀。该值来自在 `gather` 块的动态作用域的link:https://docs.perl6.org/type/Mu#routine_take[take]调用。
+`gather` 是一个返回值的link:https://docs.raku.org/type/Seq[序列]的语句或块前缀。该值来自在 `gather` 块的动态作用域的link:https://docs.raku.org/type/Mu#routine_take[take]调用。
 
-```perl6
+```raku
 my @a = gather {
     take 1;
     take 5;
@@ -482,11 +482,11 @@ my @a = gather {
 say join ', ', @a;          # OUTPUT: «1, 5, 42» 
 ```
 
-`gather/take` 可以懒惰地生成值，具体取决于上下文。如果要强制延迟计算 ，请使用link:https://docs.perl6.org/type/Iterable#method_lazy[lazy]子例程或方法。绑定到标量或无符号的容器也会导致懒惰。
+`gather/take` 可以懒惰地生成值，具体取决于上下文。如果要强制延迟计算 ，请使用link:https://docs.raku.org/type/Iterable#method_lazy[lazy]子例程或方法。绑定到标量或无符号的容器也会导致懒惰。
 
 例如：
 
-```perl6
+```raku
 my @vals = lazy gather {
     take 1;
     say "Produced a value";
@@ -505,7 +505,7 @@ say @vals[1];
 
 `gather/take` 是动态作用域的，因此您可以从 `gather` 里面的 subs 或方法内部调用 `take`：
 
-```perl6
+```raku
 sub weird(@elems, :$direction = 'forward') {
     my %direction = (
         forward  => sub { take $_ for @elems },
@@ -518,20 +518,20 @@ sub weird(@elems, :$direction = 'forward') {
 say weird(<a b c>, :direction<backward> );          # OUTPUT: «(c b a)» 
 ```
 
-如果值需要在调用方可变，请使用link:https://docs.perl6.org/type/Mu#routine_take-rw[take-rw]。
+如果值需要在调用方可变，请使用link:https://docs.raku.org/type/Mu#routine_take-rw[take-rw]。
 
 请注意，`gather/take` 也适用于哈希。返回值仍然是一个 `Seq` 但在以下示例中对散列的赋值使其成为散列。
 
-```perl6
+```raku
 my %h = gather { take "foo" => 1; take "bar" => 2};
 say %h;                                             # OUTPUT: «{bar => 2, foo => 1}» 
 ```
 
 === supply/emit
 
-将调用者发射到闭合的 link:https://docs.perl6.org/language/concurrency#index-entry-supply_%28on-demand%29[supply] 中：
+将调用者发射到闭合的 link:https://docs.raku.org/language/concurrency#index-entry-supply_%28on-demand%29[supply] 中：
 
-```perl6
+```raku
 my $supply = supply {
     emit $_ for "foo", 42, .5;
 }
@@ -547,9 +547,9 @@ $supply.tap: {
 
 === given 
 
-`given` 语句是 Perl 6 中的 topicalizing 关键字, 类似于 C 语言中的 `switch`。换句话说，`given` 设置后面跟着的块里面的 `$_`。单独用例的关键词是 `when` 和 `default`。通常的惯用法看起来像这样：
+`given` 语句是 Raku 中的 topicalizing 关键字, 类似于 C 语言中的 `switch`。换句话说，`given` 设置后面跟着的块里面的 `$_`。单独用例的关键词是 `when` 和 `default`。通常的惯用法看起来像这样：
 
-```perl6
+```raku
 my $var = (Any, 21, any <answer lie>).pick;
 given $var {
     when 21    { say $_ * 2    }
@@ -560,13 +560,13 @@ given $var {
 
 `given` 语句通常单独使用：
 
-```perl6
+```raku
 given 42 { .say; .Numeric; }
 ```
 
 这比下面的写法更容易理解：
 
-```perl6
+```raku
 { .say; .Numeric; }(42)
 ```
 
@@ -574,7 +574,7 @@ given 42 { .say; .Numeric; }
 
 当 `default` 语句后面的 sub-block 离开时, 包含 `default` 语句的块立马离开。好像跳过了块中的其余语句。
 
-```perl6
+```raku
 given 42 {
     "This says".say;
     $_ == 42 and ( default { "This says, too".say; 43; } );
@@ -587,7 +587,7 @@ given 42 {
 
 此外，`when` 语句针对提供的表达式和 `topic`（`$_`）进行 智能匹配，以便在指定匹配时可以检查值，正则表达式和类型。
 
-```perl6
+```raku
 for 42, 43, "foo", 44, "bar" {
     when Int { .say }
     when /:i ^Bar/ { .say }
@@ -602,7 +602,7 @@ Bar»
 
 在这种形式中，`given`/`when` 结构的行为很像一组 `if`/`elsif`/`else` 语句。注意 `when` 语句的顺序。下面的代码打印 `"Int"` 而不是 `42`。
 
-```perl6
+```raku
 given 42 {
     when Int { say "Int" }
     when 42  { say 42 }
@@ -613,7 +613,7 @@ given 42 {
 
 当 `when` 语句或 `default` 语句导致外部块返回时，嵌套 `when` 或 `default` 块不计为外部块，因此只要不打开新块，就可以嵌套这些语句并仍然在同一个“开关”(switch)中：
 
-```perl6
+```raku
 given 42 {
     when Int {
       when 42  { say 42 }
@@ -624,7 +624,7 @@ given 42 {
 # OUTPUT: «42» 
 ```
 
-`when` 语句可以智能匹配link:https://docs.perl6.org/language/syntax#Signature_literals[签名]。
+`when` 语句可以智能匹配link:https://docs.raku.org/language/syntax#Signature_literals[签名]。
 
 ==== proceed
 
@@ -634,7 +634,7 @@ given 42 {
 
 `proceed` 语句将立即离开 `when` 或 `default` 块, 跳过其余的语句，并在块后重新开始。这可以防止 `when` 或 `default` 退出外部块。
 
-```perl6
+```raku
 given * {
     default {
         proceed;
@@ -646,7 +646,7 @@ given * {
 
 这通常用于进入多个 `when` 块。`proceed` 在成功匹配后将恢复匹配，如下：
 
-```perl6
+```raku
 given 42 {
     when Int   { say "Int"; proceed }
     when 42    { say 42 }
@@ -661,7 +661,7 @@ given 42 {
 
 这不像 `C` 的 `switch` 语句，因为 `proceed` 不仅仅是进入直接跟随的块，它还会再次尝试匹配 `given` 值，请看以下代码：
 
-```perl6
+```raku
 given 42 {
     when Int { "Int".say; proceed }
     when 43  { 43.say }
@@ -676,7 +676,7 @@ given 42 {
 
 相反，`succeed` 关键字短路执行并在此时退出整个 `given` 块。它也可能需要参数来指定块的最终值。
 
-```perl6
+```raku
 given 42 {
     when Int {
         say "Int";
@@ -691,7 +691,7 @@ given 42 {
 
 如果您不在 `when` 或 `default` 块中，则尝试使用 `proceed` 或 `succeed` 是错误的。还要记住，`when` 语句修饰符形式不会导致任何块被丢弃，并且这样的语句中的任何 `succeed` 或 `proceed` 都应用于周围的子句，如果有的话：
 
-```perl6
+```raku
 given 42 {
     { say "This says" } when Int;
     "This says too".say;
@@ -707,7 +707,7 @@ given 42 {
 
 `given` 可以跟在语句后面, 以在给它所跟的语句中设置主题(topic)。
 
-```perl6
+```raku
 .say given "foo";
 # OUTPUT: «foo» 
  
@@ -724,7 +724,7 @@ printf "%s %02i.%02i.%i",
 
 `loop` 语句接收 3 个参数, 分别是初始化, 条件和增量, 它们在元括号中用 `;` 分隔。初始化执行一次，任何变量声明都将溢出到周围的块中。每次迭代执行一次条件并将其强转为 `Bool`，如果为 `False` 则循环停止。每次迭代执行一次增量器。
 
-```perl6
+```raku
 loop (my $i = 0; $i < 10; $i++) {
     say $i;
 }
@@ -732,13 +732,13 @@ loop (my $i = 0; $i < 10; $i++) {
 
 无限循环不需要圆括号。
 
-```perl6
+```raku
 loop { say 'forever' }
 ```
 
 `loop` 如果出现在列表中，则该语句可用于从附加块的每次运行结果中生成值：
 
-```perl6
+```raku
 (loop ( my $i = 0; $i++ < 3;) { $i * 2 }).say;               # OUTPUT: «(2 4 6)» 
 my @a = (loop ( my $j = 0; $j++ < 3;) { $j * 2 }); @a.say;   # OUTPUT: «[2 4 6]» 
 my @b = do loop ( my $k = 0; $k++ < 3;) { $k * 2 }; @b.say;  # same thing 
@@ -746,7 +746,7 @@ my @b = do loop ( my $k = 0; $k++ < 3;) { $k * 2 }; @b.say;  # same thing
 
 与 `for` 循环不同，不应该依赖于返回的值是否是惰性生成的。最好使用 `eager` 来保证循环的返回值真实运行：
 
-```perl6
+```raku
 sub heads-in-a-row {
     (eager loop (; 2.rand < 1;) { "heads".say })
 }
@@ -756,7 +756,7 @@ sub heads-in-a-row {
 
 只要条件为真，`while` 语句就会执行该块。所以
 
-```perl6
+```raku
 my $x = 1;
 while $x < 4 {
     print $x++;
@@ -768,7 +768,7 @@ print "\n";
 
 类似地，只要表达式为 false ，`until` 语句就会执行该块。
 
-```perl6
+```raku
 my $x = 1;
 until $x > 3 {
     print $x++;
@@ -782,7 +782,7 @@ print "\n";
 
 `while` 和 `until` 两者可作为语句修饰符。例如：
 
-```perl6
+```raku
 my $x = 42;
 $x-- while $x > 12
 ```
@@ -795,7 +795,7 @@ $x-- while $x > 12
 
 *至少*执行*一次*该块，如果条件允许，则重复执行该块。这与 `while`/`until` 的不同之处在于，即使条件出现在前面，也会在循环结束时计算条件。
 
-```perl6
+```raku
 my $x = -42;
 repeat {
     $x++;
@@ -842,15 +842,15 @@ $x.say; # OUTPUT: «21»
 
 === return
 
-sub `return` 将停止子程序或方法的执行，运行所有相关的link:https://docs.perl6.org/language/phasers#Block_phasers[phasers]，并提供给定的返回值给调用者。默认返回值是 `Nil`。如果提供了返回值link:https://docs.perl6.org/type/Signature#Constraining_return_types[类型约束]，则将检查它，除非返回值为 `Nil`。如果类型检查失败，则抛出异常 link:https://docs.perl6.org/type/X::TypeCheck::Return[X::TypeCheck::Return]。如果它通过了, 则发生控制异常，可以通过 link:https://docs.perl6.org/language/phasers#CONTROL[CONTROL] 捕获。
+sub `return` 将停止子程序或方法的执行，运行所有相关的link:https://docs.raku.org/language/phasers#Block_phasers[phasers]，并提供给定的返回值给调用者。默认返回值是 `Nil`。如果提供了返回值link:https://docs.raku.org/type/Signature#Constraining_return_types[类型约束]，则将检查它，除非返回值为 `Nil`。如果类型检查失败，则抛出异常 link:https://docs.raku.org/type/X::TypeCheck::Return[X::TypeCheck::Return]。如果它通过了, 则发生控制异常，可以通过 link:https://docs.raku.org/language/phasers#CONTROL[CONTROL] 捕获。
 
-无论嵌套有多深，块中的任何 `return` 都与该块外部词法作用域中的第一个 `Routine` 绑定。请注意，包的根目录中的 `return` 将在运行时失败。块中被惰性计算（例如在 `map` 里面）的`return` 可能发现外部词法例程在块执行时消失了。几乎在任何情况下 `last` 都是更好的选择。有关如何处理和生成返回值的更多信息，请查看link:https://docs.perl6.org/language/functions#Return_values[函数文档]。
+无论嵌套有多深，块中的任何 `return` 都与该块外部词法作用域中的第一个 `Routine` 绑定。请注意，包的根目录中的 `return` 将在运行时失败。块中被惰性计算（例如在 `map` 里面）的`return` 可能发现外部词法例程在块执行时消失了。几乎在任何情况下 `last` 都是更好的选择。有关如何处理和生成返回值的更多信息，请查看link:https://docs.raku.org/language/functions#Return_values[函数文档]。
 
 === return-rw
 
 sub `return` 将返回值，而不是容器。这些是不可变的，并且在尝试可变(mutated)时会导致运行时错误。
 
-```perl6
+```raku
 sub s(){ my $a = 41; return $a };
 say ++s();
 CATCH { default { say .^name, ': ', .Str } };
@@ -859,7 +859,7 @@ CATCH { default { say .^name, ': ', .Str } };
 
 要返回可变容器，请使用 `return-rw`。
 
-```perl6
+```raku
 sub s(){ my $a = 41; return-rw $a };
 say ++s();
 # OUTPUT: «42» 
@@ -869,9 +869,9 @@ say ++s();
 
 === fail
 
-在执行所有相关的 link:https://docs.perl6.org/language/phasers#Block_phasers[phasers]之后，离开例程并返回提供的 link:https://docs.perl6.org/type/Exception[Exception] 或包含在 link:https://docs.perl6.org/type/Failure[Failure] 里面的 `Str` 。如果调用者通过编译指令 `use fatal;` 激活致命异常，则抛出异常而不是作为 `Failure` 返回。
+在执行所有相关的 link:https://docs.raku.org/language/phasers#Block_phasers[phasers]之后，离开例程并返回提供的 link:https://docs.raku.org/type/Exception[Exception] 或包含在 link:https://docs.raku.org/type/Failure[Failure] 里面的 `Str` 。如果调用者通过编译指令 `use fatal;` 激活致命异常，则抛出异常而不是作为 `Failure` 返回。
 
-```perl6
+```raku
 sub f { fail "WELP!" };
 say f;
 CATCH { default { say .^name, ': ', .Str } }
@@ -882,7 +882,7 @@ CATCH { default { say .^name, ': ', .Str } }
 
 带有前缀 `once` 的块即使放在循环或递归例程中，也只执行一次。
 
-```perl6
+```raku
 my $guard = 3;
 loop {
     last if $guard-- <= 0;
@@ -894,7 +894,7 @@ manymanymany»
 
 这适用于包含代码对象的每个“克隆”，因此：
 
-```perl6
+```raku
 ({ once 42.say } xx 3).map: {$_(), $_()}; # says 42 thrice 
 ```
 
@@ -904,7 +904,7 @@ manymanymany»
 
 `quietly` 块将抑制其生成的所有警告。
 
-```perl6
+```raku
 quietly { warn 'kaput!' };
 warn 'still kaput!';
 # OUTPUT: «still kaput! [...]» 
@@ -912,7 +912,7 @@ warn 'still kaput!';
 
 从块内调用的任何例程生成的任何警告也将被抑制：
 
-```perl6
+```raku
 sub told-you { warn 'hey...' };
 quietly { told-you; warn 'kaput!' };
 warn 'Only telling you now!'
@@ -924,7 +924,7 @@ warn 'Only telling you now!'
 
 `while`，`until`，`loop` 和 `for` 循环都可以带一个标签，它可以用来标识 `next`，`last` 和 `redo` 。支持嵌套循环，例如：
 
-```perl6
+```raku
 OUTAHERE: while True  {
     for 1,2,3 -> $n {
         last OUTAHERE if $n == 2;
@@ -934,7 +934,7 @@ OUTAHERE: while True  {
 
 标签也可以在嵌套循环中用于命名每个循环，例如：
 
-```perl6
+```raku
 OUTAHERE:
 loop ( my $i = 1; True; $i++ ) {
   OUTFOR:
@@ -952,7 +952,7 @@ loop ( my $i = 1; True; $i++ ) {
 
 `next`  命令启动循环的下一次迭代。所以代码：
 
-```perl6
+```raku
 my @x = 1, 2, 3, 4, 5;
 for @x -> $x {
     next if $x == 3;
@@ -962,9 +962,9 @@ for @x -> $x {
 
 打印 “1245”。
 
-如果存在link:https://docs.perl6.org/language/phasers#NEXT[`NEXT` phaser]，它将在下一次迭代之前运行：
+如果存在link:https://docs.raku.org/language/phasers#NEXT[`NEXT` phaser]，它将在下一次迭代之前运行：
 
-```perl6
+```raku
 my Int $i = 0;
 while ($i < 10) {
   if ($i % 2 == 0) {
@@ -1000,9 +1000,9 @@ for @x -> $x {
 
 打印 “12”。
 
-如果存在link:https://docs.perl6.org/language/phasers#LAST[`LAST` phaser]，则在退出循环之前运行：
+如果存在link:https://docs.raku.org/language/phasers#LAST[`LAST` phaser]，则在退出循环之前运行：
 
-```perl6
+```raku
 my Int $i = 1;
 while ($i < 10) {
   if ($i % 5 == 0) {
@@ -1025,7 +1025,7 @@ while ($i < 10) {
 
 `redo` 命令重新启动循环块，而不再计算条件。
 
-```perl6
+```raku
 loop {
     my $x = prompt("Enter a number");
     redo unless $x ~~ /\d+/;
