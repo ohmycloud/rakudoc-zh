@@ -1,0 +1,197 @@
+== 语句前缀
+
+语句前缀写在语句之前, 改变语句的意思, 语句的输出或语句运行的时刻。因为他们拥有特定的行为, 他们有时候也对某些语句或语句组有特定作用。
+
+=== lazy
+
+作为语句前缀，`lazy` 会在任何语句（包括 `for` 循环）之前起作用，从而在实际需要将其赋值给变量时保存执行。
+
+```raku
+my $incremented = 0;
+my $var = lazy for <1 2 3 4> -> $d {
+    $incremented++
+};
+say $incremented; # OUTPUT: «0␤» 
+say eager $var;   # OUTPUT: «(0 1 2 3)␤» 
+say $incremented; # OUTPUT: «4␤» 
+```
+
+`$incremented` 变量仅递增，也就是说，仅当我们热切计算包含惰性循环变量 `$var` 时，才运行循环的内部部分。 渴望可以通过其他方式应用于变量，例如在其上调用 `.eager` 方法。
+
+```raku
+my @array = lazy { (^3).map( *² )  };
+say @array;       # OUTPUT: «[...]» 
+say @array.eager; # OUTPUT: «[0 1 4]␤» 
+```
+
+这个前缀也可以在 link:https://docs.raku.org/language/control#gather/take[gather] 前面使用，以使内部语句表现得懒惰。 通常，使用此方法会使返回值的任何语句集变得懒惰。
+
+=== eager
+
+`eager` 语句前缀将热切地返回后面的语句的结果，从而消除惰性并返回结果。
+
+```raku
+my $result := eager gather { for 1..3 { say "Hey"; take $_² } };
+say $result[0]; # OUTPUT: «Hey␤Hey␤Hey␤1␤» 
+```
+
+当与标量绑定时，`gather` link:https://docs.raku.org/syntax/gather%20take[隐式地是惰性的]。 但是，使用 `eager` 作为语句前缀，即使我们只是连续请求第一个，它也会在循环中运行所有三个迭代，如打印的 "Hey" 所示。
+
+=== hyper, race
+
+`hyper` 和 `race` 使用（可能是同时）线程在循环中运行不同的迭代：
+
+[source,raku]
+----
+my @a = hyper for ^100_000 { .is-prime }
+----
+
+此代码比裸代码快3倍左右。 但是这里有一些警告：
+
+- 循环内的操作应花费足够的时间使线程有意义。  
+- 循环内不应有对同一数据结构的读取或写入访问。 让循环产生一个结果，并分配它。  
+- 如果循环中存在I / O操作，则可能存在争用，因此请避免使用。  
+
+`hyper` 和 `race` 之间的主要区别是结果的顺序。 如果您需要按顺序生成循环结果，请使用 `hyper`；如果您不关心，请使用 `race`。
+
+=== quietly
+
+作为语句前缀，`quietly` 抑制其前面的语句产生的所有警告。
+
+[source,raku]
+----
+sub marine() {};
+quietly say ~&marine; # OUTPUT: «marine␤» 
+----
+
+在代码上调用 `.Str` link:https://docs.raku.org/type/Code#method_Str[会产生警告]。 在该语句前面加一个 `quietly` 只会产生输出，即例程的名称。
+
+=== try
+
+如果在语句前使用 `try`，它将包含其中产生的异常并将其存储在 `$!` 中。 变量，link:https://docs.raku.org/language/language/exceptions#try_blocks[就像在块前使用它一样]。
+
+[source,raku]
+----
+try [].pop;
+say $!; # OUTPUT: «Cannot pop from an empty Array␤..»
+----
+
+=== do
+
+`do` 可以用作语句前缀，以消除它们之前的语句的歧义； 例如，如果要分配 `for` 语句的结果，则需要使用此命令。 裸 `for` 将失败，但这将起作用：
+
+[source,raku]
+----
+my $counter = 0;
+my $result = do for ^5 { $counter++ };
+say $counter; # OUTPUT: «5␤» 
+say $result;  # OUTPUT: «(0 1 2 3 4)␤» 
+----
+
+在其他情况下，`do` 等效于用括号将语句括起来。 它可以用作（可能更多）简单语法的替代方法。
+
+=== sink
+
+link:https://docs.raku.org/routine/sink[与例程一样]，`sink` 将运行该语句以丢弃结果。 如果您想对其产生的副作用运行某些语句，请使用它。
+
+[source,raku]
+----
+my $counter = 0;
+my $result = sink for ^5 { $counter++ };
+say $counter; #  OUTPUT: «5␤» 
+say $result;  #  OUTPUT: «(Any)␤» 
+----
+
+=== once
+
+在循环内, 仅运行带前缀的语句一次。
+
+[source,raku]
+----
+my $counter;
+my $result = do for ^5 { once $counter = 0; $counter++ };
+say $result; # OUTPUT: «(0 1 2 3 4)␤» 
+----
+
+=== gather
+
+可以在语句前面使用 `gather`，在该语句的任何位置接收并收集从一次 `take` 运行发出的所有数据结构的列表：
+
+[source,raku]
+----
+proto sub fact( Int ) {*}
+multi sub fact( 1 --> 1 ) {}
+multi sub fact( $x ) { take $x * fact( $x-1 ) }
+ 
+my @factors = gather say fact(13); # OUTPUT: «6227020800» 
+say @factors;
+# OUTPUT: «[2 6 24 120 720 5040 40320 362880 3628800 ...]» 
+----
+
+在此示例中，`gather` 在 `say` 之前，它打印阶乘的第一个结果； 同时，它从每次对事实的调用中都收集了结果，该结果发送到 `@factor`。
+
+=== start
+
+作为语句前缀，`start` 的行为与link:https://docs.raku.org/language/control#flow%29_start[在块前面]的行为相同，即，它以异步方式运行该语句，并返回 promise。
+
+[source,raku]
+----
+proto sub fact( Int ) {*}
+multi sub fact( 1 --> 1 ) {}
+multi sub fact( $x ) {  $x * fact( $x-1 ) }
+ 
+my @promises = gather {
+    for <3 4> {
+        take start fact( 10 ** $_ );
+    }
+}
+ 
+say await @promises;
+----
+
+由 `start` 创建的 link:https://docs.raku.org/type/Promise[Promises] 收集在一个数组中，一旦实现了 Promise，它就会返回操作的结果。
+
+=== react
+
+`react` 可以在并发程序中用于创建代码块，这些代码块在某些事件发生时运行。 它link:https://docs.raku.org/syntax/react[适用于块]，也可用作语句前缀。
+
+[source,raku]
+----
+my Channel $KXGA .= new;
+for ^100 {
+    $KXGA.send( (100000..200000).pick );
+}
+ 
+my @sums = ( start react whenever $KXGA -> $number {
+    say "In thread ", $*THREAD.id;
+    say "→ ", (^$number).sum;
+} ) for ^10;
+ 
+start { sleep 10; $KXGA.close(); }
+ 
+await @sums;
+----
+
+在这种情况下，`react` 前置于 `whenever`，这会使从通道中读取的每个数字都变得很长。
+
+=== supply
+
+关键字 `supply` 可创建您可以点击的link:https://docs.raku.org/language/concurrency#index-entry-supply_(on-demand)[按需供应]。 它与 `emit` 配对，可以在 `supply` 前缀语句中的任何位置使用它。
+
+[source,raku]
+----
+my &cards = ->  {
+    my @cards = 1..10 X~ <♠ ♥ ♦ ♣>;
+    emit($_) for @cards.pick(@cards.elems);
+}
+my $supply = supply cards;
+ 
+$supply.tap( -> $v { say "Drawing: $v" });
+$supply.tap( -> $v { say "Drawing: $v" }, done => { say "No more cards" });
+# OUTPUT: 
+# [...] 
+# Drawing: 1♥ 
+# Drawing: 7♥ 
+# Drawing: 9♥ 
+# No more cards 
+----
